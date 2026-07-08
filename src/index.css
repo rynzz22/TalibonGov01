@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-brand-primary: var(--primary, #EA580C);
+  --color-brand-secondary: var(--secondary, #F97316);
+  --color-brand-accent: var(--accent, #FDBA74);
+  --color-brand-bg: #FFFFFF;
+  --color-brand-surface: #F8FAFC;
+  --color-brand-border: #F1F5F9;
+  --color-brand-text: #0F172A;
+  --color-brand-muted: #475569;
+
+  --color-dark-bg: #020617;
+  --color-dark-surface: #0F172A;
+  --color-dark-border: #1E293B;
+  --color-dark-text: #F8FAFC;
+  --color-dark-muted: #A1B0CB;
+
+  --navbar-height-mobile: 140px;
+  --navbar-height-desktop: 204px;
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-brand-bg text-brand-text antialiased transition-colors duration-500;
+    selection-color: #EA580C;
+    selection-background: rgba(234, 88, 12, 0.1);
+  }
+
+  body::selection,
+  body *::selection {
+    background: rgba(234, 88, 12, 0.12);
+    color: #EA580C;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #CBD5E1;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: #1E293B;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+
+  /* ─── Card variants ─── */
+  .minimal-card {
+    @apply bg-brand-surface rounded-[2.5rem] transition-all duration-500;
+    @apply hover:bg-white hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)];
+    @apply dark:bg-dark-surface dark:hover:bg-dark-surface/80;
+    @apply dark:border dark:border-dark-border;
+  }
+
+  .pro-card {
+    @apply bg-white border border-brand-border rounded-[2.5rem] transition-all duration-300;
+    @apply hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)];
+    @apply dark:bg-dark-surface dark:border-dark-border;
+  }
+
+  .civic-card {
+    @apply bg-white border border-brand-border rounded-3xl transition-all duration-300;
+    @apply hover:shadow-lg hover:-translate-y-0.5;
+    @apply dark:bg-dark-surface dark:border-dark-border;
+  }
+
+  /* ─── Buttons ─── */
+  .minimal-button-primary {
+    @apply px-8 py-4 bg-brand-primary text-white font-bold text-xs tracking-widest;
+    @apply rounded-2xl hover:bg-brand-primary/90 active:scale-95 transition-all duration-300;
+    @apply flex items-center justify-center gap-3 uppercase;
+    @apply focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2;
+  }
+
+  .minimal-button-outline {
+    @apply px-8 py-4 border border-brand-primary/50 text-brand-primary font-extrabold text-xs tracking-widest;
+    @apply rounded-2xl hover:bg-brand-primary hover:text-white active:scale-95 transition-all duration-300;
+    @apply flex items-center justify-center gap-3 uppercase;
+    @apply dark:border-dark-border dark:text-dark-text dark:hover:bg-brand-primary;
+    @apply focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2;
+  }
+
+  .pro-button {
+    @apply px-8 py-4 bg-brand-text text-white font-black text-[10px] tracking-widest uppercase;
+    @apply rounded-2xl hover:bg-brand-primary active:scale-95 transition-all duration-300;
+    @apply flex items-center justify-center gap-2;
+    @apply focus-visible:ring-2 focus-visible:ring-brand-text focus-visible:ring-offset-2;
+  }
+
+  .civic-button-primary {
+    @apply px-8 py-4 bg-brand-primary text-white font-black text-[10px] tracking-widest uppercase;
+    @apply rounded-2xl hover:bg-brand-primary/90 active:scale-95 transition-all;
+    @apply flex items-center justify-center gap-2;
+    @apply disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  /* ─── Typography helpers ─── */
+  .glass-panel {
+    @apply bg-white/85 backdrop-blur-3xl border border-white/30 shadow-2xl shadow-black/5;
+    @apply dark:bg-dark-bg/80 dark:border-dark-border;
+  }
+
+  .section-label {
+    @apply text-[10px] font-extrabold uppercase tracking-[0.4em] text-brand-primary mb-6 block;
+    @apply dark:text-brand-secondary;
+  }
+
+  .section-title {
+    @apply text-4xl lg:text-6xl font-extrabold text-brand-text tracking-tight mb-8 font-display;
+    @apply dark:text-dark-text;
+  }
+
+  /* ─── Content page layout helpers ─── */
+
+  /* For pages that need to account for the fixed navbar */
+  .page-content {
+    padding-top: var(--navbar-height-mobile);
+  }
+
+  @media (min-width: 1024px) {
+    .page-content {
+      padding-top: var(--navbar-height-desktop);
+    }
+  }
+
+  /* ─── Form utilities ─── */
+  .form-input {
+    @apply w-full bg-brand-bg border border-brand-border rounded-2xl py-4 px-6;
+    @apply font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20;
+    @apply focus:border-brand-primary/30 transition-all;
+    @apply dark:bg-dark-surface dark:border-dark-border dark:text-dark-text;
+  }
+
+  .form-label {
+    @apply text-[10px] font-black text-brand-muted uppercase tracking-widest block mb-2;
+  }
+
+  /* ─── Screen reader only ─── */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* ─── Scrollbar utility ─── */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-brand-border);
+    border-radius: 10px;
+  }
+}

@@ -1,0 +1,261 @@
+import { supabase } from "../lib/supabase";
+import { ContentData } from "../types";
+import { API_ENDPOINTS, ERROR_MESSAGES } from "../constants";
+
+// Simple cache implementation
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
+
+const getCacheKey = (table: string, slug: string) => `${table}:${slug}`;
+
+const isCacheValid = (timestamp: number): boolean => {
+  return Date.now() - timestamp < CACHE_DURATION;
+};
+
+const api = {
+  get: async (table: string, slug: string): Promise<ContentData> => {
+    const cacheKey = getCacheKey(table, slug);
+    const cached = cache.get(cacheKey);
+
+    if (cached && isCacheValid(cached.timestamp)) {
+      return cached.data;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .eq("slug", slug)
+        .limit(1);
+
+      if (error) {
+        console.error(`Query failed for ${table}/${slug}:`, error.message);
+        return { data: [], content: "" } as any;
+      }
+
+      const singleData = data && data.length > 0 ? data[0] : null;
+      const result = singleData?.body || singleData || { data: [], content: "" };
+      cache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
+    } catch (error) {
+      console.error(`API error: ${error}`);
+      return { data: [], content: "" } as any;
+    }
+  },
+};
+
+export const aboutApi = {
+  getProfile: () => api.get("content", API_ENDPOINTS.ABOUT.PROFILE).then(data => {
+    if (!data.content) {
+      return {
+        content: `Talibon is a 1st class municipality in Northern Bohol, approximately 114.8 km from Tagbilaran City. With a population of 71,272 (2020 Census), it is the second-most populous town in the province. 
+
+The municipality is famous for the Danajon Bank, the only double barrier reef in the Philippines, earning it the title of "Seafood Capital of Bohol." It serves as a major commercial hub for Northern Bohol, hosting over 1,400 registered businesses and a significant shipyard industry. 
+
+Accessibility is a key strength, with direct boat links to Cebu City (4 hours) and proximity to Southern Leyte. The town is also accessible via the Bohol Circumferential Road and the Loay Interior Road. Talibon spans 140.46 sq km across 25 barangays, including world-renowned densely populated islands like Calituban and Nocnocan.`
+      };
+    }
+    return data;
+  }),
+  getSeal: () => api.get("content", API_ENDPOINTS.ABOUT.SEAL).then(data => {
+    if (!data.description) {
+      return {
+        description: "The Official Seal of Talibon represents the municipality's rich history, its status as the seafood capital, and the resilience of its people. The three stars represent the major island groups, while the fish and golden elements symbolize the abundance of its marine resources and mining history.",
+        elements: [
+          { name: "Fish / Sea Creature", description: "Symbolizes Talibon's bounty as the seafood capital of Bohol." },
+          { name: "Talibong (Blade)", description: "Represents the town's name origin and the bravery of its ancestors." },
+          { name: "Circular Shape", description: "Symbolizes unity and the continuous progress of the municipality." }
+        ]
+      };
+    }
+    return data;
+  }),
+  getHistory: () => api.get("content", API_ENDPOINTS.ABOUT.HISTORY).then(data => {
+    if (!data.content) {
+      return {
+        content: `Talibon, officially the Municipality of Talibon, is a 1st class municipality that lies in the northernmost part of the island Province of Bohol in Central Visayas, Philippines. It is located approximately 114.8 km North of Tagbilaran City, 611.28 km Southeast of Manila, and 49.01 km Southeast of Cebu City.
+
+Its coastline has significant patches of the Danajon Bank, the only documented double barrier reef in the Philippines that is teeming with bountiful natural marine resources. Hence, Talibon is considered as the official Seafood Capital of Bohol. The municipality is bounded on the North by the Camotes Sea, South by the municipality of Trinidad, East by the municipality of Bien Unido, West by the municipality of Getafe, and Southwest by the municipality of Buenavista.
+
+The municipality possesses a total land area of 140.46 sq km, of which about 7.97 sq km or 5.7% is classified as urban, while the remaining 132.49 sq km is rural. According to the 2020 Philippine Statistics Authority Population Census, it has a population of 71,272 people, making it the second-most populous town in Bohol.`,
+        timeline: [
+          { year: "1724", title: "Official Founding", description: "Talibon was officially established as a separate municipality from Inabanga." },
+          { year: "1896", title: "Birth of President Carlos P. Garcia", description: "The 8th President of the Philippines was born in Talibon, marking the town's most significant historical legacy." },
+          { year: "2003", title: "Commercial Hub Expansion", description: "Establishment of major commercial entities like Alturas Group, solidifying Talibon's role as a leading commercial center." },
+          { year: "2024", title: "CMCI Milestone", description: "Secured the 17th position among 1st and 2nd class municipalities in the country on the Cities and Municipalities Competitiveness Index." }
+        ]
+      };
+    }
+    return data;
+  }),
+  getMayors: () => api.get("content", API_ENDPOINTS.ABOUT.MAYORS),
+  getDepartments: () => api.get("content", API_ENDPOINTS.ABOUT.DEPARTMENTS),
+  getVicinityMap: () => api.get("content", API_ENDPOINTS.ABOUT.VICINITY_MAP),
+  getBarangays: () => api.get("content", API_ENDPOINTS.ABOUT.BARANGAYS),
+  getIndustry: () => api.get("content", API_ENDPOINTS.ABOUT.INDUSTRY),
+  getServices: () => api.get("content", API_ENDPOINTS.ABOUT.SERVICES),
+  getHymn: () => api.get("content", API_ENDPOINTS.ABOUT.HYMN),
+  getDemographics: () => api.get("content", API_ENDPOINTS.ABOUT.DEMOGRAPHICS),
+  getLocation: () => api.get("content", API_ENDPOINTS.ABOUT.LOCATION),
+};
+
+export const executiveApi = {
+  getMandate: () => api.get("content", API_ENDPOINTS.EXECUTIVE.MANDATE).then(data => {
+    if (!data.content) {
+      return {
+        content: "The Executive Department of Talibon is mandated to implement all programs, projects, services, and activities of the municipality in accordance with the Local Government Code of 1991. Led by the Municipal Mayor, the office ensures the delivery of basic services, the maintenance of public order, and the promotion of the general welfare of all Talibonanos."
+      };
+    }
+    return data;
+  }),
+  getVisionMission: () => api.get("content", API_ENDPOINTS.EXECUTIVE.VISION_MISSION).then(data => {
+    if (!data.vision) {
+      return {
+        vision: "A premier eco-cultural tourism destination and an agro-industrial hub in Northern Bohol, with a God-centered, empowered, and resilient citizenry living in a sustainable environment under a transparent and dynamic leadership.",
+        mission: "To provide quality basic services, promote sustainable development, and foster inclusive growth through participatory governance while preserving our rich cultural heritage and natural resources."
+      };
+    }
+    return data;
+  }),
+  getChart: () => api.get("content", API_ENDPOINTS.EXECUTIVE.CHART),
+  getDirectory: () => api.get("content", API_ENDPOINTS.EXECUTIVE.DIRECTORY),
+  getGadIms: () => api.get("content", API_ENDPOINTS.EXECUTIVE.GAD_IMS).then(data => {
+    if (!data.sections) {
+      return {
+        title: "Talibon GAD Analytics App",
+        subtitle: "Sex-Disaggregated Data Management, Monitoring, and Reporting System",
+        sections: [
+          {
+            id: "overview",
+            title: "01. Background & Rationale",
+            content: [
+              {
+                subTitle: "Problem Statement",
+                items: [
+                  "Current data collection is fragmented and manual.",
+                  "Lack of consistent sex-disaggregated data.",
+                  "Fragmented monitoring of program effectiveness."
+                ]
+              },
+              {
+                subTitle: "Policy Compliance",
+                items: [
+                  "RA 9710 (Magna Carta of Women)",
+                  "Joint Circular 2012-01 (PCW-DILG-DBM-NEDA)",
+                  "Data Privacy Act of 2012 (RA 10173)"
+                ]
+              }
+            ]
+          },
+          {
+            id: "data-modules",
+            title: "02. Core System Modules",
+            content: [
+              {
+                subTitle: "User Management Module",
+                items: [
+                  "Role-based access control (RBAC)",
+                  "Secure login & authentication",
+                  "Defined roles: Super Admin, GAD Focal, MPDC, Encoders"
+                ]
+              },
+              {
+                subTitle: "Beneficiary Profiling Module",
+                items: [
+                  "Encoding of unique individual records (Name, Sex, Age, Barangay)",
+                  "Automated ID generation",
+                  "Editable and searchable demographic database"
+                ]
+              },
+              {
+                subTitle: "Program/Service Monitoring",
+                items: [
+                  "Recording of services availed",
+                  "Linking beneficiaries to specific programs",
+                  "Categorization by sector and gender"
+                ]
+              }
+            ]
+          },
+          {
+            id: "analysis",
+            title: "03. Analytics & Dashboard",
+            content: [
+              {
+                subTitle: "Real-time Visualization",
+                items: [
+                  "Male vs Female distribution charts",
+                  "Age group breakdown and Sectoral analysis",
+                  "Barangay-level statistics",
+                  "Trend analysis (monthly/annual)"
+                ]
+              },
+              {
+                subTitle: "Automated Reporting",
+                items: [
+                  "GPB and GAR support tables",
+                  "Custom report filters",
+                  "Export to Excel and PDF"
+                ]
+              }
+            ]
+          },
+          {
+            id: "admin",
+            title: "04. Governance & Strategy",
+            content: [
+              {
+                subTitle: "Implementation Strategy",
+                items: [
+                  "Phase 1: Planning and Design requirements gathering",
+                  "Phase 2: System coding and initial deployment",
+                  "Phase 3: Capacity Building (Staff training)",
+                  "Phase 4: Pilot implementation in selected offices",
+                  "Phase 5: Municipality-wide full rollout"
+                ]
+              },
+              {
+                subTitle: "Security Measures",
+                items: [
+                  "Encrypted data storage and regular backups",
+                  "Audit trail tracking user activity",
+                  "Consent-based data collection compliance"
+                ]
+              }
+            ]
+          }
+        ]
+      };
+    }
+    return data;
+  }),
+};
+
+export const legislativeApi = {
+  getMandate: () => api.get("content", API_ENDPOINTS.LEGISLATIVE.MANDATE),
+  getStructure: () => api.get("content", API_ENDPOINTS.LEGISLATIVE.STRUCTURE),
+};
+
+export const transparencyApi = {
+  getCitizenCharter: () => api.get("content", API_ENDPOINTS.TRANSPARENCY.CITIZEN_CHARTER),
+  getFullDisclosure: () => api.get("content", API_ENDPOINTS.TRANSPARENCY.FULL_DISCLOSURE),
+  getInfrastructure: () => api.get("content", API_ENDPOINTS.TRANSPARENCY.INFRASTRUCTURE),
+  getFinanceReports: () => api.get("content", API_ENDPOINTS.TRANSPARENCY.FINANCE_REPORTS),
+  getExecutiveOrders: () => api.get("content", API_ENDPOINTS.TRANSPARENCY.EXECUTIVE_ORDERS),
+  getBudget: () => api.get("content", API_ENDPOINTS.TRANSPARENCY.BUDGET),
+  getBiddings: () => api.get("content", API_ENDPOINTS.TRANSPARENCY.BIDDINGS),
+};
+
+export const tourismApi = {
+  getSpots: () => api.get("content", API_ENDPOINTS.TOURISM.SPOTS),
+  getFestivities: () => api.get("content", API_ENDPOINTS.TOURISM.FESTIVITIES),
+  getDelicacies: () => api.get("content", API_ENDPOINTS.TOURISM.DELICACIES),
+};
+
+export const formsApi = {
+  getBusinessPermits: () => api.get("content", API_ENDPOINTS.FORMS.BUSINESS_PERMITS),
+  getBuildingPermits: () => api.get("content", API_ENDPOINTS.FORMS.BUILDING_PERMITS),
+  getZoningClearance: () => api.get("content", API_ENDPOINTS.FORMS.ZONING_CLEARANCE),
+};
+
+export default api;

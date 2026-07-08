@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Talibon, Bohol Official Website",
+  "description": "The official website for the Local Government Unit of Talibon, Bohol, Philippines.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}
