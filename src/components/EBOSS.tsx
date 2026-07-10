@@ -39,7 +39,7 @@ export default function EBOSS() {
             <div className="space-y-6">
               <span className="section-label">Electronic Business One-Stop Shop</span>
               <h2 className="section-title">E-BOSS Portal</h2>
-              <p className="text-lg sm:text-xl text-slate-800 dark:text-slate-100 font-semibold leading-relaxed">
+              <p className="text-base text-slate-700 dark:text-slate-200 font-normal leading-relaxed">
                 Apply for and receive your Business Permit in simple steps. Our digital platform streamlines the entire process from application to issuance.
               </p>
             </div>
@@ -67,13 +67,13 @@ export default function EBOSS() {
                 className="p-8 rounded-[2.5rem] bg-brand-surface border border-brand-border/60 relative overflow-hidden group hover:border-brand-primary/30 transition-all duration-500 shadow-sm"
               >
                 <div className="relative z-10">
-                  <div className="flex items-center gap-4 mb-3">
+                   <div className="flex items-center gap-4 mb-3">
                     <span className="text-[10px] font-extrabold text-brand-primary uppercase tracking-[0.3em] bg-brand-primary/10 px-4 py-1.5 rounded-full shadow-xs">
                       {step.step}
                     </span>
-                    <h3 className="text-xl font-extrabold text-brand-text font-display uppercase tracking-tight">{step.title}</h3>
+                    <h3 className="text-base font-semibold text-brand-text font-display uppercase tracking-tight">{step.title}</h3>
                   </div>
-                  <p className="text-slate-700 dark:text-slate-200 text-sm font-medium leading-relaxed mb-6">
+                  <p className="text-slate-600 dark:text-slate-300 text-sm font-normal leading-relaxed mb-6">
                     {step.description}
                   </p>
                   

@@ -36,14 +36,14 @@ const BriefProfile: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-20"
         >
-          <div className="inline-flex items-center gap-2 bg-white text-brand-primary px-4 py-2 rounded-full text-[10px] font-black tracking-[0.3em] mb-4 border border-brand-primary/10 shadow-sm uppercase">
+          <div className="inline-flex items-center gap-2 bg-white text-brand-primary px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.3em] mb-4 border border-brand-primary/10 shadow-sm uppercase">
             <Landmark size={14} />
             MUNICIPAL PROFILE
           </div>
-          <h2 className="text-5xl lg:text-6xl font-black text-brand-text tracking-tight mb-6 font-display uppercase">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-brand-text tracking-tight mb-6 font-display uppercase">
             Brief <span className="text-brand-primary">Profile</span>
           </h2>
-          <p className="text-lg text-brand-muted max-w-3xl mx-auto font-medium">
+          <p className="text-base text-brand-muted max-w-3xl mx-auto font-normal">
             Talibon is a 1st class municipality that lies in the northernmost part of the island Province of Bohol in Central Visayas, Philippines.
           </p>
         </motion.div>

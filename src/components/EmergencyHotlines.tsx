@@ -49,9 +49,9 @@ export default function EmergencyHotlines() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-20">
-          <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-brand-accent mb-6 block">Emergency Information</span>
-          <h2 className="text-4xl lg:text-6xl font-extrabold text-white tracking-tight mb-8 font-display">Emergency Hotlines</h2>
-          <p className="text-white/60 font-medium text-lg max-w-2xl mx-auto">
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-accent mb-4 block">Emergency Information</span>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight mb-6 font-display">Emergency Hotlines</h2>
+          <p className="text-white/60 font-normal text-base max-w-2xl mx-auto">
             Quick response for life-threatening situations. Our emergency teams are available 24/7 to serve the people of Talibon.
           </p>
         </div>

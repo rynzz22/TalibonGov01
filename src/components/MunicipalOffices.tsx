@@ -46,7 +46,7 @@ export default function MunicipalOffices() {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-[10px] font-bold uppercase tracking-[0.5em] text-brand-primary mb-4 block"
+            className="section-label"
           >
             Abante Talibon!
           </motion.span>
@@ -54,7 +54,7 @@ export default function MunicipalOffices() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl lg:text-6xl font-extrabold text-brand-text tracking-tight mb-8 font-display uppercase"
+            className="section-title uppercase"
           >
             Municipal Offices & Departments
           </motion.h2>
@@ -71,7 +71,7 @@ export default function MunicipalOffices() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-brand-muted font-medium text-lg max-w-2xl mx-auto mb-16"
+            className="text-brand-muted font-normal text-base max-w-2xl mx-auto mb-16"
           >
             Dedicated public servants committed to excellence and transparency in local governance.
           </motion.p>
@@ -96,10 +96,10 @@ export default function MunicipalOffices() {
 
               {/* Content Section */}
               <div className="p-8 flex-1 flex flex-col">
-                <h3 className="text-lg font-bold text-brand-text mb-2 leading-tight font-display group-hover:text-brand-primary transition-colors">
+                <h3 className="text-base font-semibold text-brand-text mb-2 leading-tight font-display group-hover:text-brand-primary transition-colors">
                   {office.title}
                 </h3>
-                <p className="text-sm text-brand-muted font-medium mb-6">
+                <p className="text-xs text-brand-muted font-normal mb-6">
                   {office.officer}
                 </p>
                 

@@ -37,7 +37,7 @@ export default function TransparencyGovernance() {
           <div className="max-w-2xl">
             <span className="section-label">Good Governance</span>
             <h2 className="section-title">Transparency & Accountability</h2>
-            <p className="text-brand-muted font-medium text-lg leading-relaxed">
+            <p className="text-base text-brand-muted font-normal leading-relaxed">
               We are committed to open governance. Access official reports, budget allocations, and procurement activities of the Municipal Government of Talibon.
             </p>
           </div>
@@ -75,8 +75,8 @@ export default function TransparencyGovernance() {
                 <div className="w-14 h-14 rounded-2xl bg-brand-primary/5 flex items-center justify-center text-brand-primary mb-8 group-hover:bg-brand-primary group-hover:text-white transition-all duration-500">
                   <item.icon size={28} />
                 </div>
-                <h3 className="text-2xl font-bold text-brand-text mb-4 font-display uppercase tracking-tight">{item.title}</h3>
-                <p className="text-brand-muted font-medium leading-relaxed mb-8 flex-1">
+                <h3 className="text-lg font-semibold text-brand-text mb-3 font-display uppercase tracking-tight">{item.title}</h3>
+                <p className="text-brand-muted text-sm font-normal leading-relaxed mb-6 flex-1">
                   {item.desc}
                 </p>
                 <Link 

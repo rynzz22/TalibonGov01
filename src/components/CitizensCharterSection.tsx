@@ -30,7 +30,7 @@ export default function CitizensCharterSection() {
           <div className="max-w-2xl">
             <span className="section-label">RA 11032 — Anti-Red Tape Authority</span>
             <h2 className="section-title">Citizen's Charter 2026</h2>
-            <p className="text-xl text-brand-muted font-medium leading-relaxed">
+            <p className="text-base text-brand-muted font-normal leading-relaxed">
               Official guide to government services — requirements, step-by-step procedures, fees, and processing times for each municipal office.
             </p>
           </div>
@@ -59,8 +59,8 @@ export default function CitizensCharterSection() {
                   {office.services} services
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-brand-text mb-3 font-display uppercase tracking-tight">{office.name}</h3>
-              <p className="text-brand-muted text-sm font-medium leading-relaxed">
+              <h3 className="text-base font-semibold text-brand-text mb-3 font-display uppercase tracking-tight">{office.name}</h3>
+              <p className="text-brand-muted text-sm font-normal leading-relaxed">
                 {office.desc}
               </p>
             </motion.div>

@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { ContentData } from "../types";
 import { API_ENDPOINTS, ERROR_MESSAGES } from "../constants";
 
@@ -21,26 +21,87 @@ const api = {
       return cached.data;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .eq("slug", slug)
-        .limit(1);
+    let result: any = null;
+    let fetchedSuccessfully = false;
 
-      if (error) {
-        console.error(`Query failed for ${table}/${slug}:`, error.message);
-        return { data: [], content: "" } as any;
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .eq("slug", slug)
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          const singleData = data[0];
+          result = singleData?.body || singleData;
+          fetchedSuccessfully = true;
+        } else if (error) {
+          console.warn(`Supabase query failed for ${table}/${slug}:`, error.message);
+        }
+      } catch (error) {
+        console.warn(`Supabase API error: ${error}`);
       }
-
-      const singleData = data && data.length > 0 ? data[0] : null;
-      const result = singleData?.body || singleData || { data: [], content: "" };
-      cache.set(cacheKey, { data: result, timestamp: Date.now() });
-      return result;
-    } catch (error) {
-      console.error(`API error: ${error}`);
-      return { data: [], content: "" } as any;
     }
+
+    // Fallback/direct fetch from local NestJS API
+    if (!fetchedSuccessfully) {
+      try {
+        const firstDash = slug.indexOf("-");
+        if (firstDash !== -1) {
+          const prefix = slug.substring(0, firstDash);
+          const suffix = slug.substring(firstDash + 1);
+          const response = await fetch(`/api/${prefix}/${suffix}`);
+          if (response.ok) {
+            const json = await response.json();
+            // Wrap in `{ data: json }` for forms endpoints if they return raw arrays
+            if (prefix === "forms" && Array.isArray(json)) {
+              result = { data: json };
+            } else {
+              result = json;
+            }
+            fetchedSuccessfully = true;
+          } else {
+            console.warn(`Local API fetch failed for /api/${prefix}/${suffix} (Status: ${response.status})`);
+          }
+        }
+      } catch (err) {
+        console.warn(`Local API fetch error for slug ${slug}:`, err);
+      }
+    }
+
+    // Final emergency fallbacks if both Supabase and Local API are unavailable
+    if (!fetchedSuccessfully) {
+      if (slug === "forms-business-permits") {
+        result = {
+          data: [
+            { id: 1, title: "Business Permit Application Form", url: "http://talibon.gov.ph/wp-content/uploads/2025/10/BUSINESS-PERMIT-APPLICATION-FORM.pdf" },
+            { id: 2, title: "Business Permit Renewal Form", url: "#" }
+          ]
+        };
+      } else if (slug === "forms-building-permits") {
+        result = {
+          data: [
+            { id: 1, title: "Unified Application Form for Building Permit", url: "http://talibon.gov.ph/wp-content/uploads/2025/10/UNIFIED-APPLICATION-FORM-FOR-BUILDING-PERMIT.pdf" },
+            { id: 2, title: "Application for Electrical Permit", url: "http://talibon.gov.ph/wp-content/uploads/2025/10/APPLICATION-FOR-ELECTRICAL-PERMIT.pdf" },
+            { id: 3, title: "Architectural Permit", url: "http://talibon.gov.ph/wp-content/uploads/2025/10/ARCHITECTURAL-PERMIT.pdf" },
+            { id: 4, title: "Civil/Structural Permit", url: "http://talibon.gov.ph/wp-content/uploads/2025/10/CIVIL_STRUCTURAL-PERMIT.pdf" },
+            { id: 5, title: "Plumbing Permit", url: "http://talibon.gov.ph/wp-content/uploads/2025/10/PLUMBING-PERMIT.pdf" }
+          ]
+        };
+      } else if (slug === "forms-zoning-clearance") {
+        result = {
+          data: [
+            { id: 1, title: "Locational Clearance Application Form", url: "http://talibon.gov.ph/wp-content/uploads/2025/10/LC-Application-Form.pdf" }
+          ]
+        };
+      } else {
+        result = { data: [], content: "" };
+      }
+    }
+
+    cache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   },
 };
 

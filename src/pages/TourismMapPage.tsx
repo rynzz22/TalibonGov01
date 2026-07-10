@@ -33,14 +33,14 @@ const TourismMapPage: React.FC = () => {
           
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12">
             <div className="max-w-3xl">
-              <h1 className="text-5xl md:text-7xl font-black text-brand-text tracking-tight leading-none mb-6 font-display">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-text tracking-tight leading-none mb-6 font-display">
                 {language === 'en' ? (
                   <>INTERACTIVE <br />TOURISM MAP</>
                 ) : (
                   <>INTERAKTIBONG <br />MAPA SA LUNGSOD</>
                 )}
               </h1>
-              <p className="text-brand-muted text-xl font-medium leading-relaxed">
+              <p className="text-brand-muted text-base font-normal leading-relaxed">
                 {language === 'en' 
                   ? 'Locate our premier tourist spots, government centers, and historical landmarks across the seafood capital of Bohol.'
                   : 'Pangitaa ang atong mga nindot nga suroyanan, sentro sa gobyerno, ug makasaysayanong mga dapit sa kaulohan sa isda sa Bohol.'}

@@ -1,4 +1,4 @@
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, Globe, ChevronDown, ArrowUpRight, Phone, Mail, MapPin, Search, Accessibility, Bell, Clock, LogIn, LayoutDashboard, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -8,6 +8,7 @@ import { useAuth } from "../contexts/SupabaseAuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import ThemeToggle from "./ThemeToggle";
 import GlobalSearch from "./GlobalSearch";
+import { useIsScrolled } from "../hooks/useIsScrolled";
 
 export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
@@ -16,16 +17,8 @@ export default function Navbar() {
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([]);
   const location = useLocation();
   
-  const { scrollY } = useScroll();
-  const [hidden, setHidden] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const isScrolled = useIsScrolled(80);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    setIsScrolled(latest > 50);
-    // Explicitly disabling hiding behavior as requested: "ALWAYS FIXED ON TOP"
-    setHidden(false);
-  });
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -154,13 +147,8 @@ export default function Navbar() {
 
   return (
     <motion.header 
-      variants={{
-        visible: { y: 0, opacity: 1 },
-        hidden: { y: -150, opacity: 0 },
-      }}
-      animate={hidden ? "hidden" : "visible"}
-      transition={{ duration: 0.35, ease: "easeInOut" }}
-      className="fixed top-0 left-0 right-0 z-50 pointer-events-auto shadow-2xl bg-[url('https://phillexevansnotebook.wordpress.com/wp-content/uploads/2019/01/20180410_153642.jpg')] bg-cover bg-center flex flex-col"
+      animate="visible"
+      className="fixed top-0 left-0 right-0 z-50 pointer-events-auto shadow-2xl bg-[url('https://phillexevansnotebook.wordpress.com/wp-content/uploads/2019/01/20180410_153642.jpg')] bg-cover bg-center flex flex-col transition-all duration-300 ease-in-out"
     >
       {/* Immersive Overlay */}
       <div className="absolute inset-0 bg-white/92 backdrop-blur-[1.5px] -z-10" />
@@ -275,23 +263,27 @@ export default function Navbar() {
       </div>
 
       {/* Tier 2: Branding Header */}
-      <div className="bg-transparent border-b border-gray-100/50 relative z-10">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 py-6 lg:py-8 flex items-center justify-between">
+      <div className={`bg-transparent border-b border-gray-100/50 relative z-10 transition-all duration-300 ease-in-out overflow-hidden ${
+        isScrolled 
+          ? "h-0 py-0 opacity-0 pointer-events-none border-none" 
+          : "py-6 lg:py-8"
+      }`}>
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 flex items-center justify-between">
           {/* Left Section: Logos */}
           <div className="flex items-center gap-4 w-1/4">
             <Link to="/" className="flex items-center gap-4 group">
-              <div className="p-1.5 bg-white rounded-full shadow-lg border-2 border-brand-primary/20 group-hover:border-brand-primary transition-all duration-500">
+              <div className="p-1.5 bg-white rounded-full shadow-lg border-2 border-brand-primary/20 group-hover:border-brand-primary transition-all duration-300">
                 <img 
                   src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
                   alt="Talibon Seal" 
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain transition-transform group-hover:rotate-6 rounded-full" 
+                  className="object-contain transition-all duration-300 rounded-full group-hover:rotate-6 w-16 h-16 sm:w-20 sm:h-20" 
                   referrerPolicy="no-referrer"
                 />
               </div>
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Bagong_Pilipinas_logo.png/1920px-Bagong_Pilipinas_logo.png" 
                 alt="Bagong Pilipinas" 
-                className="hidden xl:block h-10 object-contain" 
+                className="hidden xl:block object-contain h-10" 
                 referrerPolicy="no-referrer" 
               />
             </Link>
@@ -303,93 +295,140 @@ export default function Navbar() {
               <div className="flex items-center gap-2 mb-1">
                 <div className="px-3 py-0.5 bg-brand-primary text-white text-[9px] font-black rounded-full animate-pulse tracking-widest shadow-sm">#TALIBOOM</div>
               </div>
-              <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-brand-primary tracking-tighter leading-none mb-1 drop-shadow-sm font-display">MUNICIPALITY OF TALIBON</h1>
+              <h1 className="font-display font-black text-brand-primary tracking-tighter leading-none mb-1 drop-shadow-sm text-xl sm:text-3xl lg:text-4xl">MUNICIPALITY OF TALIBON</h1>
               <div className="flex items-center gap-2">
-                <p className="text-brand-secondary font-black text-[9px] sm:text-xs lg:text-sm tracking-[0.25em] uppercase opacity-90">BOHOL'S SEAFOOD CAPITAL 🦀</p>
+                <p className="text-brand-secondary font-black tracking-[0.25em] uppercase opacity-90 text-[9px] sm:text-xs lg:text-sm">BOHOL'S SEAFOOD CAPITAL 🦀</p>
               </div>
             </div>
           </Link>
 
-          {/* Right Section: Actions */}
-          <div className="flex items-center gap-4 w-1/4 justify-end">
-            <button 
-              onClick={() => setIsSearchOpen(true)}
-              className="p-3 bg-white/40 backdrop-blur-lg rounded-full text-brand-primary transition-all hover:scale-110 active:scale-95 border border-white/50 shadow-xl"
-            >
-              <Search size={22} className="stroke-[2.5]" />
-            </button>
-            <button 
-              onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden p-2 text-brand-primary"
-            >
-              {isOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
-          </div>
+          {/* Right Section: Empty to balance the layout */}
+          <div className="w-1/4 hidden lg:block" />
         </div>
       </div>
 
       {/* Tier 3: Secondary Navigation (Vibrant Bar) */}
-      <div className="bg-gradient-to-r from-orange-600/90 to-amber-500/90 hidden lg:block backdrop-blur-md border-t border-white/10">
-        <div className="max-w-screen-2xl mx-auto px-8 flex items-center justify-center">
-          {secondaryNavLinks.map((link) => (
-            <div 
-              key={link.name} 
-              className="relative group/secondary"
-              onMouseEnter={() => link.subLinks && setActiveDropdown(link.name)}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <div className="flex flex-col">
-                {link.subLinks ? (
-                  <div className="flex items-center">
+      <div className={`bg-gradient-to-r from-orange-600/90 to-amber-500/90 backdrop-blur-md border-t border-white/10 transition-all duration-300 ${
+        isScrolled ? "shadow-md" : ""
+      }`}>
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 flex items-center justify-between relative transition-all duration-300">
+          
+          {/* Left: Mini Seal & Title (Visible when scrolled) */}
+          <div className="flex items-center gap-2 min-w-[120px] lg:min-w-[180px]">
+            <AnimatePresence>
+              {isScrolled && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-2"
+                >
+                  <img 
+                    src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
+                    alt="Talibon Seal" 
+                    className="w-8 h-8 object-contain rounded-full bg-white p-0.5 shadow-md" 
+                    referrerPolicy="no-referrer"
+                  />
+                  <span className="text-white text-[11px] font-black tracking-widest uppercase font-display hidden sm:inline-block">
+                    TALIBON
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Center: Navigation Links */}
+          <div className="hidden lg:flex items-center justify-center flex-1">
+            {secondaryNavLinks.map((link) => (
+              <div 
+                key={link.name} 
+                className="relative group/secondary"
+                onMouseEnter={() => link.subLinks && setActiveDropdown(link.name)}
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                <div className="flex flex-col">
+                  {link.subLinks ? (
+                    <div className="flex items-center">
+                      <Link 
+                        to={link.href} 
+                        className={`pl-4 ${link.href === '#' ? 'pointer-events-none' : ''} ${
+                          isScrolled ? 'py-2.5' : 'py-4'
+                        } text-white text-[10px] font-bold tracking-wider hover:bg-white/10 transition-all duration-300`}
+                      >
+                        {link.name}
+                      </Link>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdown(activeDropdown === link.name ? null : link.name);
+                        }}
+                        className={`pr-4 ${
+                          isScrolled ? 'py-2.5' : 'py-4'
+                        } text-white hover:bg-white/10 transition-all duration-300`}
+                      >
+                        <ChevronDown size={14} className={activeDropdown === link.name ? 'rotate-180' : ''} />
+                      </button>
+                    </div>
+                  ) : (
                     <Link 
                       to={link.href} 
-                      className={`pl-6 ${link.href === '#' ? 'pointer-events-none' : ''} py-4 text-white text-[11px] font-black tracking-widest hover:bg-white/10 transition-all`}
+                      target={link.isExternal ? "_blank" : undefined}
+                      className={`px-4 ${
+                        isScrolled ? 'py-2.5' : 'py-4'
+                      } text-white text-[10px] font-bold tracking-wider hover:bg-white/10 transition-all duration-300 block`}
                     >
                       {link.name}
                     </Link>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveDropdown(activeDropdown === link.name ? null : link.name);
-                      }}
-                      className="pr-6 py-4 text-white hover:bg-white/10 transition-all"
-                    >
-                      <ChevronDown size={14} className={activeDropdown === link.name ? 'rotate-180' : ''} />
-                    </button>
-                  </div>
-                ) : (
-                  <Link 
-                    to={link.href} 
-                    target={link.isExternal ? "_blank" : undefined}
-                    className="px-6 py-4 text-white text-[11px] font-black tracking-widest hover:bg-white/10 transition-all block"
-                  >
-                    {link.name}
-                  </Link>
-                )}
-                
-                <AnimatePresence>
-                  {activeDropdown === link.name && link.subLinks && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                      className="absolute top-full left-1/2 -translate-x-1/2 w-64 bg-white shadow-2xl border border-gray-100 py-3 z-[70] rounded-b-xl overflow-hidden"
-                    >
-                      {link.subLinks.map((sub) => (
-                        <Link
-                          key={sub.name}
-                          to={sub.href}
-                          className="block px-6 py-2.5 hover:bg-brand-primary/5 text-gray-800 hover:text-brand-primary transition-all text-xs font-bold tracking-tight"
-                        >
-                          {sub.name}
-                        </Link>
-                      ))}
-                    </motion.div>
                   )}
-                </AnimatePresence>
+                  
+                  <AnimatePresence>
+                    {activeDropdown === link.name && link.subLinks && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                        className="absolute top-full left-1/2 -translate-x-1/2 w-64 bg-white shadow-2xl border border-gray-100 py-3 z-[70] rounded-b-xl overflow-hidden"
+                      >
+                        {link.subLinks.map((sub) => (
+                          <Link
+                            key={sub.name}
+                            to={sub.href}
+                            className="block px-6 py-2.5 hover:bg-brand-primary/5 text-gray-800 hover:text-brand-primary transition-all text-xs font-bold tracking-tight"
+                          >
+                            {sub.name}
+                          </Link>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Right: Search and Mobile Hamburger Buttons */}
+          <div className="flex items-center gap-2 justify-end min-w-[120px] lg:min-w-[180px]">
+            <button 
+              onClick={() => setIsSearchOpen(true)}
+              className={`hover:bg-white/15 rounded-full text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-transparent hover:border-white/20 ${
+                isScrolled ? 'p-1.5' : 'p-2'
+              }`}
+              title="Search"
+            >
+              <Search size={16} className="stroke-[2.5]" />
+            </button>
+            <button 
+              onClick={() => setIsOpen(!isOpen)}
+              className={`lg:hidden hover:bg-white/15 rounded-full text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-transparent hover:border-white/20 ${
+                isScrolled ? 'p-1.5' : 'p-2'
+              }`}
+              title="Menu"
+            >
+              {isOpen ? <X size={20} className="stroke-[2.5]" /> : <Menu size={20} className="stroke-[2.5]" />}
+            </button>
+          </div>
+
         </div>
       </div>
 

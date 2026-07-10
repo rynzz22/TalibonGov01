@@ -24,7 +24,7 @@ export default function PopularServices() {
   return (
     <section className="py-24 bg-white" id="popular-services">
       <div className="max-w-7xl mx-auto px-4 text-center">
-        <h2 className="text-4xl font-extrabold text-gray-800 uppercase tracking-tight mb-16">POPULAR SERVICES</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 uppercase tracking-tight mb-12">POPULAR SERVICES</h2>
         
         <div className="flex flex-wrap justify-center gap-4 mb-16">
           {services.map((service, idx) => (

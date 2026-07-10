@@ -35,7 +35,7 @@ export default function Tourism() {
             <span className="section-label">Explore Talibon</span>
             <h2 className="section-title">Beyond the Horizon</h2>
           </div>
-          <p className="text-brand-muted font-medium text-lg max-w-sm leading-relaxed mb-4">
+          <p className="text-brand-muted font-normal text-base max-w-sm leading-relaxed mb-4">
             Discover the unique biodiversity of the Danajon Bank and the vibrant cultural heritage of northern Bohol.
           </p>
         </div>
@@ -68,9 +68,9 @@ export default function Tourism() {
               <div className="flex-1 space-y-8">
                 <div className="space-y-4">
                   <span className="text-[10px] font-bold text-brand-primary uppercase tracking-[0.4em]">{spot.category}</span>
-                  <h3 className="text-5xl md:text-7xl font-extrabold text-brand-text tracking-tighter font-display uppercase">{spot.title}</h3>
+                  <h3 className="text-3xl md:text-4xl font-semibold text-brand-text tracking-tight font-display uppercase">{spot.title}</h3>
                 </div>
-                <p className="text-xl text-brand-muted font-medium leading-relaxed max-w-md">
+                <p className="text-base text-brand-muted font-normal leading-relaxed max-w-md">
                   {spot.description}
                 </p>
                 <Link 

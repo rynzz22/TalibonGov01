@@ -28,7 +28,7 @@ const CitizenCharterPage: React.FC = () => {
         className="relative z-10"
       >
         <div className="mb-16">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-brand-text uppercase tracking-tighter leading-none mb-8 font-display">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-text uppercase tracking-tighter leading-none mb-6 font-display">
             Citizen Charter
           </h1>
           <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-brand-border inline-flex shadow-sm">
@@ -40,10 +40,10 @@ const CitizenCharterPage: React.FC = () => {
         <div className="pro-card overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2">
             <div className="p-12 md:p-20 flex flex-col justify-center">
-              <h2 className="text-4xl md:text-5xl font-extrabold text-brand-text mb-8 uppercase tracking-tight leading-none font-display">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-brand-text mb-6 uppercase tracking-tight leading-none font-display">
                 Citizen Charter
               </h2>
-              <p className="text-xl text-brand-muted font-medium mb-12 leading-relaxed">
+              <p className="text-base text-brand-muted font-normal mb-12 leading-relaxed">
                 The Citizen's Charter is a document of commitments made by a Government organization to the citizens in relation to the services being provided to them.
               </p>
               
