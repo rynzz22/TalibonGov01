@@ -12,10 +12,10 @@ import { Link } from "react-router-dom";
 
 export default function QuickAccess() {
   const quickLinks = [
-    { name: "Apply for Permit", icon: FileText, href: "/forms/business" },
-    { name: "Request Certificate", icon: FileCheck, href: "/executive/directory" },
-    { name: "Pay Online", icon: CreditCard, href: "https://talibon-citizen-stg.multisyscorp.io/e-services" },
-    { name: "Track My Request", icon: Search, href: "https://talibon-citizen-stg.multisyscorp.io/e-services" },
+    { name: "Apply for Permit", icon: FileText, href: "/services/apply-permit" },
+    { name: "Request Certificate", icon: FileCheck, href: "/services/request-certificate" },
+    { name: "Pay Online", icon: CreditCard, href: "/services/pay-online" },
+    { name: "Track My Request", icon: Search, href: "/services/track-request" },
     { name: "Tourism Guide", icon: Map, href: "/tourism/spots" },
     { name: "Downloadables", icon: Download, href: "/downloads" },
     { name: "Citizen's Charter", icon: BookOpen, href: "/transparency/charter" },

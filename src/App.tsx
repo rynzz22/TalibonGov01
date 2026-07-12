@@ -21,6 +21,7 @@ import UpdatesPage from "./pages/UpdatesPage";
 import NewsCategoryPage from "./pages/NewsCategoryPage";
 import NewsDetailPage from "./pages/NewsDetailPage";
 import DownloadsPage from "./pages/DownloadsPage";
+import ServiceInfoPage from "./pages/ServiceInfoPage";
 import BarangayHome from "./pages/BarangayHome";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -92,6 +93,7 @@ function AppLayout() {
           <Route path="/brgy/:slug" element={<BarangayHome />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/downloads" element={<DownloadsPage />} />
+          <Route path="/services/:slug" element={<ServiceInfoPage />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/cancel" element={<PaymentCancel />} />
           <Route path="/tourism/map" element={<TourismMapPage />} />
