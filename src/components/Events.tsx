@@ -81,7 +81,7 @@ export default function Events() {
 
   if (loading) {
     return (
-      <section id="events" className="py-32 bg-white flex flex-col items-center justify-center gap-6">
+      <section id="events" className="py-32 bg-brand-bg flex flex-col items-center justify-center gap-6">
         <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
         <p className="text-brand-muted font-bold animate-pulse uppercase tracking-[0.2em] text-sm">
           Fetching latest news...
@@ -95,7 +95,7 @@ export default function Events() {
   }
 
   return (
-    <section id="events" className="py-32 bg-white">
+    <section id="events" className="py-32 bg-brand-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
           <span className="section-label">Stay Updated</span>

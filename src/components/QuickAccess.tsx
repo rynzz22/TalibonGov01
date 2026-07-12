@@ -37,7 +37,7 @@ export default function QuickAccess() {
                 to={link.href}
                 className="flex flex-col items-center gap-3 group"
               >
-                <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-brand-border flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-brand-primary/20">
+                <div className="w-14 h-14 rounded-2xl bg-brand-bg shadow-sm border border-brand-border flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-brand-primary/20">
                   <link.icon size={24} />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-primary transition-colors">

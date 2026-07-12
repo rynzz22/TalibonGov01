@@ -32,7 +32,7 @@ export default function EBOSS() {
   ];
 
   return (
-    <section id="eboss" className="py-32 bg-white relative overflow-hidden">
+    <section id="eboss" className="py-32 bg-brand-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
           <div className="space-y-12">
@@ -79,7 +79,7 @@ export default function EBOSS() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {step.subSteps.map((sub) => (
-                      <div key={sub.id} className="p-4 bg-white dark:bg-dark-surface rounded-2xl border border-brand-border flex gap-4 items-start shadow-xs">
+                      <div key={sub.id} className="p-4 bg-brand-surface rounded-2xl border border-brand-border flex gap-4 items-start shadow-xs">
                         <div className="w-8 h-8 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary font-extrabold text-xs shrink-0">
                           {sub.id}
                         </div>

@@ -45,7 +45,7 @@ const ContentPage: React.FC<ContentPageProps> = ({
   };
 
   return (
-    <div className="pb-20 min-h-screen bg-white relative overflow-hidden">
+    <div className="pb-20 min-h-screen bg-brand-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

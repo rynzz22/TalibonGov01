@@ -6,7 +6,6 @@ import { HashLink } from "react-router-hash-link";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { useAuth } from "../contexts/SupabaseAuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
-import ThemeToggle from "./ThemeToggle";
 import GlobalSearch from "./GlobalSearch";
 import { useIsScrolled } from "../hooks/useIsScrolled";
 
@@ -151,13 +150,13 @@ export default function Navbar() {
       className="fixed top-0 left-0 right-0 z-50 pointer-events-auto shadow-2xl bg-[url('https://phillexevansnotebook.wordpress.com/wp-content/uploads/2019/01/20180410_153642.jpg')] bg-cover bg-center flex flex-col transition-all duration-300 ease-in-out"
     >
       {/* Immersive Overlay */}
-      <div className="absolute inset-0 bg-white/92 backdrop-blur-[1.5px] -z-10" />
+      <div className="absolute inset-0 bg-brand-bg/92 backdrop-blur-[1.5px] -z-10" />
 
       {/* Tier 1: Utility Navigation */}
-      <div className="bg-white/50 border-b border-gray-200 backdrop-blur-md relative z-20">
+      <div className="bg-brand-bg/50 border-b border-brand-border backdrop-blur-md relative z-20">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-10 h-10 flex justify-between items-center text-[10px] sm:text-xs">
-          <div className="flex items-center gap-10 divide-x divide-gray-300">
-            <Link to="/" className="font-extrabold text-gray-800 hover:text-brand-primary transition-colors tracking-tight">GOVPH</Link>
+          <div className="flex items-center gap-10 divide-x divide-brand-border">
+            <Link to="/" className="font-extrabold text-brand-text hover:text-brand-primary transition-colors tracking-tight">GOVPH</Link>
             
             <nav className="hidden lg:flex items-center gap-8 pl-10">
               {topNavLinks.map((link) => (
@@ -174,7 +173,7 @@ export default function Navbar() {
                           e.stopPropagation();
                           setActiveDropdown(activeDropdown === link.name ? null : link.name);
                         }}
-                        className="text-gray-800 hover:text-brand-primary font-semibold flex items-center gap-1 transition-colors"
+                        className="text-brand-text hover:text-brand-primary font-semibold flex items-center gap-1 transition-colors"
                       >
                         {link.name} <ChevronDown size={12} className={activeDropdown === link.name ? 'rotate-180' : ''} />
                       </button>
@@ -185,7 +184,7 @@ export default function Navbar() {
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
-                            className="absolute top-full left-0 w-56 bg-white shadow-2xl border border-gray-100 py-2 z-[70]"
+                            className="absolute top-full left-0 w-56 bg-brand-surface shadow-2xl border border-brand-border py-2 z-[70]"
                           >
                             {link.subLinks.map((sub) => (
                               <Link
@@ -193,7 +192,7 @@ export default function Navbar() {
                                 to={sub.href}
                                 target={sub.isExternal ? "_blank" : undefined}
                                 rel={sub.isExternal ? "noopener noreferrer" : undefined}
-                                className="block px-4 py-2 hover:bg-gray-50 text-gray-700 hover:text-brand-primary transition-all text-xs font-semibold"
+                                className="block px-4 py-2 hover:bg-brand-bg text-brand-text hover:text-brand-primary transition-all text-xs font-semibold"
                               >
                                 {sub.name}
                               </Link>
@@ -210,12 +209,12 @@ export default function Navbar() {
                         const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
                         window.scrollTo({ top: y, behavior: 'smooth' });
                       }}
-                      className="text-gray-800 hover:text-brand-primary font-semibold transition-colors"
+                      className="text-brand-text hover:text-brand-primary font-semibold transition-colors"
                     >
                       {link.name}
                     </HashLink>
                   ) : (
-                    <Link to={link.href} className="text-gray-800 hover:text-brand-primary font-semibold transition-colors">
+                    <Link to={link.href} className="text-brand-text hover:text-brand-primary font-semibold transition-colors">
                       {link.name}
                     </Link>
                   )}
@@ -223,14 +222,14 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="hidden sm:flex items-center gap-6 pl-10 border-l border-gray-300">
+            <div className="hidden sm:flex items-center gap-6 pl-10 border-l border-brand-border">
               {user ? (
                 <div className="flex items-center gap-4">
                   <Link to="/admin" className="flex items-center gap-2 text-brand-primary font-extrabold uppercase tracking-widest hover:opacity-80 transition-colors">
                     <LayoutDashboard size={14} />
                     CMS DASHBOARD
                   </Link>
-                  <button onClick={() => signOut()} className="flex items-center gap-2 text-gray-600 font-extrabold uppercase tracking-widest hover:text-red-600 transition-colors">
+                  <button onClick={() => signOut()} className="flex items-center gap-2 text-brand-muted font-extrabold uppercase tracking-widest hover:text-red-600 transition-colors">
                     <LogOut size={14} />
                     LOGOUT
                   </button>
@@ -244,9 +243,9 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-gray-700 font-semibold">
+          <div className="flex items-center gap-4 text-brand-text font-semibold">
             <div className="hidden xl:block">{formatTime(currentTime)} (PST)</div>
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-300">
+            <div className="flex items-center gap-3 pl-4 border-l border-brand-border">
               <button 
                 onClick={() => setLanguage(language === 'en' ? 'ceb' : 'en')}
                 className="flex items-center gap-1.5 px-3 py-1 bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary rounded-full transition-all text-[9px] font-black tracking-widest uppercase border border-brand-primary/10"
@@ -254,9 +253,8 @@ export default function Navbar() {
                 <Globe size={12} />
                 {language === 'en' ? 'EN' : 'CEB'}
               </button>
-              <button className="hover:text-brand-accent transition-colors"><Bell size={16} /></button>
-              <button className="hover:text-brand-primary transition-colors"><Accessibility size={16} /></button>
-              <ThemeToggle />
+              <button className="hover:text-brand-accent text-brand-text transition-colors"><Bell size={16} /></button>
+              <button className="hover:text-brand-primary text-brand-text transition-colors"><Accessibility size={16} /></button>
             </div>
           </div>
         </div>
@@ -388,13 +386,13 @@ export default function Navbar() {
                         initial={{ opacity: 0, scale: 0.95, y: 5 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                        className="absolute top-full left-1/2 -translate-x-1/2 w-64 bg-white shadow-2xl border border-gray-100 py-3 z-[70] rounded-b-xl overflow-hidden"
+                        className="absolute top-full left-1/2 -translate-x-1/2 w-64 bg-brand-surface shadow-2xl border border-brand-border py-3 z-[70] rounded-b-xl overflow-hidden"
                       >
                         {link.subLinks.map((sub) => (
                           <Link
                             key={sub.name}
                             to={sub.href}
-                            className="block px-6 py-2.5 hover:bg-brand-primary/5 text-gray-800 hover:text-brand-primary transition-all text-xs font-bold tracking-tight"
+                            className="block px-6 py-2.5 hover:bg-brand-primary/5 text-brand-text hover:text-brand-primary transition-all text-xs font-bold tracking-tight"
                           >
                             {sub.name}
                           </Link>
@@ -439,7 +437,7 @@ export default function Navbar() {
             initial={{ opacity: 0, x: "100%" }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
-            className="fixed inset-0 z-[100] bg-white lg:hidden overflow-y-auto"
+            className="fixed inset-0 z-[100] bg-brand-bg lg:hidden overflow-y-auto"
           >
             <div className="p-6 h-full flex flex-col">
               <div className="flex justify-between items-center mb-8">
@@ -455,14 +453,14 @@ export default function Navbar() {
                       <>
                         <button 
                           onClick={() => setMobileSubMenu(mobileSubMenu === link.name ? null : link.name)}
-                          className="w-full text-left py-2 text-lg font-black text-gray-800 flex justify-between items-center"
+                          className="w-full text-left py-2 text-lg font-black text-brand-text flex justify-between items-center"
                         >
                           {link.name} <ChevronDown size={18} />
                         </button>
                         {mobileSubMenu === link.name && (
                           <div className="pl-4 py-2 space-y-2 border-l-2 border-brand-primary/20">
                             {link.subLinks.map(sub => (
-                              <Link key={sub.name} to={sub.href} onClick={() => setIsOpen(false)} className="block py-1 text-sm font-bold text-gray-600">{sub.name}</Link>
+                              <Link key={sub.name} to={sub.href} onClick={() => setIsOpen(false)} className="block py-1 text-sm font-bold text-brand-muted">{sub.name}</Link>
                             ))}
                           </div>
                         )}
@@ -476,7 +474,7 @@ export default function Navbar() {
                           window.scrollTo({ top: y, behavior: 'smooth' });
                         }}
                         onClick={() => setIsOpen(false)} 
-                        className="block py-2 text-lg font-black text-gray-800"
+                        className="block py-2 text-lg font-black text-brand-text"
                       >
                         {link.name}
                       </HashLink>
@@ -484,7 +482,7 @@ export default function Navbar() {
                       <Link 
                         to={link.href} 
                         onClick={() => setIsOpen(false)} 
-                        className="block py-2 text-lg font-black text-gray-800"
+                        className="block py-2 text-lg font-black text-brand-text"
                       >
                         {link.name}
                       </Link>
@@ -492,7 +490,7 @@ export default function Navbar() {
                   </div>
                 ))}
 
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-8">Government Portal</p>
+                <p className="text-[10px] font-black text-brand-muted uppercase tracking-widest mt-8">Government Portal</p>
                 {secondaryNavLinks.map(link => (
                   <div key={link.name}>
                     {link.subLinks ? (
@@ -506,7 +504,7 @@ export default function Navbar() {
                         {mobileSubMenu === link.name && (
                           <div className="pl-4 py-2 space-y-2 border-l-2 border-brand-primary/20">
                             {link.subLinks.map(sub => (
-                              <Link key={sub.name} to={sub.href} onClick={() => setIsOpen(false)} className="block py-1 text-sm font-bold text-gray-600">{sub.name}</Link>
+                              <Link key={sub.name} to={sub.href} onClick={() => setIsOpen(false)} className="block py-1 text-sm font-bold text-brand-muted">{sub.name}</Link>
                             ))}
                           </div>
                         )}

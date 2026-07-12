@@ -31,7 +31,7 @@ export default function TransparencyGovernance() {
   ];
 
   return (
-    <section id="transparency" className="py-32 bg-white relative overflow-hidden">
+    <section id="transparency" className="py-32 bg-brand-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row items-end justify-between gap-12 mb-20">
           <div className="max-w-2xl">

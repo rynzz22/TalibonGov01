@@ -1,6 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+:root {
+  --brand-bg: #F8FAFC;
+  --brand-surface: #FFFFFF;
+  --brand-border: #E2E8F0;
+  --brand-text: #0F172A;
+  --brand-muted: #64748B;
+}
+
+.dark {
+  --brand-bg: #F8FAFC;
+  --brand-surface: #FFFFFF;
+  --brand-border: #E2E8F0;
+  --brand-text: #0F172A;
+  --brand-muted: #64748B;
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", sans-serif;
@@ -9,11 +25,11 @@
   --color-brand-primary: var(--primary, #EA580C);
   --color-brand-secondary: var(--secondary, #F97316);
   --color-brand-accent: var(--accent, #FDBA74);
-  --color-brand-bg: #FFFFFF;
-  --color-brand-surface: #F8FAFC;
-  --color-brand-border: #F1F5F9;
-  --color-brand-text: #0F172A;
-  --color-brand-muted: #475569;
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-border: var(--brand-border);
+  --color-brand-text: var(--brand-text);
+  --color-brand-muted: var(--brand-muted);
 
   --color-dark-bg: #020617;
   --color-dark-surface: #0F172A;

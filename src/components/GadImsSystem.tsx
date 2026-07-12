@@ -91,7 +91,7 @@ const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
   const activeSection = sections.find(s => s.id === activeTab);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 bg-white border border-brand-border rounded-[2.5rem] p-4 lg:p-10 shadow-2xl relative overflow-hidden">
+    <div className="flex flex-col lg:flex-row gap-8 bg-brand-surface border border-brand-border rounded-[2.5rem] p-4 lg:p-10 shadow-2xl relative overflow-hidden">
       {/* System Decoration */}
       <div className="absolute top-0 right-0 p-8 flex items-center gap-6 opacity-30 select-none pointer-events-none">
         <div className="text-right">
@@ -123,18 +123,18 @@ const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
           </div>
         </div>
         
-        <nav className="flex flex-col gap-1 p-2 bg-gray-50 rounded-[2rem] border border-brand-border/50">
+        <nav className="flex flex-col gap-1 p-2 bg-brand-bg rounded-[2rem] border border-brand-border/50">
           {sections.map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveTab(section.id)}
               className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-left relative group ${
                 activeTab === section.id 
-                  ? 'bg-white text-brand-text shadow-md border border-brand-border' 
-                  : 'text-brand-muted hover:text-brand-text hover:bg-white/50'
+                  ? 'bg-brand-bg text-brand-text shadow-md border border-brand-border' 
+                  : 'text-brand-muted hover:text-brand-text hover:bg-brand-bg/50'
               }`}
             >
-              <span className={`transition-colors p-2 rounded-xl scale-90 ${activeTab === section.id ? 'bg-brand-primary text-white' : 'bg-gray-100 text-brand-muted group-hover:bg-white transition-all'}`}>
+              <span className={`transition-colors p-2 rounded-xl scale-90 ${activeTab === section.id ? 'bg-brand-primary text-white' : 'bg-brand-bg text-brand-muted group-hover:bg-brand-surface transition-all'}`}>
                 {SECTION_ICONS[section.id] || <ChevronRight size={18} />}
               </span>
               <div className="flex flex-col">
@@ -259,10 +259,10 @@ const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="bg-white border border-brand-border rounded-[2rem] p-8 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden"
+                    className="bg-brand-surface border border-brand-border rounded-[2rem] p-8 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden"
                   >
                     <div className="relative z-10">
-                      <h3 className="text-sm font-black text-brand-text uppercase tracking-widest pb-4 mb-6 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="text-sm font-black text-brand-text uppercase tracking-widest pb-4 mb-6 border-b border-brand-border flex items-center justify-between">
                         {sub.subTitle}
                         <span className="text-[8px] font-mono text-brand-primary opacity-30">SUB_SEC_{idx.toString().padStart(2, '0')}</span>
                       </h3>
@@ -271,7 +271,7 @@ const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
                           <li key={`gad-item-${idx}-${i}`} className="flex gap-4 text-xs text-brand-muted font-bold leading-relaxed group/item">
                             <div className="mt-1 flex flex-col items-center">
                               <div className="w-1.5 h-1.5 rounded-full bg-brand-primary group-hover/item:scale-150 transition-transform shrink-0" />
-                              <div className="w-px h-full bg-gray-100 mt-1" />
+                              <div className="w-px h-full bg-brand-border mt-1" />
                             </div>
                             <span>{item}</span>
                           </li>

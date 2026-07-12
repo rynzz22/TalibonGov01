@@ -6,7 +6,7 @@ import { ArrowUpRight, MapPin } from "lucide-react";
 
 const BarangaySelector: React.FC = () => {
   return (
-    <section className="py-32 bg-white overflow-hidden">
+    <section className="py-32 bg-brand-bg overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-24">
           <div className="max-w-2xl">

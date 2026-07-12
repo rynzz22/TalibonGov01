@@ -122,7 +122,7 @@ const OrganizationalChartPage: React.FC = () => {
   }
 
   return (
-    <div className="pb-20 px-4 md:px-8 max-w-7xl mx-auto min-h-screen bg-white relative overflow-hidden">
+    <div className="pb-20 px-4 md:px-8 max-w-7xl mx-auto min-h-screen bg-brand-bg relative overflow-hidden">
       <div className="relative z-10">
         <div className="mb-16">
           <span className="section-label">Executive Structure</span>

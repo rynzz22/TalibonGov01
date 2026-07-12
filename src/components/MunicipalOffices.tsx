@@ -39,7 +39,7 @@ export default function MunicipalOffices() {
   ];
 
   return (
-    <section id="offices" className="py-32 bg-white relative overflow-hidden">
+    <section id="offices" className="py-32 bg-brand-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
           <motion.span 
@@ -85,11 +85,11 @@ export default function MunicipalOffices() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1, duration: 0.6 }}
-              className="group flex flex-col h-full bg-white rounded-3xl border border-brand-border overflow-hidden hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
+              className="group flex flex-col h-full bg-brand-surface rounded-3xl border border-brand-border overflow-hidden hover:shadow-2xl hover:shadow-black/5 transition-all duration-500"
             >
               {/* Top Colored Section with Icon */}
               <div className={`h-48 flex items-center justify-center ${office.color} transition-colors duration-500`}>
-                <div className={`p-6 rounded-3xl bg-white/50 backdrop-blur-sm shadow-sm transition-transform duration-500 group-hover:scale-110`}>
+                <div className={`p-6 rounded-3xl bg-brand-surface/50 backdrop-blur-sm shadow-sm transition-transform duration-500 group-hover:scale-110`}>
                   <Building2 size={48} className={office.iconColor} />
                 </div>
               </div>

@@ -32,7 +32,7 @@ export default function ServiceNavigator() {
               placeholder="Search for a service (e.g. 'Business Permit', 'Birth Certificate')..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-16 pr-6 py-6 bg-white dark:bg-dark-surface rounded-[2rem] shadow-xl shadow-black/5 border border-brand-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-brand-primary/20 text-lg font-medium dark:text-dark-text"
+              className="w-full pl-16 pr-6 py-6 bg-brand-bg rounded-[2rem] shadow-xl shadow-black/5 border border-brand-border focus:outline-none focus:ring-2 focus:ring-brand-primary/20 text-lg font-medium text-brand-text"
             />
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function ServiceNavigator() {
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                className="relative w-full max-w-2xl bg-white dark:bg-dark-surface rounded-[3rem] shadow-2xl overflow-y-auto max-h-[90vh]"
+                className="relative w-full max-w-2xl bg-brand-surface rounded-[3rem] shadow-2xl overflow-y-auto max-h-[90vh]"
               >
                 <div className="p-10">
                   <div className="flex justify-between items-start mb-10">

@@ -49,7 +49,7 @@ export default function CitizensCharterSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.05 }}
-              className="p-8 rounded-[2.5rem] bg-white border border-brand-border hover:shadow-2xl hover:shadow-black/5 transition-all duration-500 group"
+              className="p-8 rounded-[2.5rem] bg-brand-bg border border-brand-border hover:shadow-2xl hover:shadow-black/5 transition-all duration-500 group"
             >
               <div className="flex items-start justify-between mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-brand-primary/5 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all duration-500">
