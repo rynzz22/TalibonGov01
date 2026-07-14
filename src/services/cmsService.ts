@@ -127,7 +127,8 @@ export interface UserProfileItem {
   email: string;
   full_name?: string;
   role: "super_admin" | "admin" | "editor" | "municipal_admin" | "barangay_admin";
-  barangay_id?: string;
+  barangay_id?: string | null;
+  department_id?: string | null;
   is_verified: boolean;
   created_at?: string;
 }
@@ -341,6 +342,8 @@ const INITIAL_USERS: UserProfileItem[] = [
     full_name: "Municipal Admin",
     role: "super_admin",
     is_verified: true,
+    department_id: null,
+    barangay_id: null,
   },
   {
     id: "usr-2",
@@ -348,6 +351,35 @@ const INITIAL_USERS: UserProfileItem[] = [
     full_name: "Municipal Editor",
     role: "editor",
     is_verified: true,
+    department_id: "dept-1", // BPLO
+    barangay_id: null,
+  },
+  {
+    id: "usr-3",
+    email: "bplostaff@talibon.gov.ph",
+    full_name: "BPLO Licensing Clerk",
+    role: "municipal_admin",
+    is_verified: true,
+    department_id: "dept-1", // BPLO
+    barangay_id: null,
+  },
+  {
+    id: "usr-4",
+    email: "treasurystaff@talibon.gov.ph",
+    full_name: "MTO Cashier",
+    role: "editor",
+    is_verified: true,
+    department_id: "dept-2", // MTO (Treasury)
+    barangay_id: null,
+  },
+  {
+    id: "usr-5",
+    email: "sanpedroadmin@talibon.gov.ph",
+    full_name: "San Pedro Brgy Secretary",
+    role: "barangay_admin",
+    is_verified: true,
+    department_id: null,
+    barangay_id: "san_pedro",
   }
 ];
 
@@ -1131,10 +1163,26 @@ export const cmsService = {
     return getStorage<UserProfileItem>("users", INITIAL_USERS);
   },
 
-  async updateUserRole(id: string, role: string, isVerified: boolean, userEmail: string): Promise<UserProfileItem> {
+  async updateUserRole(
+    id: string,
+    role: string,
+    isVerified: boolean,
+    userEmail: string,
+    departmentId?: string | null,
+    barangayId?: string | null
+  ): Promise<UserProfileItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("profiles").update({ role, is_verified: isVerified }).eq("id", id).select().single();
+        const updatePayload: any = { role, is_verified: isVerified };
+        if (departmentId !== undefined) updatePayload.department_id = departmentId;
+        if (barangayId !== undefined) updatePayload.barangay_id = barangayId;
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .update(updatePayload)
+          .eq("id", id)
+          .select()
+          .single();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE_USER", "profiles", id);
@@ -1149,7 +1197,10 @@ export const cmsService = {
     const list = getStorage<UserProfileItem>("users", INITIAL_USERS);
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
-      list[index] = { ...list[index], role: role as any, is_verified: isVerified };
+      const updatedItem = { ...list[index], role: role as any, is_verified: isVerified };
+      if (departmentId !== undefined) updatedItem.department_id = departmentId;
+      if (barangayId !== undefined) updatedItem.barangay_id = barangayId;
+      list[index] = updatedItem;
       setStorage("users", list);
       await logCmsAction(userEmail, "UPDATE_USER", "profiles", id);
       return list[index];

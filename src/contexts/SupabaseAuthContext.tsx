@@ -10,6 +10,7 @@ export interface UserProfile {
   full_name: string;
   role: OfficialRole;
   barangay_id?: string | null;
+  department_id?: string | null;
   is_verified: boolean;
   created_at?: string;
 }
@@ -37,7 +38,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = async (u?: User) => {
     try {
-      const targetUser = u || (await supabase.auth.getUser()).data.user;
+      let targetUser = u;
+      if (!targetUser) {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) {
+          console.warn("[Auth] getUser failed during profile refresh:", error.message);
+          if (error.message.includes("Refresh Token") || error.message.includes("not found") || error.message.includes("invalid")) {
+            setProfile(null);
+            setUser(null);
+            setSession(null);
+            supabase.auth.signOut().catch(() => {});
+            return;
+          }
+        }
+        targetUser = data?.user ?? null;
+      }
+
       if (!targetUser) {
         setProfile(null);
         if (import.meta.env.DEV) {
@@ -83,9 +99,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Initial session load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      const currentUser = session?.user ?? null;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.warn("[Auth - DEV] Error getting session on init:", error.message);
+        if (error.message.includes("Refresh Token") || error.message.includes("invalid") || error.message.includes("not found")) {
+          // Clean invalid state
+          supabase.auth.signOut().catch(() => {});
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const currentSession = data?.session ?? null;
+      setSession(currentSession);
+      const currentUser = currentSession?.user ?? null;
       setUser(currentUser);
       
       if (currentUser) {
@@ -99,6 +129,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setLoading(false);
       }
+    }).catch((err) => {
+      console.error("[Auth] Fatal error on initial getSession():", err);
+      setLoading(false);
     });
 
     // Auth state listener

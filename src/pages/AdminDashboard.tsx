@@ -8,7 +8,7 @@ import {
   Newspaper, Users, Gavel, LayoutDashboard,
   Edit3, Save, Globe, Building2, Mic, Eye,
   Folder, Image, Clock, Landmark, Calendar,
-  Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock
+  Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock, Workflow
 } from 'lucide-react';
 import MeetingAssistant from '../components/MeetingAssistant';
 import FileUpload from '../components/FileUpload';
@@ -45,6 +45,7 @@ const AdminDashboard: React.FC = () => {
     | 'users'
     | 'logs'
     | 'meeting-assistant'
+    | 'workflows'
   >('overview');
 
   // Modal States
@@ -78,6 +79,64 @@ const AdminDashboard: React.FC = () => {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [usersList, setUsersList] = useState<UserProfileItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+
+  // Local storage-backed citizen workflow requests state
+  const [citizenRequests, setCitizenRequests] = useState<any[]>(() => {
+    const saved = localStorage.getItem('talibon_citizen_requests');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      {
+        id: "req-1",
+        citizenName: "Jose Rizal Macalinao",
+        type: "Business Permit",
+        description: "Application for annual resort operation clearance for Bohol Divers Beach Resort at Sandingan Coast.",
+        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+        assignedDeptId: "dept-1", // BPLO
+        status: 'PROCESSING',
+        priority: 'HIGH',
+        trackingNumber: "TLB-2026-00481"
+      },
+      {
+        id: "req-2",
+        citizenName: "Ma. Elena Sanchez",
+        type: "Tax Assessment Dispute",
+        description: "Discrepancy query on CTC tax assessment for retail stall #12 in Talibon Public Market.",
+        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+        assignedDeptId: "dept-2", // MTO
+        status: 'PENDING',
+        priority: 'MEDIUM',
+        trackingNumber: "TLB-2026-00452"
+      },
+      {
+        id: "req-3",
+        citizenName: "Kapitan Juan de la Cruz",
+        type: "Infrastructure Repair",
+        description: "Report on heavy storm drain blockage causing minor road flooding at Sitio San Juan crossroads.",
+        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+        assignedDeptId: null,
+        status: 'PENDING',
+        priority: 'HIGH',
+        trackingNumber: "TLB-2026-00431"
+      },
+      {
+        id: "req-4",
+        citizenName: "Bernardo Carpio Jr.",
+        type: "Community Health Advisory",
+        description: "Requesting free fogging service in response to increasing localized mosquito counts near Barangay hall.",
+        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
+        assignedDeptId: null,
+        status: 'PENDING',
+        priority: 'LOW',
+        trackingNumber: "TLB-2026-00422"
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('talibon_citizen_requests', JSON.stringify(citizenRequests));
+  }, [citizenRequests]);
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -164,18 +223,28 @@ const AdminDashboard: React.FC = () => {
   const isTabVisible = (tabId: string): boolean => {
     if (!profile) return false;
     const role = profile.role;
-    if (role === 'super_admin' || role === 'admin') return true;
+    
+    // Super Admins have absolute visibility over all tabs
+    if (role === 'super_admin') return true;
+    
+    // Department-restricted staff
+    if (profile.department_id && !['super_admin', 'admin'].includes(role)) {
+      return ['overview', 'news', 'downloadables', 'departments', 'services', 'workflows', 'media', 'meeting-assistant'].includes(tabId);
+    }
+    
+    // Standard role-based visibility
+    if (role === 'admin') return true;
     
     if (role === 'editor') {
-      return ['overview', 'news', 'downloadables', 'tourism', 'events', 'media', 'meeting-assistant'].includes(tabId);
+      return ['overview', 'news', 'downloadables', 'tourism', 'events', 'media', 'meeting-assistant', 'workflows'].includes(tabId);
     }
     
     if (role === 'municipal_admin') {
-      return !['users', 'logs'].includes(tabId);
+      return !['users', 'logs'].includes(tabId) || tabId === 'workflows';
     }
     
     if (role === 'barangay_admin') {
-      return !['users', 'logs'].includes(tabId);
+      return ['overview', 'news', 'downloadables', 'workflows', 'media'].includes(tabId);
     }
     
     return false;
@@ -194,12 +263,32 @@ const AdminDashboard: React.FC = () => {
       return true;
     }
     
+    // Department-restricted write permissions
+    if (profile.department_id && !['super_admin', 'admin'].includes(role)) {
+      // For departments, they can only edit their own department info
+      if (tabId === 'departments') {
+        if (!item) return false; // non-admins cannot create new departments
+        return item.id === profile.department_id;
+      }
+      // For services, they can only modify services belonging to their department
+      if (tabId === 'services') {
+        if (!item) return true; // can create services
+        const myDeptName = departments.find(d => d.id === profile.department_id)?.name;
+        return !myDeptName || item.office_responsible === myDeptName;
+      }
+      // Can write to standard communication tabs, workflows, and media
+      if (['news', 'downloadables', 'workflows', 'media', 'meeting-assistant'].includes(tabId)) {
+        return true;
+      }
+      return false;
+    }
+    
     if (role === 'editor') {
       return ['news', 'downloadables', 'tourism', 'events', 'media', 'meeting-assistant'].includes(tabId);
     }
     
     if (role === 'municipal_admin') {
-      return !['users', 'logs'].includes(tabId);
+      return !['users', 'logs'].includes(tabId) || tabId === 'workflows';
     }
     
     if (role === 'barangay_admin') {
@@ -629,7 +718,13 @@ const AdminDashboard: React.FC = () => {
   };
 
   // USER ACCESS VERIFICATION & ROLE SETTINGS
-  const handleUpdateUserRole = async (userId: string, targetRole: string, verified: boolean) => {
+  const handleUpdateUserRole = async (
+    userId: string,
+    targetRole: string,
+    verified: boolean,
+    departmentId?: string | null,
+    barangayId?: string | null
+  ) => {
     if (!profile) return;
     
     // Safety check: Find the user being modified in usersList
@@ -651,7 +746,7 @@ const AdminDashboard: React.FC = () => {
     setIsActionLoading(true);
     const userEmail = user?.email || "unknown@talibon.gov.ph";
     try {
-      await cmsService.updateUserRole(userId, targetRole, verified, userEmail);
+      await cmsService.updateUserRole(userId, targetRole, verified, userEmail, departmentId, barangayId);
       showSuccess("User permissions and verification status updated!");
       loadAllCmsData();
     } catch (err: any) {
@@ -771,7 +866,7 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-3 w-full lg:w-auto">
-            {activeTab !== 'overview' && activeTab !== 'logs' && activeTab !== 'users' && activeTab !== 'media' && activeTab !== 'meeting-assistant' && canWriteTab(activeTab) && (
+            {activeTab !== 'overview' && activeTab !== 'logs' && activeTab !== 'users' && activeTab !== 'media' && activeTab !== 'meeting-assistant' && activeTab !== 'workflows' && canWriteTab(activeTab) && (
               <button
                 onClick={() => { resetAllForms(); setIsModalOpen(true); }}
                 className="px-6 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2 grow lg:grow-0"
@@ -814,11 +909,27 @@ const AdminDashboard: React.FC = () => {
 
         {/* MAIN CMS LAYOUT GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          
-          {/* NAVIGATION SIDEBAR */}
+                   {/* NAVIGATION SIDEBAR */}
           <div className="space-y-2 lg:col-span-1">
+            {profile?.department_id ? (
+              <div className="bg-blue-50/50 p-5 rounded-3xl mb-4 border border-blue-100/30">
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-black uppercase tracking-widest rounded-md">Office Assigned</span>
+                <p className="text-xs font-black text-blue-900 mt-2 leading-relaxed">
+                  {departments.find(d => d.id === profile.department_id)?.name || "Department Staff"}
+                </p>
+              </div>
+            ) : profile?.barangay_id ? (
+              <div className="bg-amber-50/50 p-5 rounded-3xl mb-4 border border-amber-100/30">
+                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-widest rounded-md">Barangay Active</span>
+                <p className="text-xs font-black text-amber-900 mt-2 leading-relaxed">
+                  {BARANGAYS.find(b => b.id === profile.barangay_id)?.name || "Barangay Admin"}
+                </p>
+              </div>
+            ) : null}
+
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mb-3">Core Modules</p>
             <SidebarBtn id="overview" label="Dashboard Stats" icon={LayoutDashboard} active={activeTab} onClick={setActiveTab} visible={isTabVisible('overview')} />
+            <SidebarBtn id="workflows" label="Citizen Workflows" icon={Workflow} active={activeTab} onClick={setActiveTab} visible={isTabVisible('workflows')} />
             <SidebarBtn id="news" label="News & Advisory" icon={Newspaper} active={activeTab} onClick={setActiveTab} visible={isTabVisible('news')} />
             <SidebarBtn id="downloadables" label="Document Library" icon={Folder} active={activeTab} onClick={setActiveTab} visible={isTabVisible('downloadables')} />
             <SidebarBtn id="tourism" label="Tourism Spots" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('tourism')} />
@@ -925,9 +1036,7 @@ const AdminDashboard: React.FC = () => {
                   <div>
                     <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">CMS Status Overview</h2>
                     <p className="text-gray-400 font-bold text-xs">Real-time counts of municipal web elements managed by this account.</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  </div>                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <StatBox count={stats.totalNews} label="News Posts" icon={Newspaper} color="bg-blue-50 text-blue-600" />
                     <StatBox count={stats.totalDownloadables} label="Files & Forms" icon={Folder} color="bg-indigo-50 text-indigo-600" />
                     <StatBox count={stats.totalTourism} label="Tourism Spots" icon={Image} color="bg-emerald-50 text-emerald-600" />
@@ -935,6 +1044,151 @@ const AdminDashboard: React.FC = () => {
                     <StatBox count={stats.totalDepartments} label="Offices" icon={Landmark} color="bg-purple-50 text-purple-600" />
                     <StatBox count={stats.totalServices} label="Citizen Services" icon={Building2} color="bg-teal-50 text-teal-600" />
                   </div>
+
+                  {/* DEPARTMENT SPECIFIC WIDGETS */}
+                  {profile?.department_id && (() => {
+                    const deptId = profile.department_id;
+                    const deptName = departments.find(d => d.id === deptId)?.name || "Your Department";
+                    
+                    if (deptId === "dept-1") { // BPLO
+                      return (
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50/30 p-8 rounded-[2rem] border border-blue-100/40 space-y-6">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Operational Dashboard</span>
+                              <h3 className="text-base font-black text-blue-900 uppercase tracking-tight mt-2">{deptName}</h3>
+                              <p className="text-gray-500 font-bold text-xs mt-1">Real-time status of business clearings & municipal compliance reviews.</p>
+                            </div>
+                            <Workflow className="text-blue-500" size={24} />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Pending Clearances</p>
+                              <p className="text-2xl font-black text-blue-950 mt-1">14</p>
+                              <span className="text-[10px] text-emerald-600 font-bold">● 4 urgent priority</span>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Active Taxpayers Registered</p>
+                              <p className="text-2xl font-black text-blue-950 mt-1">1,480</p>
+                              <span className="text-[10px] text-gray-400 font-bold">12 new this quarter</span>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Avg Resolution Speed</p>
+                              <p className="text-2xl font-black text-blue-950 mt-1">12.4m</p>
+                              <span className="text-[10px] text-blue-600 font-bold">Within SLA target</span>
+                            </div>
+                          </div>
+
+                          <div className="bg-white/80 p-5 rounded-2xl border border-blue-100/10">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-3">Licensing Fast-Track Tasks</p>
+                            <div className="space-y-3 text-xs">
+                              <div className="flex justify-between items-center bg-blue-50/30 p-3 rounded-xl border border-blue-100/10">
+                                <span className="font-bold text-blue-950">Review Unified Form: Bohol Divers Co.</span>
+                                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 font-black text-[8px] uppercase tracking-wider rounded">Zoning Check</span>
+                              </div>
+                              <div className="flex justify-between items-center bg-blue-50/30 p-3 rounded-xl border border-blue-100/10">
+                                <span className="font-bold text-blue-950">Approve Clearance: Calituban Marine Supply</span>
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-black text-[8px] uppercase tracking-wider rounded">Ready</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (deptId === "dept-2") { // MTO
+                      return (
+                        <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50/30 p-8 rounded-[2rem] border border-purple-100/40 space-y-6">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="px-2.5 py-1 bg-purple-100 text-purple-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Financial Portal</span>
+                              <h3 className="text-base font-black text-purple-900 uppercase tracking-tight mt-2">{deptName}</h3>
+                              <p className="text-gray-500 font-bold text-xs mt-1">Current collections ledger, community tax logs, and general accounting.</p>
+                            </div>
+                            <Landmark className="text-purple-500" size={24} />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">CTC Forms Issued Today</p>
+                              <p className="text-2xl font-black text-purple-950 mt-1">142</p>
+                              <span className="text-[10px] text-purple-600 font-bold">Total revenue: ₱3,550</span>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Treasury Daily Collections</p>
+                              <p className="text-2xl font-black text-purple-950 mt-1">₱184,250</p>
+                              <span className="text-[10px] text-emerald-600 font-bold">▲ 8% vs yesterday</span>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
+                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Tax Assessment Queue</p>
+                              <p className="text-2xl font-black text-purple-950 mt-1">18</p>
+                              <span className="text-[10px] text-amber-600 font-bold">Avg wait: 4.8 mins</span>
+                            </div>
+                          </div>
+
+                          <div className="bg-white/80 p-5 rounded-2xl border border-purple-100/10">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-3">Treasury Ledger Audits</p>
+                            <div className="space-y-3 text-xs">
+                              <div className="flex justify-between items-center bg-purple-50/30 p-3 rounded-xl border border-purple-100/10">
+                                <span className="font-bold text-purple-950">Verify Community Tax Receipt Batch 04A</span>
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 font-black text-[8px] uppercase tracking-wider rounded">Auditing</span>
+                              </div>
+                              <div className="flex justify-between items-center bg-purple-50/30 p-3 rounded-xl border border-purple-100/10">
+                                <span className="font-bold text-purple-950">Reconcile BPLO Clearance Permits</span>
+                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 font-black text-[8px] uppercase tracking-wider rounded">Pending</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Fallback for general departments
+                    return (
+                      <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4">
+                        <p className="text-xs font-black text-gray-900 uppercase tracking-wider">{deptName} Dashboard</p>
+                        <p className="text-xs text-gray-500 font-bold">Departmental workflow queues are active. View the Citizen Workflows tab to process received requests.</p>
+                      </div>
+                    );
+                  })()}
+
+                  {/* BARANGAY SPECIFIC WIDGETS */}
+                  {profile?.barangay_id && (() => {
+                    const brgyName = BARANGAYS.find(b => b.id === profile.barangay_id)?.name || "Assigned Barangay";
+                    return (
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50/30 p-8 rounded-[2rem] border border-amber-100/40 space-y-6">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Barangay Administration</span>
+                            <h3 className="text-base font-black text-amber-900 uppercase tracking-tight mt-2">{brgyName}</h3>
+                            <p className="text-gray-500 font-bold text-xs mt-1">Localized communication bulletins, residency declarations, and resident support requests.</p>
+                          </div>
+                          <Globe className="text-amber-500" size={24} />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Active News Advisories</p>
+                            <p className="text-2xl font-black text-amber-950 mt-1">
+                              {news.filter(n => n.barangay_id === profile.barangay_id).length}
+                            </p>
+                            <span className="text-[10px] text-gray-400 font-bold">Posted to localized feed</span>
+                          </div>
+                          <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Residency Applications</p>
+                            <p className="text-2xl font-black text-amber-950 mt-1">5</p>
+                            <span className="text-[10px] text-amber-600 font-bold">● 2 pending signature</span>
+                          </div>
+                          <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Assigned Officials</p>
+                            <p className="text-2xl font-black text-amber-950 mt-1">8</p>
+                            <span className="text-[10px] text-emerald-600 font-bold">Active directory live</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="p-8 bg-gray-50 rounded-3xl border border-gray-100 flex flex-col md:flex-row items-center gap-6 justify-between">
                     <div>
@@ -1567,6 +1821,152 @@ const AdminDashboard: React.FC = () => {
                 </div>
               )}
 
+              {/* CITIZEN WORKFLOW ROUTING PANEL */}
+              {activeTab === 'workflows' && (() => {
+                // If user is a department staff, filter to only show their department's requests
+                const myDeptId = profile?.department_id;
+                const isGeneralAdmin = ['super_admin', 'admin'].includes(profile?.role || '');
+                
+                const filteredRequests = citizenRequests.filter(req => {
+                  // Search filter
+                  const matchesSearch = req.citizenName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        req.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        (req.trackingNumber || "").toLowerCase().includes(searchTerm.toLowerCase());
+                  
+                  // Department-aware restriction: if not general admin, must match user's department
+                  if (!isGeneralAdmin && myDeptId) {
+                    return matchesSearch && req.assignedDeptId === myDeptId;
+                  }
+                  return matchesSearch;
+                });
+
+                const handleAssignDept = (reqId: string, deptId: string | null) => {
+                  setCitizenRequests(prev => prev.map(req => {
+                    if (req.id === reqId) {
+                      const deptName = departments.find(d => d.id === deptId)?.name || "Unassigned";
+                      showSuccess(`Request ${req.trackingNumber} routed to ${deptName}!`);
+                      return { ...req, assignedDeptId: deptId, status: deptId ? 'ROUTED' : 'PENDING' };
+                    }
+                    return req;
+                  }));
+                };
+
+                const handleUpdateReqStatus = (reqId: string, newStatus: string) => {
+                  setCitizenRequests(prev => prev.map(req => {
+                    if (req.id === reqId) {
+                      showSuccess(`Request ${req.trackingNumber} status updated to ${newStatus}!`);
+                      return { ...req, status: newStatus };
+                    }
+                    return req;
+                  }));
+                };
+
+                return (
+                  <div className="space-y-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div>
+                        <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Citizen Workflow Routing Engine</h3>
+                        <p className="text-gray-400 text-xs font-bold mt-1">
+                          {isGeneralAdmin 
+                            ? "Overview of all active municipal citizen inquiries. Route tasks to responsible departments." 
+                            : `Displaying tasks routed specifically to your office: ${departments.find(d => d.id === myDeptId)?.name || "Assigned Department"}`
+                          }
+                        </p>
+                      </div>
+                      
+                      {!isGeneralAdmin && myDeptId && (
+                        <div className="px-3.5 py-1.5 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 font-black text-[9px] uppercase tracking-widest animate-pulse">
+                          DEPARTMENT FILTER ACTIVE
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {filteredRequests.map((req) => {
+                        const assignedDept = departments.find(d => d.id === req.assignedDeptId);
+                        return (
+                          <div key={req.id} className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-xs hover:border-blue-200 transition-all space-y-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-[10px] font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                                  {req.trackingNumber}
+                                </span>
+                                <h4 className="font-black text-gray-900 mt-2 text-sm">{req.citizenName}</h4>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{req.type}</span>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${
+                                req.priority === 'HIGH' ? 'bg-red-100 text-red-700' : 
+                                req.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                {req.priority} Priority
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-gray-600 font-bold leading-relaxed">
+                              {req.description}
+                            </p>
+
+                            <div className="pt-4 border-t border-gray-50 grid grid-cols-2 gap-4">
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Responsible Office</label>
+                                {isGeneralAdmin ? (
+                                  <select
+                                    value={req.assignedDeptId || ""}
+                                    onChange={(e) => handleAssignDept(req.id, e.target.value || null)}
+                                    className="w-full bg-gray-50 border border-transparent rounded-xl p-2 font-black text-gray-800 text-[10px] focus:outline-none"
+                                  >
+                                    <option value="">-- ROUTE DEPARTMENT --</option>
+                                    {departments.map(d => (
+                                      <option key={d.id} value={d.id}>{d.name}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <div className="bg-gray-50 p-2 rounded-xl text-gray-700 font-black text-[10px] truncate">
+                                    {assignedDept ? assignedDept.name : "Unassigned"}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Action Status</label>
+                                <select
+                                  value={req.status}
+                                  onChange={(e) => handleUpdateReqStatus(req.id, e.target.value)}
+                                  className="w-full bg-gray-50 border border-transparent rounded-xl p-2 font-black text-gray-800 text-[10px] focus:outline-none"
+                                >
+                                  <option value="PENDING">PENDING</option>
+                                  <option value="ROUTED">ROUTED</option>
+                                  <option value="PROCESSING">PROCESSING</option>
+                                  <option value="COMPLETED">COMPLETED</option>
+                                  <option value="REJECTED">REJECTED</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2 text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                              <span>Submitted: {new Date(req.submittedAt).toLocaleDateString()}</span>
+                              <span className={`h-2 w-2 rounded-full ${
+                                req.status === 'COMPLETED' ? 'bg-green-500' :
+                                req.status === 'PROCESSING' ? 'bg-blue-500' :
+                                req.status === 'ROUTED' ? 'bg-indigo-500' :
+                                req.status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500'
+                              }`} />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {filteredRequests.length === 0 && (
+                        <div className="col-span-2 text-center py-16 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                          <Workflow className="mx-auto text-gray-300 mb-2 animate-pulse" size={32} />
+                          <p className="text-xs text-gray-400 font-bold">No citizen requests found matching search or filter restrictions.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* USER MANAGEMENT PANEL (SUPER ADMIN ONLY) */}
               {activeTab === 'users' && isSuperAdminOrAdmin && (() => {
                 const filteredUsers = usersList.filter(u => {
@@ -1587,6 +1987,8 @@ const AdminDashboard: React.FC = () => {
                           <tr className="bg-gray-50">
                             <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email address</th>
                             <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Role</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Department Assignment</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Barangay (if applicable)</th>
                             <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Verification Status</th>
                             <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                           </tr>
@@ -1599,7 +2001,7 @@ const AdminDashboard: React.FC = () => {
                                 <select
                                   value={item.role}
                                   disabled={item.role === 'super_admin' && profile?.role !== 'super_admin'}
-                                  onChange={(e) => handleUpdateUserRole(item.id, e.target.value, item.is_verified)}
+                                  onChange={(e) => handleUpdateUserRole(item.id, e.target.value, item.is_verified, item.department_id, item.barangay_id)}
                                   className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {(profile?.role === 'super_admin' || item.role === 'super_admin') && (
@@ -1612,13 +2014,39 @@ const AdminDashboard: React.FC = () => {
                                 </select>
                               </td>
                               <td className="px-6 py-4">
+                                <select
+                                  value={item.department_id || ""}
+                                  disabled={['super_admin', 'barangay_admin'].includes(item.role)}
+                                  onChange={(e) => handleUpdateUserRole(item.id, item.role, item.is_verified, e.target.value || null, item.barangay_id)}
+                                  className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <option value="">-- No Department --</option>
+                                  {departments.map((d) => (
+                                    <option key={d.id} value={d.id}>{d.name}</option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="px-6 py-4">
+                                <select
+                                  value={item.barangay_id || ""}
+                                  disabled={item.role !== 'barangay_admin'}
+                                  onChange={(e) => handleUpdateUserRole(item.id, item.role, item.is_verified, item.department_id, e.target.value || null)}
+                                  className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <option value="">-- No Barangay --</option>
+                                  {BARANGAYS.map((b) => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="px-6 py-4">
                                 <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${item.is_verified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                                   {item.is_verified ? "Verified" : "Pending Verification"}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-right">
                                 <button
-                                  onClick={() => handleUpdateUserRole(item.id, item.role, !item.is_verified)}
+                                  onClick={() => handleUpdateUserRole(item.id, item.role, !item.is_verified, item.department_id, item.barangay_id)}
                                   disabled={item.role === 'super_admin' && profile?.role !== 'super_admin'}
                                   className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
                                     item.role === 'super_admin' && profile?.role !== 'super_admin'
