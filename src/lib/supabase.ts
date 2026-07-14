@@ -4,10 +4,29 @@ import { createClient } from '@supabase/supabase-js';
 const rawUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
 const rawKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
 
-export const isSupabaseConfigured = !!rawUrl && !rawUrl.includes('placeholder-project');
+const sanitizeUrl = (url: string | undefined): string | undefined => {
+  if (!url) return url;
+  let trimmed = url.trim();
+  // Remove trailing slashes
+  while (trimmed.endsWith('/')) {
+    trimmed = trimmed.slice(0, -1);
+  }
+  // Strip /rest/v1 if it is at the end of the URL
+  if (trimmed.endsWith('/rest/v1')) {
+    trimmed = trimmed.slice(0, -8);
+  }
+  while (trimmed.endsWith('/')) {
+    trimmed = trimmed.slice(0, -1);
+  }
+  return trimmed;
+};
 
-const supabaseUrl = rawUrl || 'https://placeholder-project.supabase.co';
-const supabaseAnonKey = rawKey || 'placeholder-anon-key';
+const cleanUrl = sanitizeUrl(rawUrl);
+
+export const isSupabaseConfigured = !!cleanUrl && !cleanUrl.includes('placeholder-project');
+
+const supabaseUrl = cleanUrl || 'https://placeholder-project.supabase.co';
+const supabaseAnonKey = rawKey ? rawKey.trim() : 'placeholder-anon-key';
 
 if (!isSupabaseConfigured) {
   console.warn(

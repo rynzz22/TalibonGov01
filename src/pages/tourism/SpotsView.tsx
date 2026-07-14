@@ -4,6 +4,7 @@ interface Spot {
   id: string;
   name: string;
   description?: string;
+  featured_image?: string;
 }
 
 interface SpotsViewProps {
@@ -17,7 +18,7 @@ export default function SpotsView({ data }: SpotsViewProps) {
         <div key={`${spot.id}-${idx}`} className="group">
           <div className="aspect-square bg-brand-surface rounded-[2.5rem] mb-6 overflow-hidden border-4 border-white shadow-2xl relative">
             <img 
-              src={`https://picsum.photos/seed/spot${spot.id}/800/800`} 
+              src={spot.featured_image || `https://picsum.photos/seed/spot${spot.id}/800/800`} 
               alt={spot.name} 
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
               referrerPolicy="no-referrer" 

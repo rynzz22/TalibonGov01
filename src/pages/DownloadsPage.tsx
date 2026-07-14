@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Download, FileText, FileSpreadsheet, FileArchive, Search, Filter, ExternalLink, Building2, Briefcase, FileCheck, Landmark, Target, Activity } from 'lucide-react';
 import { formsApi } from '../services/api';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface DownloadItem {
   id: string | number;
@@ -27,7 +28,30 @@ const DownloadsPage: React.FC = () => {
           formsApi.getZoningClearance()
         ]);
 
+        let liveDownloadables: DownloadItem[] = [];
+        if (isSupabaseConfigured) {
+          try {
+            const { data, error } = await supabase
+              .from("downloadables")
+              .select("*")
+              .eq("status", "published");
+            if (!error && data) {
+              liveDownloadables = (data as any[]).map(item => ({
+                id: item.id,
+                title: item.title,
+                url: item.file_url,
+                category: item.category || 'General',
+                fileSize: item.file_size || '1.2 MB',
+                fileType: 'PDF'
+              }));
+            }
+          } catch (e) {
+            console.warn("Failed to fetch live downloadables from Supabase", e);
+          }
+        }
+
         const combined: DownloadItem[] = [
+          ...liveDownloadables,
           ...(Array.isArray(permits?.data) ? permits.data : []).map((item: any) => ({ ...item, id: `business-${item.id}`, category: 'Business' })),
           ...(Array.isArray(buildings?.data) ? buildings.data : []).map((item: any) => ({ ...item, id: `building-${item.id}`, category: 'Building' })),
           ...(Array.isArray(zoning?.data) ? zoning.data : []).map((item: any) => ({ ...item, id: `zoning-${item.id}`, category: 'Zoning' })),

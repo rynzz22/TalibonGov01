@@ -1,16 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { User, Session } from "@supabase/supabase-js";
+import { User, Session, AuthResponse } from "@supabase/supabase-js";
 
-export type OfficialRole = "municipal_admin" | "barangay_admin";
+export type OfficialRole = "super_admin" | "admin" | "editor" | "municipal_admin" | "barangay_admin";
 
 export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
   role: OfficialRole;
-  barangay_id?: string;
+  barangay_id?: string | null;
   is_verified: boolean;
+  created_at?: string;
 }
 
 interface AuthContextType {
@@ -18,9 +19,12 @@ interface AuthContextType {
   profile: UserProfile | null;
   session: Session | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<AuthResponse>;
+  signUpWithEmail: (email: string, password: string) => Promise<AuthResponse>;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: (u?: User) => Promise<void>;
+  resetPasswordForEmail: (email: string) => Promise<{ error: any }>;
+  updatePassword: (password: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,103 +35,187 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshProfile = async () => {
+  const refreshProfile = async (u?: User) => {
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) return;
+      const targetUser = u || (await supabase.auth.getUser()).data.user;
+      if (!targetUser) {
+        setProfile(null);
+        if (import.meta.env.DEV) {
+          console.log("[Auth - DEV] No user found during refreshProfile. Clearing profile state.");
+        }
+        return;
+      }
 
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", currentUser.id)
+        .eq("id", targetUser.id)
         .single();
 
       if (error) {
         if (error.code !== 'PGRST116') {
           console.error("[Auth] Profile fetch error:", error.message);
         }
+        setProfile(null);
+        if (import.meta.env.DEV) {
+          console.warn(`[Auth - DEV] Profile database load failed for ${targetUser.email} with code ${error.code}: ${error.message}`);
+        }
         return;
       }
 
-      if (data) setProfile(data as UserProfile);
+      if (data) {
+        setProfile(data as UserProfile);
+        if (import.meta.env.DEV) {
+          console.log(`[Auth - DEV] User Profile Loaded: ${data.full_name || data.email}`);
+          console.log(`[Auth - DEV] Role Loaded: ${data.role} (Verified: ${data.is_verified})`);
+        }
+      } else {
+        setProfile(null);
+        if (import.meta.env.DEV) {
+          console.warn(`[Auth - DEV] No profile found in 'profiles' table for user: ${targetUser.email}`);
+        }
+      }
     } catch (err) {
       console.error("[Auth] refreshProfile error:", err);
+      setProfile(null);
     }
   };
 
   useEffect(() => {
+    // Initial session load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) refreshProfile();
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) refreshProfile();
-      else setProfile(null);
-      setLoading(false);
-    });
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      if (
-        event.data &&
-        typeof event.data === 'object' &&
-        event.data.type === 'SUPABASE_AUTH_SUCCESS' &&
-        event.source !== null
-      ) {
-        refreshProfile();
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        if (import.meta.env.DEV) {
+          console.log("[Auth - DEV] Session restored successfully for:", currentUser.email);
+        }
+        refreshProfile(currentUser).finally(() => setLoading(false));
+      } else {
+        if (import.meta.env.DEV) {
+          console.log("[Auth - DEV] No initial session found. User is guest.");
+        }
+        setLoading(false);
       }
-    };
-    window.addEventListener('message', handleMessage);
+    });
+
+    // Auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (import.meta.env.DEV) {
+        console.log(`[Auth - DEV] Auth state change event occurred: ${event} for ${currentUser?.email || "No User"}`);
+      }
+      
+      if (currentUser) {
+        await refreshProfile(currentUser);
+      } else {
+        setProfile(null);
+        if (event === "SIGNED_OUT" && import.meta.env.DEV) {
+          console.log("[Auth - DEV] Session expired or user signed out successfully.");
+        }
+      }
+      setLoading(false);
+    });
 
     return () => {
       subscription.unsubscribe();
-      window.removeEventListener('message', handleMessage);
     };
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: true,
-        },
+      const res = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (error) {
-        console.error("[Auth] Google sign-in error:", error.message);
-        alert("Login Error: " + error.message);
-        return;
-      }
-
-      if (data?.url) {
-        const popup = window.open(
-          data.url,
-          'supabase_auth_popup',
-          'width=600,height=700,top=100,left=100,noopener,noreferrer'
-        );
-        if (!popup) {
-          alert("Popup blocked. Please allow popups for this site and try again.");
+      if (res.error) {
+        if (import.meta.env.DEV) {
+          console.error(`[Auth - DEV] Login Failure for ${email}:`, res.error.message);
+        }
+      } else if (res.data?.user) {
+        if (import.meta.env.DEV) {
+          console.log(`[Auth - DEV] Login Success for ${email}`);
         }
       }
-    } catch (err) {
-      console.error("[Auth] Unexpected sign-in error:", err);
+      return res;
+    } catch (err: any) {
+      if (import.meta.env.DEV) {
+        console.error(`[Auth - DEV] Sign-in error exception:`, err.message || err);
+      }
+      throw err;
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
+    try {
+      const res = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (res.error) {
+        if (import.meta.env.DEV) {
+          console.error(`[Auth - DEV] Registration Failure for ${email}:`, res.error.message);
+        }
+      } else if (res.data?.user) {
+        if (import.meta.env.DEV) {
+          console.log(`[Auth - DEV] Registration Success for ${email}`);
+        }
+      }
+      return res;
+    } catch (err: any) {
+      if (import.meta.env.DEV) {
+        console.error(`[Auth - DEV] Sign-up error exception:`, err.message || err);
+      }
+      throw err;
     }
   };
 
   const signOut = async () => {
+    setLoading(true);
     await supabase.auth.signOut();
+    setUser(null);
     setProfile(null);
+    setSession(null);
+    setLoading(false);
+    if (import.meta.env.DEV) {
+      console.log("[Auth - DEV] User manually signed out.");
+    }
+  };
+
+  const resetPasswordForEmail = async (email: string) => {
+    return await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+  };
+
+  const updatePassword = async (password: string) => {
+    return await supabase.auth.updateUser({
+      password,
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, signInWithGoogle, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        session,
+        loading,
+        signInWithEmail,
+        signUpWithEmail,
+        signOut,
+        refreshProfile,
+        resetPasswordForEmail,
+        updatePassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

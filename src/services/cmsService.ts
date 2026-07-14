@@ -367,25 +367,33 @@ function setStorage<T>(key: string, data: T[]): void {
 
 // Low-level helper to track actions in audit logs
 export const logCmsAction = async (userEmail: string, action: string, table: string, targetId: string) => {
-  const newLog: AuditLogItem = {
-    id: Math.random().toString(36).substring(2, 9),
-    user_email: userEmail || "anonymous@talibon.gov.ph",
-    action,
-    target_table: table,
-    target_id: targetId,
-    timestamp: new Date().toISOString()
-  };
+  const email = userEmail || "anonymous@talibon.gov.ph";
+  const timestamp = new Date().toISOString();
 
   if (isSupabaseConfigured) {
     try {
-      await supabase.from("audit_logs").insert([newLog]);
-    } catch (e) {
-      console.warn("Could not insert Supabase audit log, logging to local storage instead", e);
+      const { error } = await supabase.from("audit_logs").insert([{
+        user_email: email,
+        action,
+        target_table: table,
+        target_id: targetId
+      }]);
+      if (error) throw error;
+    } catch (e: any) {
+      console.warn("Could not insert Supabase audit log:", e.message || e);
     }
   }
 
+  const localLog: AuditLogItem = {
+    id: "mock-" + Math.random().toString(36).substring(2, 9),
+    user_email: email,
+    action,
+    target_table: table,
+    target_id: targetId,
+    timestamp
+  };
   const logs = getStorage<AuditLogItem>("audit_logs", INITIAL_LOGS);
-  logs.unshift(newLog);
+  logs.unshift(localLog);
   setStorage("audit_logs", logs.slice(0, 50)); // limit logs to last 50
 };
 
@@ -428,30 +436,33 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("news").select("*").order("date", { ascending: false });
-        if (!error && data) return data as NewsItem[];
-      } catch (e) {
-        console.warn("Supabase News fetch failed, using local fallback.");
+        if (error) throw error;
+        if (data) return data as NewsItem[];
+      } catch (e: any) {
+        console.error("Supabase News fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<NewsItem>("news", INITIAL_NEWS);
   },
 
   async createNews(item: Omit<NewsItem, "id">, userEmail: string): Promise<NewsItem> {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as NewsItem;
-
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("news").insert([newItem]).select().single();
-        if (!error && data) {
+        const { data, error } = await supabase.from("news").insert([item]).select().single();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "CREATE", "news", data.id);
           return data as NewsItem;
         }
-      } catch (e) {
-        console.warn("Supabase News insert failed, creating locally.");
+      } catch (e: any) {
+        console.error("Supabase News insert failed:", e.message || e);
+        throw e;
       }
     }
 
+    const id = "mock-" + Math.random().toString(36).substring(2, 9);
+    const newItem = { ...item, id } as NewsItem;
     const list = getStorage<NewsItem>("news", INITIAL_NEWS);
     list.unshift(newItem);
     setStorage("news", list);
@@ -463,12 +474,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("news").update(item).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "news", id);
           return data as NewsItem;
         }
-      } catch (e) {
-        console.warn("Supabase News update failed, updating locally.");
+      } catch (e: any) {
+        console.error("Supabase News update failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -487,12 +500,12 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase.from("news").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "news", id);
-          return true;
-        }
-      } catch (e) {
-        console.warn("Supabase News delete failed, deleting locally.");
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "news", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase News delete failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -508,30 +521,33 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("downloadables").select("*").order("created_at", { ascending: false });
-        if (!error && data) return data as DownloadableItem[];
-      } catch (e) {
-        console.warn("Supabase Downloadables fetch failed, using local fallback.");
+        if (error) throw error;
+        if (data) return data as DownloadableItem[];
+      } catch (e: any) {
+        console.error("Supabase Downloadables fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<DownloadableItem>("downloadables", INITIAL_DOWNLOADS);
   },
 
   async createDownloadable(item: Omit<DownloadableItem, "id">, userEmail: string): Promise<DownloadableItem> {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as DownloadableItem;
-
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("downloadables").insert([newItem]).select().single();
-        if (!error && data) {
+        const { data, error } = await supabase.from("downloadables").insert([item]).select().single();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "CREATE", "downloadables", data.id);
           return data as DownloadableItem;
         }
-      } catch (e) {
-        console.warn("Supabase Downloadables insert failed.");
+      } catch (e: any) {
+        console.error("Supabase Downloadables insert failed:", e.message || e);
+        throw e;
       }
     }
 
+    const id = "mock-" + Math.random().toString(36).substring(2, 9);
+    const newItem = { ...item, id } as DownloadableItem;
     const list = getStorage<DownloadableItem>("downloadables", INITIAL_DOWNLOADS);
     list.unshift(newItem);
     setStorage("downloadables", list);
@@ -543,12 +559,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("downloadables").update(item).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "downloadables", id);
           return data as DownloadableItem;
         }
-      } catch (e) {
-        console.warn("Supabase Downloadables update failed.");
+      } catch (e: any) {
+        console.error("Supabase Downloadables update failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -567,12 +585,12 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase.from("downloadables").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "downloadables", id);
-          return true;
-        }
-      } catch (e) {
-        console.warn("Supabase Downloadables delete failed.");
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "downloadables", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase Downloadables delete failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -588,30 +606,33 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("tourism_spots").select("*");
-        if (!error && data) return data as TourismSpotItem[];
-      } catch (e) {
-        console.warn("Supabase Tourism spots fetch failed, using local fallback.");
+        if (error) throw error;
+        if (data) return data as TourismSpotItem[];
+      } catch (e: any) {
+        console.error("Supabase Tourism spots fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<TourismSpotItem>("tourism_spots", INITIAL_TOURISM);
   },
 
   async createTourismSpot(item: Omit<TourismSpotItem, "id">, userEmail: string): Promise<TourismSpotItem> {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as TourismSpotItem;
-
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("tourism_spots").insert([newItem]).select().single();
-        if (!error && data) {
+        const { data, error } = await supabase.from("tourism_spots").insert([item]).select().single();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "CREATE", "tourism_spots", data.id);
           return data as TourismSpotItem;
         }
-      } catch (e) {
-        console.warn("Supabase Tourism insert failed.");
+      } catch (e: any) {
+        console.error("Supabase Tourism insert failed:", e.message || e);
+        throw e;
       }
     }
 
+    const id = "mock-" + Math.random().toString(36).substring(2, 9);
+    const newItem = { ...item, id } as TourismSpotItem;
     const list = getStorage<TourismSpotItem>("tourism_spots", INITIAL_TOURISM);
     list.unshift(newItem);
     setStorage("tourism_spots", list);
@@ -623,12 +644,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("tourism_spots").update(item).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "tourism_spots", id);
           return data as TourismSpotItem;
         }
-      } catch (e) {
-        console.warn("Supabase Tourism update failed.");
+      } catch (e: any) {
+        console.error("Supabase Tourism update failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -647,12 +670,12 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase.from("tourism_spots").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "tourism_spots", id);
-          return true;
-        }
-      } catch (e) {
-        console.warn("Supabase Tourism delete failed.");
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "tourism_spots", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase Tourism delete failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -668,30 +691,33 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("officials").select("*").order("level", { ascending: true }).order("display_order", { ascending: true });
-        if (!error && data) return data as OfficialItem[];
-      } catch (e) {
-        console.warn("Supabase Officials fetch failed.");
+        if (error) throw error;
+        if (data) return data as OfficialItem[];
+      } catch (e: any) {
+        console.error("Supabase Officials fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<OfficialItem>("officials", INITIAL_OFFICIALS);
   },
 
   async createOfficial(item: Omit<OfficialItem, "id">, userEmail: string): Promise<OfficialItem> {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as OfficialItem;
-
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("officials").insert([newItem]).select().single();
-        if (!error && data) {
+        const { data, error } = await supabase.from("officials").insert([item]).select().single();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "CREATE", "officials", data.id);
           return data as OfficialItem;
         }
-      } catch (e) {
-        console.warn("Supabase Officials insert failed.");
+      } catch (e: any) {
+        console.error("Supabase Officials insert failed:", e.message || e);
+        throw e;
       }
     }
 
+    const id = "mock-" + Math.random().toString(36).substring(2, 9);
+    const newItem = { ...item, id } as OfficialItem;
     const list = getStorage<OfficialItem>("officials", INITIAL_OFFICIALS);
     list.push(newItem);
     setStorage("officials", list);
@@ -703,12 +729,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("officials").update(item).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "officials", id);
           return data as OfficialItem;
         }
-      } catch (e) {
-        console.warn("Supabase Officials update failed.");
+      } catch (e: any) {
+        console.error("Supabase Officials update failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -727,12 +755,12 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase.from("officials").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "officials", id);
-          return true;
-        }
-      } catch (e) {
-        console.warn("Supabase Officials delete failed.");
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "officials", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase Officials delete failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -748,30 +776,33 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("departments").select("*").order("name", { ascending: true });
-        if (!error && data) return data as DepartmentItem[];
-      } catch (e) {
-        console.warn("Supabase Departments fetch failed, using local fallback.");
+        if (error) throw error;
+        if (data) return data as DepartmentItem[];
+      } catch (e: any) {
+        console.error("Supabase Departments fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<DepartmentItem>("departments", INITIAL_DEPARTMENTS);
   },
 
   async createDepartment(item: Omit<DepartmentItem, "id">, userEmail: string): Promise<DepartmentItem> {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as DepartmentItem;
-
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("departments").insert([newItem]).select().single();
-        if (!error && data) {
+        const { data, error } = await supabase.from("departments").insert([item]).select().single();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "CREATE", "departments", data.id);
           return data as DepartmentItem;
         }
-      } catch (e) {
-        console.warn("Supabase Departments insert failed.");
+      } catch (e: any) {
+        console.error("Supabase Departments insert failed:", e.message || e);
+        throw e;
       }
     }
 
+    const id = "mock-" + Math.random().toString(36).substring(2, 9);
+    const newItem = { ...item, id } as DepartmentItem;
     const list = getStorage<DepartmentItem>("departments", INITIAL_DEPARTMENTS);
     list.push(newItem);
     setStorage("departments", list);
@@ -783,12 +814,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("departments").update(item).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "departments", id);
           return data as DepartmentItem;
         }
-      } catch (e) {
-        console.warn("Supabase Departments update failed.");
+      } catch (e: any) {
+        console.error("Supabase Departments update failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -807,12 +840,12 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase.from("departments").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "departments", id);
-          return true;
-        }
-      } catch (e) {
-        console.warn("Supabase Departments delete failed.");
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "departments", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase Departments delete failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -828,30 +861,33 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("services_cms").select("*");
-        if (!error && data) return data as ServiceCmsItem[];
-      } catch (e) {
-        console.warn("Supabase Services fetch failed, using local fallback.");
+        if (error) throw error;
+        if (data) return data as ServiceCmsItem[];
+      } catch (e: any) {
+        console.error("Supabase Services fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<ServiceCmsItem>("services_cms", INITIAL_SERVICES);
   },
 
   async createService(item: Omit<ServiceCmsItem, "id">, userEmail: string): Promise<ServiceCmsItem> {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as ServiceCmsItem;
-
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("services_cms").insert([newItem]).select().single();
-        if (!error && data) {
+        const { data, error } = await supabase.from("services_cms").insert([item]).select().single();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "CREATE", "services_cms", data.id);
           return data as ServiceCmsItem;
         }
-      } catch (e) {
-        console.warn("Supabase Services insert failed.");
+      } catch (e: any) {
+        console.error("Supabase Services insert failed:", e.message || e);
+        throw e;
       }
     }
 
+    const id = "mock-" + Math.random().toString(36).substring(2, 9);
+    const newItem = { ...item, id } as ServiceCmsItem;
     const list = getStorage<ServiceCmsItem>("services_cms", INITIAL_SERVICES);
     list.push(newItem);
     setStorage("services_cms", list);
@@ -863,12 +899,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("services_cms").update(item).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "services_cms", id);
           return data as ServiceCmsItem;
         }
-      } catch (e) {
-        console.warn("Supabase Services update failed.");
+      } catch (e: any) {
+        console.error("Supabase Services update failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -887,12 +925,12 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase.from("services_cms").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "services_cms", id);
-          return true;
-        }
-      } catch (e) {
-        console.warn("Supabase Services delete failed.");
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "services_cms", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase Services delete failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -908,30 +946,33 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("citizens_charter_cms").select("*");
-        if (!error && data) return data as CitizensCharterCmsItem[];
-      } catch (e) {
-        console.warn("Supabase Citizen Charter fetch failed, using local fallback.");
+        if (error) throw error;
+        if (data) return data as CitizensCharterCmsItem[];
+      } catch (e: any) {
+        console.error("Supabase Citizen Charter fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<CitizensCharterCmsItem>("citizens_charter_cms", INITIAL_CHARTERS);
   },
 
   async createCitizensCharter(item: Omit<CitizensCharterCmsItem, "id">, userEmail: string): Promise<CitizensCharterCmsItem> {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as CitizensCharterCmsItem;
-
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("citizens_charter_cms").insert([newItem]).select().single();
-        if (!error && data) {
+        const { data, error } = await supabase.from("citizens_charter_cms").insert([item]).select().single();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "CREATE", "citizens_charter_cms", data.id);
           return data as CitizensCharterCmsItem;
         }
-      } catch (e) {
-        console.warn("Supabase Citizen Charter insert failed.");
+      } catch (e: any) {
+        console.error("Supabase Citizen Charter insert failed:", e.message || e);
+        throw e;
       }
     }
 
+    const id = "mock-" + Math.random().toString(36).substring(2, 9);
+    const newItem = { ...item, id } as CitizensCharterCmsItem;
     const list = getStorage<CitizensCharterCmsItem>("citizens_charter_cms", INITIAL_CHARTERS);
     list.push(newItem);
     setStorage("citizens_charter_cms", list);
@@ -943,12 +984,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("citizens_charter_cms").update(item).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "citizens_charter_cms", id);
           return data as CitizensCharterCmsItem;
         }
-      } catch (e) {
-        console.warn("Supabase Citizen Charter update failed.");
+      } catch (e: any) {
+        console.error("Supabase Citizen Charter update failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -967,12 +1010,12 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase.from("citizens_charter_cms").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "citizens_charter_cms", id);
-          return true;
-        }
-      } catch (e) {
-        console.warn("Supabase Citizen Charter delete failed.");
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "citizens_charter_cms", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase Citizen Charter delete failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -988,30 +1031,33 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("events").select("*").order("date", { ascending: true });
-        if (!error && data) return data as EventItem[];
-      } catch (e) {
-        console.warn("Supabase Events fetch failed, using local fallback.");
+        if (error) throw error;
+        if (data) return data as EventItem[];
+      } catch (e: any) {
+        console.error("Supabase Events fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<EventItem>("events", INITIAL_EVENTS);
   },
 
   async createEvent(item: Omit<EventItem, "id">, userEmail: string): Promise<EventItem> {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as EventItem;
-
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("events").insert([newItem]).select().single();
-        if (!error && data) {
+        const { data, error } = await supabase.from("events").insert([item]).select().single();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "CREATE", "events", data.id);
           return data as EventItem;
         }
-      } catch (e) {
-        console.warn("Supabase Events insert failed.");
+      } catch (e: any) {
+        console.error("Supabase Events insert failed:", e.message || e);
+        throw e;
       }
     }
 
+    const id = "mock-" + Math.random().toString(36).substring(2, 9);
+    const newItem = { ...item, id } as EventItem;
     const list = getStorage<EventItem>("events", INITIAL_EVENTS);
     list.unshift(newItem);
     setStorage("events", list);
@@ -1023,12 +1069,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("events").update(item).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "events", id);
           return data as EventItem;
         }
-      } catch (e) {
-        console.warn("Supabase Events update failed.");
+      } catch (e: any) {
+        console.error("Supabase Events update failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -1047,12 +1095,12 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase.from("events").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "events", id);
-          return true;
-        }
-      } catch (e) {
-        console.warn("Supabase Events delete failed.");
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "events", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase Events delete failed:", e.message || e);
+        throw e;
       }
     }
 
@@ -1068,9 +1116,11 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("audit_logs").select("*").order("timestamp", { ascending: false }).limit(100);
-        if (!error && data) return data as AuditLogItem[];
-      } catch (e) {
-        console.warn("Supabase Audit Logs fetch failed.");
+        if (error) throw error;
+        if (data) return data as AuditLogItem[];
+      } catch (e: any) {
+        console.error("Supabase Audit Logs fetch failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<AuditLogItem>("audit_logs", INITIAL_LOGS);
@@ -1081,9 +1131,11 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("profiles").select("*");
-        if (!error && data) return data as UserProfileItem[];
-      } catch (e) {
-        console.warn("Supabase profiles query failed.");
+        if (error) throw error;
+        if (data) return data as UserProfileItem[];
+      } catch (e: any) {
+        console.error("Supabase profiles query failed:", e.message || e);
+        throw e;
       }
     }
     return getStorage<UserProfileItem>("users", INITIAL_USERS);
@@ -1093,12 +1145,14 @@ export const cmsService = {
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.from("profiles").update({ role, is_verified: isVerified }).eq("id", id).select().single();
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE_USER", "profiles", id);
           return data as UserProfileItem;
         }
-      } catch (e) {
-        console.warn("Supabase profiles update failed.");
+      } catch (e: any) {
+        console.error("Supabase profiles update failed:", e.message || e);
+        throw e;
       }
     }
 

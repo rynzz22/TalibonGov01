@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route, useLocation, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, Link, Navigate } from "react-router-dom";
 import { motion } from "motion/react";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
@@ -28,6 +28,7 @@ import AuthCallback from "./pages/AuthCallback";
 import EServicesPage from "./pages/EServicesPage";
 import { BARANGAYS } from "./constants/barangayConfig";
 import AdminDashboard from "./pages/AdminDashboard";
+import AccessDenied from "./pages/AccessDenied";
 import TourismMapPage from "./pages/TourismMapPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
@@ -35,7 +36,7 @@ import Footer from "./components/Footer";
 import GeminiAssistant from "./components/GeminiAssistant";
 import ScrollToTop from "./components/ScrollToTop";
 import { aboutApi, executiveApi, legislativeApi, transparencyApi, tourismApi, formsApi } from "./services/api";
-import { AuthProvider } from "./contexts/SupabaseAuthContext";
+import { AuthProvider, useAuth } from "./contexts/SupabaseAuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
 // Modular Page/View Components
@@ -70,6 +71,34 @@ import FestivitiesView from "./pages/tourism/FestivitiesView";
 import DelicaciesView from "./pages/tourism/DelicaciesView";
 
 
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
+        <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Loading System Core...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!profile) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!profile.is_verified) {
+    return <AccessDenied />;
+  }
+
+  return <>{children}</>;
+}
+
 function AppLayout() {
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -91,7 +120,13 @@ function AppLayout() {
           <Route path="/e-services" element={<EServicesPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/brgy/:slug" element={<BarangayHome />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          
+          {/* Protected CMS Control Core */}
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/cms" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/manage/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          
           <Route path="/downloads" element={<DownloadsPage />} />
           <Route path="/services/:slug" element={<ServiceInfoPage />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />

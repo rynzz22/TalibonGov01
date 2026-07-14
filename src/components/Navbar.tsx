@@ -224,13 +224,28 @@ export default function Navbar() {
 
             <div className="hidden sm:flex items-center gap-6 pl-10 border-l border-brand-border">
               {user ? (
-                <div className="flex items-center gap-4">
-                  <Link to="/admin" className="flex items-center gap-2 text-brand-primary font-extrabold uppercase tracking-widest hover:opacity-80 transition-colors">
-                    <LayoutDashboard size={14} />
-                    CMS DASHBOARD
+                <div className="flex items-center gap-5">
+                  {/* Administrator Identity Badge */}
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 text-blue-600 font-extrabold flex items-center justify-center text-xs shadow-sm">
+                      {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-[10px] font-black text-brand-text tracking-tight leading-none">
+                        {profile?.full_name || user.email?.split("@")[0]}
+                      </span>
+                      <span className="text-[8px] font-black text-brand-primary uppercase tracking-widest mt-1 leading-none">
+                        {profile?.role?.replace("_", " ") || "Staff"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Link to="/admin" className="flex items-center gap-1.5 text-brand-primary font-extrabold uppercase tracking-widest hover:opacity-85 transition-colors text-[10px]">
+                    <LayoutDashboard size={13} />
+                    DASHBOARD
                   </Link>
-                  <button onClick={() => signOut()} className="flex items-center gap-2 text-brand-muted font-extrabold uppercase tracking-widest hover:text-red-600 transition-colors">
-                    <LogOut size={14} />
+                  <button onClick={() => signOut()} className="flex items-center gap-1.5 text-brand-muted font-extrabold uppercase tracking-widest hover:text-red-600 transition-colors text-[10px]">
+                    <LogOut size={13} />
                     LOGOUT
                   </button>
                 </div>

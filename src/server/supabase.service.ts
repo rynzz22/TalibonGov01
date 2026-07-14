@@ -6,13 +6,29 @@ export class SupabaseService {
   private supabase: SupabaseClient | null = null;
 
   constructor() {
-    const supabaseUrl = process.env.SUPABASE_URL;
+    let rawUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!rawUrl || !supabaseKey) {
       console.warn("[Supabase Server] Warning: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Backend services requiring Supabase will fail.");
       return;
     }
+
+    const sanitizeUrl = (url: string): string => {
+      let trimmed = url.trim();
+      while (trimmed.endsWith('/')) {
+        trimmed = trimmed.slice(0, -1);
+      }
+      if (trimmed.endsWith('/rest/v1')) {
+        trimmed = trimmed.slice(0, -8);
+      }
+      while (trimmed.endsWith('/')) {
+        trimmed = trimmed.slice(0, -1);
+      }
+      return trimmed;
+    };
+
+    const supabaseUrl = sanitizeUrl(rawUrl);
 
     try {
       this.supabase = createClient(supabaseUrl, supabaseKey, {

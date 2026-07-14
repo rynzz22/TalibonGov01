@@ -24,7 +24,7 @@ const api = {
     let result: any = null;
     let fetchedSuccessfully = false;
 
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && table !== "content") {
       try {
         const { data, error } = await supabase
           .from(table)
@@ -308,7 +308,22 @@ export const transparencyApi = {
 };
 
 export const tourismApi = {
-  getSpots: () => api.get("content", API_ENDPOINTS.TOURISM.SPOTS),
+  getSpots: async () => {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from("tourism_spots")
+          .select("*")
+          .order("name", { ascending: true });
+        if (!error && data && data.length > 0) {
+          return data;
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live tourism spots, falling back:", err);
+      }
+    }
+    return api.get("content", API_ENDPOINTS.TOURISM.SPOTS);
+  },
   getFestivities: () => api.get("content", API_ENDPOINTS.TOURISM.FESTIVITIES),
   getDelicacies: () => api.get("content", API_ENDPOINTS.TOURISM.DELICACIES),
 };

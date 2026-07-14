@@ -8,7 +8,7 @@ import {
   Newspaper, Users, Gavel, LayoutDashboard,
   Edit3, Save, Globe, Building2, Mic, Eye,
   Folder, Image, Clock, Landmark, Calendar,
-  Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse
+  Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock
 } from 'lucide-react';
 import MeetingAssistant from '../components/MeetingAssistant';
 import FileUpload from '../components/FileUpload';
@@ -28,7 +28,7 @@ import {
 } from '../services/cmsService';
 
 const AdminDashboard: React.FC = () => {
-  const { user, profile, loading, signInWithGoogle, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   
   // Tabs & Navigation
   const [activeTab, setActiveTab] = useState<
@@ -83,6 +83,17 @@ const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
 
+  // Pagination, Detailed View, and Custom Delete Confirmation states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewingItem, setViewingItem] = useState<any>(null);
+  const [viewingTab, setViewingTab] = useState<string | null>(null);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<{ id: string; tab: string; name: string } | null>(null);
+  const itemsPerPage = 8;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchTerm, categoryFilter]);
+
   // Media Library Files State
   const [mediaFiles, setMediaFiles] = useState<any[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -92,7 +103,7 @@ const AdminDashboard: React.FC = () => {
   const [newsForm, setNewsForm] = useState<Omit<NewsItem, 'id'>>({
     title: '', slug: '', summary: '', content: '', category: 'ARTICLE',
     image_url: '', file_url: '', date: new Date().toISOString().split('T')[0], status: 'published',
-    author: 'Municipal Admin'
+    author: 'Municipal Admin', barangay_id: null
   });
 
   const [downloadForm, setDownloadForm] = useState<Omit<DownloadableItem, 'id'>>({
@@ -148,7 +159,61 @@ const AdminDashboard: React.FC = () => {
     ['super_admin', 'admin', 'editor', 'municipal_admin', 'barangay_admin'].includes(profile.role);
 
   const isSuperAdminOrAdmin =
-    profile && ['super_admin', 'admin', 'municipal_admin'].includes(profile.role);
+    profile && ['super_admin', 'admin'].includes(profile.role);
+
+  const isTabVisible = (tabId: string): boolean => {
+    if (!profile) return false;
+    const role = profile.role;
+    if (role === 'super_admin' || role === 'admin') return true;
+    
+    if (role === 'editor') {
+      return ['overview', 'news', 'downloadables', 'tourism', 'events', 'media', 'meeting-assistant'].includes(tabId);
+    }
+    
+    if (role === 'municipal_admin') {
+      return !['users', 'logs'].includes(tabId);
+    }
+    
+    if (role === 'barangay_admin') {
+      return !['users', 'logs'].includes(tabId);
+    }
+    
+    return false;
+  };
+
+  const canWriteTab = (tabId: string, item?: any): boolean => {
+    if (!profile) return false;
+    const role = profile.role;
+    
+    if (role === 'super_admin') return true;
+    
+    if (role === 'admin') {
+      if (tabId === 'users' && item && item.role === 'super_admin') {
+        return false;
+      }
+      return true;
+    }
+    
+    if (role === 'editor') {
+      return ['news', 'downloadables', 'tourism', 'events', 'media', 'meeting-assistant'].includes(tabId);
+    }
+    
+    if (role === 'municipal_admin') {
+      return !['users', 'logs'].includes(tabId);
+    }
+    
+    if (role === 'barangay_admin') {
+      if (tabId === 'news') {
+        if (!item) {
+          return true;
+        }
+        return item.barangay_id === profile.barangay_id;
+      }
+      return false;
+    }
+    
+    return false;
+  };
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
@@ -252,7 +317,7 @@ const AdminDashboard: React.FC = () => {
     setNewsForm({
       title: '', slug: '', summary: '', content: '', category: 'ARTICLE',
       image_url: '', file_url: '', date: new Date().toISOString().split('T')[0], status: 'published',
-      author: 'Municipal Admin'
+      author: 'Municipal Admin', barangay_id: null
     });
     setDownloadForm({
       title: '', description: '', category: 'forms', file_url: '', file_size: '1.2 MB', status: 'published'
@@ -303,7 +368,8 @@ const AdminDashboard: React.FC = () => {
       setNewsForm({
         title: item.title, slug: item.slug, summary: item.summary, content: item.content,
         category: item.category, image_url: item.image_url || '', file_url: item.file_url || '',
-        date: item.date, status: item.status || 'published', author: item.author || 'Municipal Admin'
+        date: item.date, status: item.status || 'published', author: item.author || 'Municipal Admin',
+        barangay_id: item.barangay_id || null
       });
     } else if (tab === 'downloadables') {
       setDownloadForm({
@@ -354,7 +420,6 @@ const AdminDashboard: React.FC = () => {
 
   // DELETE ENTITY
   const handleDeleteEntity = async (tab: typeof activeTab, id: string) => {
-    if (!window.confirm("Are you sure you want to permanently delete this item?")) return;
     setIsActionLoading(true);
     const userEmail = user?.email || "unknown@talibon.gov.ph";
     try {
@@ -384,12 +449,108 @@ const AdminDashboard: React.FC = () => {
   // SAVE SUBMISSION FOR ALL ENTITIES
   const handleSaveEntity = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // FIELD-LEVEL CMS VALIDATIONS
+    if (activeTab === 'news') {
+      if (newsForm.title.trim().length < 3) {
+        showError("Validation Error: Title must be at least 3 characters.");
+        return;
+      }
+      if (newsForm.summary.trim().length < 10) {
+        showError("Validation Error: Summary must be at least 10 characters.");
+        return;
+      }
+      if (newsForm.content.trim().length < 20) {
+        showError("Validation Error: Full Content must be at least 20 characters.");
+        return;
+      }
+    } else if (activeTab === 'downloadables') {
+      if (downloadForm.title.trim().length < 3) {
+        showError("Validation Error: Document Name must be at least 3 characters.");
+        return;
+      }
+      if (!downloadForm.file_url) {
+        showError("Validation Error: Please upload a file attachment.");
+        return;
+      }
+    } else if (activeTab === 'tourism') {
+      if (tourismForm.name.trim().length < 3) {
+        showError("Validation Error: Tourism Spot Name must be at least 3 characters.");
+        return;
+      }
+      if (tourismForm.description.trim().length < 10) {
+        showError("Validation Error: Description must be at least 10 characters.");
+        return;
+      }
+      if (tourismForm.location.trim().length < 3) {
+        showError("Validation Error: Location must be at least 3 characters.");
+        return;
+      }
+    } else if (activeTab === 'officials') {
+      if (officialForm.name.trim().length < 3) {
+        showError("Validation Error: Official Name must be at least 3 characters.");
+        return;
+      }
+      if (officialForm.role.trim().length < 2) {
+        showError("Validation Error: Position / Title must be at least 2 characters.");
+        return;
+      }
+    } else if (activeTab === 'departments') {
+      if (departmentForm.name.trim().length < 3) {
+        showError("Validation Error: Department Name must be at least 3 characters.");
+        return;
+      }
+      if (departmentForm.description.trim().length < 10) {
+        showError("Validation Error: Description & Mandate must be at least 10 characters.");
+        return;
+      }
+    } else if (activeTab === 'services') {
+      if (serviceForm.name.trim().length < 3) {
+        showError("Validation Error: Service Name must be at least 3 characters.");
+        return;
+      }
+      if (serviceForm.description.trim().length < 10) {
+        showError("Validation Error: Description must be at least 10 characters.");
+        return;
+      }
+    } else if (activeTab === 'charter') {
+      if (charterForm.office.trim().length < 3) {
+        showError("Validation Error: Department / Office Name must be at least 3 characters.");
+        return;
+      }
+      if (charterForm.service_name.trim().length < 3) {
+        showError("Validation Error: Chartered Service Name must be at least 3 characters.");
+        return;
+      }
+      if (!charterForm.steps || charterForm.steps.length === 0) {
+        showError("Validation Error: Citizen's Charter must include at least 1 workflow step.");
+        return;
+      }
+    } else if (activeTab === 'events') {
+      if (eventForm.title.trim().length < 3) {
+        showError("Validation Error: Event Title must be at least 3 characters.");
+        return;
+      }
+      if (eventForm.venue.trim().length < 3) {
+        showError("Validation Error: Venue must be at least 3 characters.");
+        return;
+      }
+      if (eventForm.description.trim().length < 10) {
+        showError("Validation Error: Description must be at least 10 characters.");
+        return;
+      }
+    }
+
     setIsActionLoading(true);
     const userEmail = user?.email || "unknown@talibon.gov.ph";
     try {
       if (activeTab === 'news') {
         const slug = newsForm.slug || newsForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-        const payload = { ...newsForm, slug };
+        const payload = { 
+          ...newsForm, 
+          slug,
+          barangay_id: profile?.role === 'barangay_admin' ? profile.barangay_id : newsForm.barangay_id || null
+        };
         if (editingId) {
           await cmsService.updateNews(editingId, payload, userEmail);
           showSuccess("News article updated!");
@@ -469,6 +630,24 @@ const AdminDashboard: React.FC = () => {
 
   // USER ACCESS VERIFICATION & ROLE SETTINGS
   const handleUpdateUserRole = async (userId: string, targetRole: string, verified: boolean) => {
+    if (!profile) return;
+    
+    // Safety check: Find the user being modified in usersList
+    const targetUser = usersList.find(u => u.id === userId);
+    
+    if (profile.role === 'admin') {
+      // Admin cannot modify a super_admin account
+      if (targetUser && targetUser.role === 'super_admin') {
+        showError("Unauthorized: Admins cannot modify Super Admin accounts.");
+        return;
+      }
+      // Admin cannot promote a user to super_admin
+      if (targetRole === 'super_admin') {
+        showError("Unauthorized: Admins cannot promote users to Super Admin.");
+        return;
+      }
+    }
+    
     setIsActionLoading(true);
     const userEmail = user?.email || "unknown@talibon.gov.ph";
     try {
@@ -511,7 +690,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   // Not Logged In or Unauthorized View
-  if (!user || !canAccessManagement) {
+  if (!user || !profile || !canAccessManagement) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <motion.div
@@ -543,11 +722,11 @@ const AdminDashboard: React.FC = () => {
 
           {!user ? (
             <button
-              onClick={signInWithGoogle}
+              onClick={() => window.location.href = "/login"}
               className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xs tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 group"
             >
               <LogIn size={18} className="group-hover:translate-x-1 transition-transform" />
-              Sign In with Google
+              Go to Login Page
             </button>
           ) : (
             <button
@@ -592,7 +771,7 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-3 w-full lg:w-auto">
-            {activeTab !== 'overview' && activeTab !== 'logs' && activeTab !== 'users' && activeTab !== 'media' && activeTab !== 'meeting-assistant' && (
+            {activeTab !== 'overview' && activeTab !== 'logs' && activeTab !== 'users' && activeTab !== 'media' && activeTab !== 'meeting-assistant' && canWriteTab(activeTab) && (
               <button
                 onClick={() => { resetAllForms(); setIsModalOpen(true); }}
                 className="px-6 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2 grow lg:grow-0"
@@ -639,27 +818,31 @@ const AdminDashboard: React.FC = () => {
           {/* NAVIGATION SIDEBAR */}
           <div className="space-y-2 lg:col-span-1">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mb-3">Core Modules</p>
-            <SidebarBtn id="overview" label="Dashboard Stats" icon={LayoutDashboard} active={activeTab} onClick={setActiveTab} />
-            <SidebarBtn id="news" label="News & Advisory" icon={Newspaper} active={activeTab} onClick={setActiveTab} />
-            <SidebarBtn id="downloadables" label="Document Library" icon={Folder} active={activeTab} onClick={setActiveTab} />
-            <SidebarBtn id="tourism" label="Tourism Spots" icon={Image} active={activeTab} onClick={setActiveTab} />
-            <SidebarBtn id="events" label="Public Events" icon={Calendar} active={activeTab} onClick={setActiveTab} />
+            <SidebarBtn id="overview" label="Dashboard Stats" icon={LayoutDashboard} active={activeTab} onClick={setActiveTab} visible={isTabVisible('overview')} />
+            <SidebarBtn id="news" label="News & Advisory" icon={Newspaper} active={activeTab} onClick={setActiveTab} visible={isTabVisible('news')} />
+            <SidebarBtn id="downloadables" label="Document Library" icon={Folder} active={activeTab} onClick={setActiveTab} visible={isTabVisible('downloadables')} />
+            <SidebarBtn id="tourism" label="Tourism Spots" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('tourism')} />
+            <SidebarBtn id="events" label="Public Events" icon={Calendar} active={activeTab} onClick={setActiveTab} visible={isTabVisible('events')} />
             
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mt-6 mb-3">Municipality Structure</p>
-            <SidebarBtn id="officials" label="Officials Directory" icon={Users} active={activeTab} onClick={setActiveTab} />
-            <SidebarBtn id="departments" label="Departments" icon={Landmark} active={activeTab} onClick={setActiveTab} />
-            <SidebarBtn id="services" label="Municipal Services" icon={Building2} active={activeTab} onClick={setActiveTab} />
-            <SidebarBtn id="charter" label="Citizen's Charter" icon={Gavel} active={activeTab} onClick={setActiveTab} />
-
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mt-6 mb-3">Utilities & Control</p>
-            <SidebarBtn id="media" label="Media Library" icon={Image} active={activeTab} onClick={setActiveTab} />
-            {isSuperAdminOrAdmin && (
+            {(isTabVisible('officials') || isTabVisible('departments') || isTabVisible('services') || isTabVisible('charter')) && (
               <>
-                <SidebarBtn id="users" label="User Permissions" icon={Key} active={activeTab} onClick={setActiveTab} />
-                <SidebarBtn id="logs" label="Administrative Logs" icon={Activity} active={activeTab} onClick={setActiveTab} />
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mt-6 mb-3">Municipality Structure</p>
+                <SidebarBtn id="officials" label="Officials Directory" icon={Users} active={activeTab} onClick={setActiveTab} visible={isTabVisible('officials')} />
+                <SidebarBtn id="departments" label="Departments" icon={Landmark} active={activeTab} onClick={setActiveTab} visible={isTabVisible('departments')} />
+                <SidebarBtn id="services" label="Municipal Services" icon={Building2} active={activeTab} onClick={setActiveTab} visible={isTabVisible('services')} />
+                <SidebarBtn id="charter" label="Citizen's Charter" icon={Gavel} active={activeTab} onClick={setActiveTab} visible={isTabVisible('charter')} />
               </>
             )}
-            <SidebarBtn id="meeting-assistant" label="AI Meeting Scribe" icon={Mic} active={activeTab} onClick={setActiveTab} />
+
+            {(isTabVisible('media') || isTabVisible('users') || isTabVisible('logs') || isTabVisible('meeting-assistant')) && (
+              <>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mt-6 mb-3">Utilities & Control</p>
+                <SidebarBtn id="media" label="Media Library" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('media')} />
+                <SidebarBtn id="users" label="User Permissions" icon={Key} active={activeTab} onClick={setActiveTab} visible={isTabVisible('users')} />
+                <SidebarBtn id="logs" label="Administrative Logs" icon={Activity} active={activeTab} onClick={setActiveTab} visible={isTabVisible('logs')} />
+                <SidebarBtn id="meeting-assistant" label="AI Meeting Scribe" icon={Mic} active={activeTab} onClick={setActiveTab} visible={isTabVisible('meeting-assistant')} />
+              </>
+            )}
           </div>
 
           {/* MAIN DATA PANELS */}
@@ -679,6 +862,60 @@ const AdminDashboard: React.FC = () => {
                       className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 pl-12 pr-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs"
                     />
                   </div>
+                  
+                  {/* Category / Status Filter Dropdowns based on Tab */}
+                  {activeTab === 'news' && (
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs max-w-xs"
+                    >
+                      <option value="ALL">All Categories</option>
+                      <option value="ARTICLE">Article</option>
+                      <option value="ADVISORY">Advisory</option>
+                      <option value="UPDATE">Update</option>
+                      <option value="COMMUNITY">Community</option>
+                      <option value="NOTICE">Notice</option>
+                    </select>
+                  )}
+                  {activeTab === 'downloadables' && (
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs max-w-xs"
+                    >
+                      <option value="ALL">All Document Types</option>
+                      <option value="forms">Official Form</option>
+                      <option value="ordinances">Ordinance / Legislation</option>
+                      <option value="disclosure">Disclosure File</option>
+                      <option value="reports">Report / Budget</option>
+                    </select>
+                  )}
+                  {activeTab === 'officials' && (
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs max-w-xs"
+                    >
+                      <option value="ALL">All Levels</option>
+                      <option value="1">Level 1 (Mayor)</option>
+                      <option value="2">Level 2 (Vice Mayor)</option>
+                      <option value="3">Level 3 (Council)</option>
+                      <option value="4">Level 4 (Barangay)</option>
+                    </select>
+                  )}
+                  {activeTab === 'services' && (
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs max-w-xs"
+                    >
+                      <option value="ALL">All Statuses</option>
+                      <option value="available">Available</option>
+                      <option value="coming-soon">Coming Soon</option>
+                      <option value="maintenance">Under Maintenance</option>
+                    </select>
+                  )}
                 </div>
               )}
 
@@ -738,322 +975,507 @@ const AdminDashboard: React.FC = () => {
               )}
 
               {/* NEWS PANEL */}
-              {activeTab === 'news' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">News Articles</h3>
-                    <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{news.length} Total</span>
-                  </div>
+              {activeTab === 'news' && (() => {
+                const filteredNews = news.filter(n => {
+                  const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) || n.summary.toLowerCase().includes(searchTerm.toLowerCase());
+                  const matchesFilter = categoryFilter === 'ALL' || n.category === categoryFilter;
+                  return matchesSearch && matchesFilter;
+                });
+                const paginatedNews = filteredNews.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Article / Title</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Publish Date</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {news.filter(n => n.title.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                            <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{item.title}</td>
-                            <td className="px-6 py-4">
-                              <span className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest">{item.category}</span>
-                            </td>
-                            <td className="px-6 py-4 text-gray-400 font-bold">{item.date}</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1">
-                                <button onClick={() => openEditEntity('news', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                                <button onClick={() => handleDeleteEntity('news', item.id)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
-                              </div>
-                            </td>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">News Articles</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredNews.length} of {news.length} Items</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Article / Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Publish Date</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
                           </tr>
-                        ))}
-                        {news.length === 0 && <NoDataRow colSpan={4} />}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedNews.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
+                              <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{item.title}</td>
+                              <td className="px-6 py-4">
+                                <span className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest">{item.category}</span>
+                              </td>
+                              <td className="px-6 py-4 text-gray-400 font-bold">{item.date}</td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => { setViewingItem(item); setViewingTab('news'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
+                                  {canWriteTab('news', item) ? (
+                                    <>
+                                      <button onClick={() => openEditEntity('news', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
+                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'news', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
+                                    </>
+                                  ) : (
+                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {filteredNews.length === 0 && <NoDataRow colSpan={4} />}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredNews.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* DOWNLOADABLES PANEL */}
-              {activeTab === 'downloadables' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Municipal Forms & Library</h3>
-                    <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{downloadables.length} Assets</span>
-                  </div>
+              {activeTab === 'downloadables' && (() => {
+                const filteredDownloadables = downloadables.filter(d => {
+                  const matchesSearch = d.title.toLowerCase().includes(searchTerm.toLowerCase()) || d.description.toLowerCase().includes(searchTerm.toLowerCase());
+                  const matchesFilter = categoryFilter === 'ALL' || d.category === categoryFilter;
+                  return matchesSearch && matchesFilter;
+                });
+                const paginatedDownloadables = filteredDownloadables.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Title</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">File Size</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {downloadables.filter(d => d.title.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                            <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{item.title}</td>
-                            <td className="px-6 py-4">
-                              <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest">{item.category}</span>
-                            </td>
-                            <td className="px-6 py-4 text-gray-400 font-bold">{item.file_size}</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1">
-                                <button onClick={() => openEditEntity('downloadables', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                                <button onClick={() => handleDeleteEntity('downloadables', item.id)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
-                              </div>
-                            </td>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Municipal Forms & Library</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredDownloadables.length} of {downloadables.length} Assets</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">File Size</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
                           </tr>
-                        ))}
-                        {downloadables.length === 0 && <NoDataRow colSpan={4} />}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedDownloadables.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
+                              <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{item.title}</td>
+                              <td className="px-6 py-4">
+                                <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest">{item.category}</span>
+                              </td>
+                              <td className="px-6 py-4 text-gray-400 font-bold">{item.file_size}</td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => { setViewingItem(item); setViewingTab('downloadables'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
+                                  {canWriteTab('downloadables', item) ? (
+                                    <>
+                                      <button onClick={() => openEditEntity('downloadables', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
+                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'downloadables', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
+                                    </>
+                                  ) : (
+                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {filteredDownloadables.length === 0 && <NoDataRow colSpan={4} />}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredDownloadables.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* TOURISM PANEL */}
-              {activeTab === 'tourism' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Eco-Cultural Tourist Spots</h3>
-                  </div>
+              {activeTab === 'tourism' && (() => {
+                const filteredTourism = tourismSpots.filter(t => {
+                  const matchesSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.description.toLowerCase().includes(searchTerm.toLowerCase()) || t.location.toLowerCase().includes(searchTerm.toLowerCase());
+                  return matchesSearch;
+                });
+                const paginatedTourism = filteredTourism.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {tourismSpots.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                      <div key={item.id} className="border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm flex flex-col hover:shadow-md transition-all">
-                        {item.featured_image && (
-                          <div className="h-44 w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.featured_image})` }} />
-                        )}
-                        <div className="p-6 flex-grow space-y-3">
-                          <h4 className="font-black text-gray-900 uppercase tracking-tight text-sm">{item.name}</h4>
-                          <p className="text-gray-400 text-xs line-clamp-3 leading-relaxed">{item.description}</p>
-                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5 pt-2">
-                            <Clock size={12} /> Hours: {item.opening_hours}
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Eco-Cultural Tourist Spots</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredTourism.length} of {tourismSpots.length} spots</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {paginatedTourism.map((item) => (
+                        <div key={item.id} className="border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm flex flex-col hover:shadow-md transition-all">
+                          {item.featured_image && (
+                            <div className="h-44 w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.featured_image})` }} />
+                          )}
+                          <div className="p-6 flex-grow space-y-3">
+                            <h4 className="font-black text-gray-900 uppercase tracking-tight text-sm">{item.name}</h4>
+                            <p className="text-gray-400 text-xs line-clamp-3 leading-relaxed">{item.description}</p>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5 pt-2">
+                              <Clock size={12} /> Hours: {item.opening_hours}
+                            </div>
+                          </div>
+                          <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                            <button onClick={() => { setViewingItem(item); setViewingTab('tourism'); }} className="px-4 py-2 text-xs font-black bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all flex items-center gap-1" title="View details">
+                              <Eye size={12} /> View
+                            </button>
+                            {canWriteTab('tourism', item) ? (
+                              <>
+                                <button onClick={() => openEditEntity('tourism', item)} className="px-4 py-2 text-xs font-black bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-all flex items-center gap-1">
+                                  <Edit3 size={12} /> Edit
+                                </button>
+                                <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'tourism', name: item.name })} className="px-4 py-2 text-xs font-black bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition-all flex items-center gap-1">
+                                  <Trash2 size={12} /> Delete
+                                </button>
+                              </>
+                            ) : (
+                              <span className="px-4 py-2 text-gray-400 flex items-center gap-1.5 font-bold uppercase text-[10px] tracking-widest"><Lock size={12} /> Read Only</span>
+                            )}
                           </div>
                         </div>
-                        <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-                          <button onClick={() => openEditEntity('tourism', item)} className="px-4 py-2 text-xs font-black bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-all flex items-center gap-1">
-                            <Edit3 size={12} /> Edit Details
-                          </button>
-                          <button onClick={() => handleDeleteEntity('tourism', item.id)} className="px-4 py-2 text-xs font-black bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition-all flex items-center gap-1">
-                            <Trash2 size={12} /> Delete
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    {tourismSpots.length === 0 && <p className="col-span-2 text-center py-12 text-gray-400 font-bold text-xs">No registered tourist spots.</p>}
+                      ))}
+                      {filteredTourism.length === 0 && <p className="col-span-2 text-center py-12 text-gray-400 font-bold text-xs">No registered tourist spots found.</p>}
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredTourism.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* PUBLIC EVENTS PANEL */}
-              {activeTab === 'events' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">LGU Public Events</h3>
-                  </div>
+              {activeTab === 'events' && (() => {
+                const filteredEvents = events.filter(e => {
+                  return e.title.toLowerCase().includes(searchTerm.toLowerCase()) || e.venue.toLowerCase().includes(searchTerm.toLowerCase()) || e.description.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+                const paginatedEvents = filteredEvents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Event Title</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date & Time</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Venue</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {events.filter(e => e.title.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                            <td className="px-6 py-4 font-black text-gray-900">{item.title}</td>
-                            <td className="px-6 py-4 text-gray-500">
-                              <span className="font-bold block text-gray-900">{item.date}</span>
-                              <span className="text-[10px]">{item.time}</span>
-                            </td>
-                            <td className="px-6 py-4 text-gray-400 font-bold">{item.venue}</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1">
-                                <button onClick={() => openEditEntity('events', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                                <button onClick={() => handleDeleteEntity('events', item.id)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
-                              </div>
-                            </td>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">LGU Public Events</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredEvents.length} of {events.length} Events</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Event Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date & Time</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Venue</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
                           </tr>
-                        ))}
-                        {events.length === 0 && <NoDataRow colSpan={4} />}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedEvents.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
+                              <td className="px-6 py-4 font-black text-gray-900">{item.title}</td>
+                              <td className="px-6 py-4 text-gray-500">
+                                <span className="font-bold block text-gray-900">{item.date}</span>
+                                <span className="text-[10px]">{item.time}</span>
+                              </td>
+                              <td className="px-6 py-4 text-gray-400 font-bold">{item.venue}</td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => { setViewingItem(item); setViewingTab('events'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
+                                  {canWriteTab('events', item) ? (
+                                    <>
+                                      <button onClick={() => openEditEntity('events', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
+                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'events', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
+                                    </>
+                                  ) : (
+                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {filteredEvents.length === 0 && <NoDataRow colSpan={4} />}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredEvents.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* OFFICIALS PANEL */}
-              {activeTab === 'officials' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Officials Directory</h3>
-                  </div>
+              {activeTab === 'officials' && (() => {
+                const filteredOfficials = officials.filter(o => {
+                  const matchesSearch = o.name.toLowerCase().includes(searchTerm.toLowerCase()) || o.role.toLowerCase().includes(searchTerm.toLowerCase()) || (o.department || "").toLowerCase().includes(searchTerm.toLowerCase());
+                  const matchesFilter = categoryFilter === 'ALL' || o.level.toString() === categoryFilter;
+                  return matchesSearch && matchesFilter;
+                });
+                const paginatedOfficials = filteredOfficials.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Name</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Position / Title</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Department</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {officials.filter(o => o.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                            <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
-                            <td className="px-6 py-4 text-blue-600 font-black">{item.role}</td>
-                            <td className="px-6 py-4 text-gray-400 font-bold">{item.department || "LGU"}</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1">
-                                <button onClick={() => openEditEntity('officials', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                                <button onClick={() => handleDeleteEntity('officials', item.id)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
-                              </div>
-                            </td>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Officials Directory</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredOfficials.length} of {officials.length} Officials</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Name</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Position / Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Department</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
                           </tr>
-                        ))}
-                        {officials.length === 0 && <NoDataRow colSpan={4} />}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedOfficials.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
+                              <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
+                              <td className="px-6 py-4 text-blue-600 font-black">{item.role}</td>
+                              <td className="px-6 py-4 text-gray-400 font-bold">{item.department || "LGU"}</td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => { setViewingItem(item); setViewingTab('officials'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
+                                  {canWriteTab('officials', item) ? (
+                                    <>
+                                      <button onClick={() => openEditEntity('officials', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
+                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'officials', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
+                                    </>
+                                  ) : (
+                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {filteredOfficials.length === 0 && <NoDataRow colSpan={4} />}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredOfficials.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* DEPARTMENTS PANEL */}
-              {activeTab === 'departments' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Municipal Offices & Departments</h3>
-                  </div>
+              {activeTab === 'departments' && (() => {
+                const filteredDepartments = departments.filter(d => {
+                  return d.name.toLowerCase().includes(searchTerm.toLowerCase()) || (d.head_of_office || "").toLowerCase().includes(searchTerm.toLowerCase()) || (d.email || "").toLowerCase().includes(searchTerm.toLowerCase());
+                });
+                const paginatedDepartments = filteredDepartments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Office Name</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Head of Office</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email Contact</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {departments.filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                            <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
-                            <td className="px-6 py-4 font-bold text-gray-700">{item.head_of_office || "Unspecified"}</td>
-                            <td className="px-6 py-4 text-gray-400 font-bold">{item.email || "N/A"}</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1">
-                                <button onClick={() => openEditEntity('departments', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                                <button onClick={() => handleDeleteEntity('departments', item.id)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
-                              </div>
-                            </td>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Municipal Offices & Departments</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredDepartments.length} of {departments.length} Offices</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Office Name</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Head of Office</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email Contact</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
                           </tr>
-                        ))}
-                        {departments.length === 0 && <NoDataRow colSpan={4} />}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedDepartments.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
+                              <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
+                              <td className="px-6 py-4 font-bold text-gray-700">{item.head_of_office || "Unspecified"}</td>
+                              <td className="px-6 py-4 text-gray-400 font-bold">{item.email || "N/A"}</td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => { setViewingItem(item); setViewingTab('departments'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
+                                  {canWriteTab('departments', item) ? (
+                                    <>
+                                      <button onClick={() => openEditEntity('departments', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
+                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'departments', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
+                                    </>
+                                  ) : (
+                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {filteredDepartments.length === 0 && <NoDataRow colSpan={4} />}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredDepartments.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* SERVICES CMS PANEL */}
-              {activeTab === 'services' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Citizen E-Services</h3>
-                  </div>
+              {activeTab === 'services' && (() => {
+                const filteredServices = services.filter(s => {
+                  const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.description.toLowerCase().includes(searchTerm.toLowerCase());
+                  const matchesFilter = categoryFilter === 'ALL' || s.status === categoryFilter;
+                  return matchesSearch && matchesFilter;
+                });
+                const paginatedServices = filteredServices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service Name</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Slug Route</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status Badge</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {services.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                            <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
-                            <td className="px-6 py-4 font-mono text-gray-400 text-[10px]">{item.slug}</td>
-                            <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                item.status === 'available' ? 'bg-green-100 text-green-700' :
-                                item.status === 'coming-soon' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                {item.status.replace('-', ' ')}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1">
-                                <button onClick={() => openEditEntity('services', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                                <button onClick={() => handleDeleteEntity('services', item.id)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
-                              </div>
-                            </td>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Citizen E-Services</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredServices.length} of {services.length} Services</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service Name</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Slug Route</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status Badge</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
                           </tr>
-                        ))}
-                        {services.length === 0 && <NoDataRow colSpan={4} />}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedServices.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
+                              <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
+                              <td className="px-6 py-4 font-mono text-gray-400 text-[10px]">{item.slug}</td>
+                              <td className="px-6 py-4">
+                                <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                  item.status === 'available' ? 'bg-green-100 text-green-700' :
+                                  item.status === 'coming-soon' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {item.status.replace('-', ' ')}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => { setViewingItem(item); setViewingTab('services'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
+                                  {canWriteTab('services', item) ? (
+                                    <>
+                                      <button onClick={() => openEditEntity('services', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
+                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'services', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
+                                    </>
+                                  ) : (
+                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {filteredServices.length === 0 && <NoDataRow colSpan={4} />}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredServices.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* CITIZEN CHARTER PANEL */}
-              {activeTab === 'charter' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Citizen's Charter</h3>
-                  </div>
+              {activeTab === 'charter' && (() => {
+                const filteredCharters = charters.filter(c => {
+                  return c.service_name.toLowerCase().includes(searchTerm.toLowerCase()) || c.office.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+                const paginatedCharters = filteredCharters.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Office / Section</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service Item</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Steps</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {charters.filter(c => c.service_name.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                            <td className="px-6 py-4 font-black text-gray-900">{item.office}</td>
-                            <td className="px-6 py-4 font-bold text-gray-700">{item.service_name}</td>
-                            <td className="px-6 py-4 text-blue-600 font-black">{item.steps?.length || 0} steps</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1">
-                                <button onClick={() => openEditEntity('charter', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                                <button onClick={() => handleDeleteEntity('charter', item.id)} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
-                              </div>
-                            </td>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Citizen's Charter</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredCharters.length} of {charters.length} items</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Office / Section</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service Item</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Steps</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
                           </tr>
-                        ))}
-                        {charters.length === 0 && <NoDataRow colSpan={4} />}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedCharters.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
+                              <td className="px-6 py-4 font-black text-gray-900">{item.office}</td>
+                              <td className="px-6 py-4 font-bold text-gray-700">{item.service_name}</td>
+                              <td className="px-6 py-4 text-blue-600 font-black">{item.steps?.length || 0} steps</td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => { setViewingItem(item); setViewingTab('charter'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
+                                  {canWriteTab('charter', item) ? (
+                                    <>
+                                      <button onClick={() => openEditEntity('charter', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
+                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'charter', name: item.service_name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
+                                    </>
+                                  ) : (
+                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {filteredCharters.length === 0 && <NoDataRow colSpan={4} />}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredCharters.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* MEDIA LIBRARY PANEL */}
               {activeTab === 'media' && (
@@ -1146,96 +1568,136 @@ const AdminDashboard: React.FC = () => {
               )}
 
               {/* USER MANAGEMENT PANEL (SUPER ADMIN ONLY) */}
-              {activeTab === 'users' && isSuperAdminOrAdmin && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Staff Role Controls</h3>
-                  </div>
+              {activeTab === 'users' && isSuperAdminOrAdmin && (() => {
+                const filteredUsers = usersList.filter(u => {
+                  return u.email.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+                const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email address</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Role</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Verification Status</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {usersList.filter(u => u.email.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 font-black text-gray-900">{item.email}</td>
-                            <td className="px-6 py-4">
-                              <select
-                                value={item.role}
-                                onChange={(e) => handleUpdateUserRole(item.id, e.target.value, item.is_verified)}
-                                className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none"
-                              >
-                                <option value="super_admin">Super Admin</option>
-                                <option value="admin">Admin</option>
-                                <option value="editor">Editor</option>
-                                <option value="municipal_admin">Municipal Admin</option>
-                                <option value="barangay_admin">Barangay Admin</option>
-                              </select>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${item.is_verified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                {item.is_verified ? "Verified" : "Pending Verification"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <button
-                                onClick={() => handleUpdateUserRole(item.id, item.role, !item.is_verified)}
-                                className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${item.is_verified ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
-                              >
-                                {item.is_verified ? "Deauthorize" : "Verify / Approve"}
-                              </button>
-                            </td>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Staff Role Controls</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredUsers.length} of {usersList.length} staff</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email address</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Role</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Verification Status</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedUsers.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-6 py-4 font-black text-gray-900">{item.email}</td>
+                              <td className="px-6 py-4">
+                                <select
+                                  value={item.role}
+                                  disabled={item.role === 'super_admin' && profile?.role !== 'super_admin'}
+                                  onChange={(e) => handleUpdateUserRole(item.id, e.target.value, item.is_verified)}
+                                  className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {(profile?.role === 'super_admin' || item.role === 'super_admin') && (
+                                    <option value="super_admin">Super Admin</option>
+                                  )}
+                                  <option value="admin">Admin</option>
+                                  <option value="editor">Editor</option>
+                                  <option value="municipal_admin">Municipal Admin</option>
+                                  <option value="barangay_admin">Barangay Admin</option>
+                                </select>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${item.is_verified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                  {item.is_verified ? "Verified" : "Pending Verification"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <button
+                                  onClick={() => handleUpdateUserRole(item.id, item.role, !item.is_verified)}
+                                  disabled={item.role === 'super_admin' && profile?.role !== 'super_admin'}
+                                  className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                                    item.role === 'super_admin' && profile?.role !== 'super_admin'
+                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+                                      : item.is_verified
+                                      ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                                      : 'bg-green-50 text-green-600 hover:bg-green-100'
+                                  }`}
+                                >
+                                  {item.is_verified ? "Deauthorize" : "Verify / Approve"}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredUsers.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* AUDIT LOGS PANEL */}
-              {activeTab === 'logs' && isSuperAdminOrAdmin && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Full System Audit Trails</h3>
-                  </div>
+              {activeTab === 'logs' && isSuperAdminOrAdmin && (() => {
+                const filteredLogs = auditLogs.filter(log => {
+                  return log.user_email.toLowerCase().includes(searchTerm.toLowerCase()) || log.target_table.toLowerCase().includes(searchTerm.toLowerCase()) || log.action.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+                const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-                  <div className="divide-y divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden text-xs">
-                    {auditLogs.map((log) => (
-                      <div key={log.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-gray-50">
-                        <div>
-                          <p className="font-black text-gray-900">
-                            {log.user_email}
-                          </p>
-                          <p className="text-gray-400 font-bold mt-0.5">
-                            Modified <span className="text-blue-600">[{log.target_table}]</span> entry {log.target_id}
-                          </p>
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Full System Audit Trails</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredLogs.length} of {auditLogs.length} entries</span>
+                    </div>
+
+                    <div className="divide-y divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden text-xs">
+                      {paginatedLogs.map((log) => (
+                        <div key={log.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-gray-50">
+                          <div>
+                            <p className="font-black text-gray-900">
+                              {log.user_email}
+                            </p>
+                            <p className="text-gray-400 font-bold mt-0.5">
+                              Modified <span className="text-blue-600">[{log.target_table}]</span> entry {log.target_id}
+                            </p>
+                          </div>
+                          <div className="text-right flex items-center gap-4">
+                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                              log.action === 'CREATE' ? 'bg-green-100 text-green-700' :
+                              log.action === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {log.action}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-bold">{new Date(log.timestamp).toLocaleString()}</span>
+                          </div>
                         </div>
-                        <div className="text-right flex items-center gap-4">
-                          <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                            log.action === 'CREATE' ? 'bg-green-100 text-green-700' :
-                            log.action === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {log.action}
-                          </span>
-                          <span className="text-[10px] text-gray-400 font-bold">{new Date(log.timestamp).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {auditLogs.length === 0 && (
-                      <p className="p-8 text-center text-gray-400 font-bold">No system changes recorded yet.</p>
-                    )}
+                      ))}
+                      {filteredLogs.length === 0 && (
+                        <p className="p-8 text-center text-gray-400 font-bold">No system changes recorded yet.</p>
+                      )}
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredLogs.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* MEETING ASSISTANT PANEL */}
               {activeTab === 'meeting-assistant' && (
@@ -1296,6 +1758,22 @@ const AdminDashboard: React.FC = () => {
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="news-date">Publication Date</label>
                         <input id="news-date" type="date" required value={newsForm.date} onChange={(e) => setNewsForm({ ...newsForm, date: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="news-barangay">Associated Barangay</label>
+                      {profile?.role === 'barangay_admin' ? (
+                        <div className="w-full bg-gray-100 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-500 text-xs">
+                          {BARANGAYS.find(b => b.id === profile.barangay_id)?.name || `Barangay ID: ${profile.barangay_id}`} (Locked to your assigned Barangay)
+                        </div>
+                      ) : (
+                        <select id="news-barangay" value={newsForm.barangay_id || ''} onChange={(e) => setNewsForm({ ...newsForm, barangay_id: e.target.value || null })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs">
+                          <option value="">Municipality-Wide / Central LGU</option>
+                          {BARANGAYS.map((b) => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
 
                     <FileUpload label="Featured Image (Optional)" accept="image/*" folder="news_images" currentValue={newsForm.image_url} onUploadComplete={(url) => setNewsForm({ ...newsForm, image_url: url })} />
@@ -1754,6 +2232,289 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* CUSTOM DELETE CONFIRMATION DIALOG */}
+      <AnimatePresence>
+        {deleteConfirmItem && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Confirm item deletion">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDeleteConfirmItem(null)} className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" />
+            
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden p-8 text-center space-y-6">
+              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
+                <Trash2 size={32} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Delete item?</h3>
+                <p className="text-gray-500 text-xs leading-relaxed font-bold">
+                  Are you sure you want to permanently delete <span className="text-gray-900 font-black">"{deleteConfirmItem.name}"</span>? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmItem(null)}
+                  className="flex-1 py-3.5 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const { tab, id } = deleteConfirmItem;
+                    setDeleteConfirmItem(null);
+                    await handleDeleteEntity(tab as any, id);
+                  }}
+                  className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-red-600/10"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CUSTOM VIEW DETAILS MODAL */}
+      <AnimatePresence>
+        {viewingItem && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="View entry details">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setViewingItem(null); setViewingTab(null); }} className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" />
+            
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+              <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-white sticky top-0 z-10">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
+                    {viewingTab?.replace('_', ' ')} Details
+                  </h2>
+                  <p className="text-gray-400 text-[10px] uppercase font-black tracking-widest mt-0.5">Municipal Record Information Card</p>
+                </div>
+                <button onClick={() => { setViewingItem(null); setViewingTab(null); }} className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto flex-grow space-y-6 text-xs text-gray-700">
+                {viewingTab === 'news' && (
+                  <div className="space-y-6">
+                    {viewingItem.featured_image && (
+                      <img src={viewingItem.featured_image} alt={viewingItem.title} className="w-full h-64 object-cover rounded-2xl border border-gray-100" referrerPolicy="no-referrer" />
+                    )}
+                    <div className="space-y-2">
+                      <span className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest">{viewingItem.category}</span>
+                      <h3 className="text-xl font-black text-gray-900 tracking-tight">{viewingItem.title}</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Published: {viewingItem.date} by {viewingItem.author || 'Super Admin'}</p>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 italic text-gray-600 font-medium">
+                      {viewingItem.summary}
+                    </div>
+                    <div className="prose max-w-none text-gray-800 font-medium leading-relaxed whitespace-pre-wrap">
+                      {viewingItem.content}
+                    </div>
+                  </div>
+                )}
+
+                {viewingTab === 'downloadables' && (
+                  <div className="space-y-6">
+                    <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                        <FileText size={24} />
+                      </div>
+                      <div className="flex-grow">
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight">{viewingItem.title}</h4>
+                        <p className="text-[10px] text-indigo-600 uppercase font-black tracking-widest mt-0.5">{viewingItem.category} • {viewingItem.file_size || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Description & Usage Instruction</h4>
+                      <p className="text-gray-600 leading-relaxed font-bold bg-gray-50 p-4 rounded-2xl border border-gray-100">{viewingItem.description || 'No instructions provided.'}</p>
+                    </div>
+                    <div className="pt-4 border-t border-gray-50 flex gap-3">
+                      <a
+                        href={viewingItem.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest text-center transition-all shadow-xl shadow-indigo-600/15"
+                      >
+                        Download PDF / Document
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {viewingTab === 'tourism' && (
+                  <div className="space-y-6">
+                    {viewingItem.featured_image && (
+                      <img src={viewingItem.featured_image} alt={viewingItem.name} className="w-full h-64 object-cover rounded-2xl border border-gray-100" referrerPolicy="no-referrer" />
+                    )}
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">{viewingItem.name}</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Location: {viewingItem.location}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">About this tourist destination</h4>
+                      <p className="text-gray-600 leading-relaxed font-bold bg-gray-50 p-4 rounded-2xl border border-gray-100">{viewingItem.description}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Opening Hours</span>
+                        <span className="font-bold text-gray-800">{viewingItem.opening_hours || 'Always Open'}</span>
+                      </div>
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Entrance Fee</span>
+                        <span className="font-bold text-gray-800">{viewingItem.fee || 'Free'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {viewingTab === 'events' && (
+                  <div className="space-y-6">
+                    {viewingItem.banner_image && (
+                      <img src={viewingItem.banner_image} alt={viewingItem.title} className="w-full h-64 object-cover rounded-2xl border border-gray-100" referrerPolicy="no-referrer" />
+                    )}
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">{viewingItem.title}</h3>
+                      <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Scheduled Event</p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Event Description</h4>
+                      <p className="text-gray-600 leading-relaxed font-bold bg-gray-50 p-4 rounded-2xl border border-gray-100">{viewingItem.description}</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 pt-2">
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Date</span>
+                        <span className="font-bold text-gray-800">{viewingItem.date}</span>
+                      </div>
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Time</span>
+                        <span className="font-bold text-gray-800">{viewingItem.time}</span>
+                      </div>
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Venue</span>
+                        <span className="font-bold text-gray-800 truncate block">{viewingItem.venue}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {viewingTab === 'officials' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-6 p-6 border border-gray-100 bg-gray-50/50 rounded-3xl">
+                      {viewingItem.photo_url ? (
+                        <img src={viewingItem.photo_url} alt={viewingItem.name} className="w-24 h-24 object-cover rounded-2xl border border-gray-200" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-24 h-24 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-400 font-black text-lg">
+                          {viewingItem.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">{viewingItem.name}</h3>
+                        <p className="text-xs text-blue-600 font-black uppercase tracking-widest">{viewingItem.role}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Department: {viewingItem.department || 'LGU'}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Term of Office</span>
+                        <span className="font-bold text-gray-800">{viewingItem.term_start || 'N/A'} - {viewingItem.term_end || 'N/A'}</span>
+                      </div>
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Hierarchy Level</span>
+                        <span className="font-bold text-gray-800">Level {viewingItem.level || '0'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {viewingTab === 'departments' && (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">{viewingItem.name}</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Office Head: <span className="text-gray-800 font-black">{viewingItem.head_of_office || 'None'}</span></p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">About Office & Mandate</h4>
+                      <p className="text-gray-600 leading-relaxed font-bold bg-gray-50 p-4 rounded-2xl border border-gray-100">{viewingItem.description}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Email Address</span>
+                        <span className="font-bold text-gray-800">{viewingItem.email || 'N/A'}</span>
+                      </div>
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Phone Contact</span>
+                        <span className="font-bold text-gray-800">{viewingItem.phone || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {viewingTab === 'services' && (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">{viewingItem.name}</h3>
+                      <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Processing Time: {viewingItem.processing_time || 'Immediate'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Service Overview</h4>
+                      <p className="text-gray-600 leading-relaxed font-bold bg-gray-50 p-4 rounded-2xl border border-gray-100">{viewingItem.description}</p>
+                    </div>
+
+                    {viewingItem.downloadable_forms && viewingItem.downloadable_forms.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Downloadable Forms</h4>
+                        <div className="space-y-2">
+                          {viewingItem.downloadable_forms.map((form: any, idx: number) => (
+                            <a
+                              key={idx}
+                              href={form.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex justify-between items-center bg-gray-50 hover:bg-gray-100 border border-gray-100 px-4 py-3 rounded-xl transition-all"
+                            >
+                              <span className="font-bold text-indigo-600">{form.title}</span>
+                              <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest">Get Form</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {viewingTab === 'charter' && (
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">{viewingItem.service_name}</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Responsible Office: <span className="text-gray-800 font-black">{viewingItem.office}</span></p>
+                    </div>
+
+                    {viewingItem.steps && viewingItem.steps.length > 0 && (
+                      <div className="space-y-4">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Step-by-step Procedures</h4>
+                        <div className="space-y-3 relative before:absolute before:left-6 before:top-4 before:bottom-4 before:w-0.5 before:bg-blue-100">
+                          {viewingItem.steps.map((st: any, idx: number) => (
+                            <div key={idx} className="flex gap-4 relative">
+                              <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xs z-10 shrink-0 border-2 border-white">
+                                {st.stepNumber || idx + 1}
+                              </div>
+                              <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl flex-grow space-y-1">
+                                <h5 className="font-black text-gray-900 text-xs">{st.activity}</h5>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Client Step: {st.clientSteps}</p>
+                                <p className="text-[10px] text-blue-600 font-black uppercase tracking-wider">Duration: {st.duration} • Responsible: {st.officeResponsible}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -1765,8 +2526,10 @@ interface SidebarBtnProps {
   icon: React.ElementType;
   active: string;
   onClick: (val: any) => void;
+  visible?: boolean;
 }
-const SidebarBtn: React.FC<SidebarBtnProps> = ({ id, label, icon: Icon, active, onClick }) => {
+const SidebarBtn: React.FC<SidebarBtnProps> = ({ id, label, icon: Icon, active, onClick, visible = true }) => {
+  if (!visible) return null;
   const isSelected = active === id;
   return (
     <button
@@ -1830,5 +2593,40 @@ const NoDataRow: React.FC<{ colSpan: number }> = ({ colSpan }) => {
 
 // COMPONENT: ROTATIONAL SPINNING LOADER
 const LoaderSpin = () => <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />;
+
+// COMPONENT: TABLE PAGINATION CONTROLS
+const Pagination: React.FC<{
+  currentPage: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+}> = ({ currentPage, totalItems, itemsPerPage, onPageChange }) => {
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-between pt-6 border-t border-gray-100 mt-4">
+      <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+        Showing Page {currentPage} of {totalPages}
+      </span>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-4 py-2 text-[9px] font-black uppercase tracking-widest bg-gray-50 border border-gray-100 text-gray-500 rounded-xl hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-gray-50 transition-all"
+        >
+          Prev
+        </button>
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 text-[9px] font-black uppercase tracking-widest bg-gray-50 border border-gray-100 text-gray-500 rounded-xl hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-gray-50 transition-all"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default AdminDashboard;

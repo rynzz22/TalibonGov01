@@ -1,30 +1,198 @@
 import React, { useState, useEffect } from "react";
 import { useAuth, OfficialRole } from "../contexts/SupabaseAuthContext";
 import { BARANGAYS } from "../constants/barangayConfig";
-import { motion } from "motion/react";
-import { Globe, Shield, Lock, ArrowRight, CheckCircle2, LayoutDashboard } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Globe, Shield, Lock, ArrowRight, CheckCircle2, LayoutDashboard, Eye, EyeOff, Loader2, AlertCircle, Mail, KeyRound } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
-  const { user, profile, signInWithGoogle, signOut, refreshProfile } = useAuth();
+  const { user, profile, signInWithEmail, signUpWithEmail, signOut, refreshProfile, resetPasswordForEmail, updatePassword } = useAuth();
   const navigate = useNavigate();
+
+  // Auth Views
+  const [view, setView] = useState<'login' | 'forgot' | 'reset' | 'register'>('login');
+
+  // Login Form States
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Profile Setup Form States
   const [selectedRole, setSelectedRole] = useState<OfficialRole>("barangay_admin");
   const [selectedBarangay, setSelectedBarangay] = useState(BARANGAYS[0].slug);
   const [fullName, setFullName] = useState("");
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
+  // Status & Feedback States
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Populate saved email if Remember Me was checked
+    const savedEmail = localStorage.getItem("remember_me_email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+
+    // Check for recovery token/query params indicating password recovery
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    if (params.get("type") === "recovery" || hash.includes("type=recovery") || hash.includes("access_token")) {
+      setView("reset");
+    }
+
+    // Listen to PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setView("reset");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     if (profile) {
-      const timer = setTimeout(() => {
-        navigate("/admin");
-      }, 1500);
-      return () => clearTimeout(timer);
+      if (profile.is_verified) {
+        const timer = setTimeout(() => {
+          navigate("/admin");
+        }, 1200);
+        return () => clearTimeout(timer);
+      } else {
+        navigate("/admin"); // ProtectRoute will handle the Access Denied display
+      }
     }
   }, [profile, navigate]);
 
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setErrorMsg("Please provide both email and password.");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const { data, error } = await signInWithEmail(email, password);
+      if (error) {
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          setErrorMsg("Email not confirmed. Please check your inbox for the confirmation email, or disable 'Confirm email' under Auth -> Providers -> Email in your Supabase Dashboard.");
+        } else {
+          setErrorMsg(error.message);
+        }
+      } else {
+        setSuccessMsg("Logged in successfully!");
+        if (rememberMe) {
+          localStorage.setItem("remember_me_email", email);
+        } else {
+          localStorage.removeItem("remember_me_email");
+        }
+      }
+    } catch (err: any) {
+      if (err.message?.toLowerCase().includes("email not confirmed")) {
+        setErrorMsg("Email not confirmed. Please check your inbox for the confirmation email, or disable 'Confirm email' under Auth -> Providers -> Email in your Supabase Dashboard.");
+      } else {
+        setErrorMsg(err.message || "Failed to authenticate.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setErrorMsg("Please provide both email and password.");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const { data, error } = await signUpWithEmail(email, password);
+      if (error) {
+        setErrorMsg(error.message);
+      } else {
+        setSuccessMsg("Account created! A confirmation link has been sent to your email. Please confirm it before logging in. If you want to skip email confirmation, disable 'Confirm email' in your Supabase Dashboard (Auth -> Providers -> Email).");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to register account.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setErrorMsg("Please enter your email address.");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const { error } = await resetPasswordForEmail(email);
+      if (error) {
+        setErrorMsg(error.message);
+      } else {
+        setSuccessMsg("Password reset link has been dispatched to your email.");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password) {
+      setErrorMsg("Please enter a new password.");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const { error } = await updatePassword(password);
+      if (error) {
+        setErrorMsg(error.message);
+      } else {
+        setSuccessMsg("Your password has been changed successfully. You can now login.");
+        setTimeout(() => {
+          setView("login");
+          setPassword("");
+        }, 2000);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Could not update your password.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleRegisterProfile = async () => {
     if (!user) return;
+
+    setIsLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
 
     const { error } = await supabase.from("profiles").insert({
       id: user.id,
@@ -34,15 +202,17 @@ const Login: React.FC = () => {
       barangay_id: selectedRole === "barangay_admin" ? selectedBarangay : null,
     });
 
+    setIsLoading(false);
     if (!error) {
       await refreshProfile();
       setRegistrationSuccess(true);
     } else {
-      alert("Error: " + error.message);
+      setErrorMsg("Error registering profile: " + error.message);
     }
   };
 
-  if (profile) {
+  // Authenticated, verified user state
+  if (profile && profile.is_verified) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-bg p-4 text-center">
         <motion.div 
@@ -77,6 +247,7 @@ const Login: React.FC = () => {
     );
   }
 
+  // Onboarding screen if user logged in successfully but profile doesn't exist
   if (user && !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-bg p-4">
@@ -92,6 +263,13 @@ const Login: React.FC = () => {
           </div>
 
           <div className="space-y-6">
+            {errorMsg && (
+              <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-wider">
+                <AlertCircle size={16} />
+                {errorMsg}
+              </div>
+            )}
+
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">Full Name</label>
               <input 
@@ -141,11 +319,11 @@ const Login: React.FC = () => {
             )}
 
             <button 
-              disabled={!fullName}
+              disabled={!fullName || isLoading}
               onClick={handleRegisterProfile} 
-              className="minimal-button-primary w-full disabled:opacity-30"
+              className="minimal-button-primary w-full disabled:opacity-30 flex items-center justify-center gap-2"
             >
-              Request Access <ArrowRight size={18} />
+              {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <>Request Access <ArrowRight size={18} /></>}
             </button>
           </div>
         </motion.div>
@@ -160,27 +338,302 @@ const Login: React.FC = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full minimal-card p-12 text-center"
+        className="max-w-md w-full minimal-card p-10 md:p-12 text-center"
       >
         <img 
           src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
           alt="Talibon Seal" 
-          className="w-24 h-24 mx-auto mb-8 drop-shadow-2xl"
+          className="w-24 h-24 mx-auto mb-6 drop-shadow-2xl"
           referrerPolicy="no-referrer"
         />
-        <h2 className="text-4xl font-black text-brand-text mb-2 tracking-tight">Admin Portal</h2>
-        <p className="text-brand-muted font-medium mb-12">Talibon Digital Governance Core</p>
+        <h2 className="text-3xl font-black text-brand-text mb-1 tracking-tight">Admin Portal</h2>
+        <p className="text-brand-muted font-bold text-xs uppercase tracking-widest mb-10">Talibon Digital Governance Core</p>
 
-        <button 
-          onClick={signInWithGoogle}
-          className="w-full py-5 bg-white border-2 border-brand-border rounded-[2rem] flex items-center justify-center gap-4 hover:border-brand-primary transition-all group active:scale-95"
-        >
-          <img src="https://www.google.com/favicon.ico" className="w-5 h-5 group-hover:scale-125 transition-transform" />
-          <span className="font-bold text-sm">Continue with Google Official</span>
-        </button>
+        {/* FEEDBACK BANNERS */}
+        {errorMsg && (
+          <div className="mb-6 p-4 bg-red-50 text-red-700 border border-red-100 rounded-2xl text-[11px] font-bold text-left flex items-start gap-2.5 leading-relaxed">
+            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
-        <div className="mt-12 flex items-center justify-center gap-2 text-[8px] font-black text-brand-muted uppercase tracking-[0.2em]">
-          <Lock size={12} /> Secure SSO Encryption Active
+        {successMsg && (
+          <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-100 rounded-2xl text-[11px] font-bold text-left flex items-start gap-2.5 leading-relaxed">
+            <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        {/* LOGIN VIEW */}
+        {view === 'login' && (
+          <form onSubmit={handleLoginSubmit} className="space-y-6 text-left">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@talibon.gov.ph"
+                  required
+                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted">
+                  Password
+                </label>
+                <button 
+                  type="button"
+                  onClick={() => setView('forgot')}
+                  className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+                >
+                  Forgot?
+                </button>
+              </div>
+              <div className="relative">
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-gray-300 text-brand-primary focus:ring-brand-primary/20 w-4 h-4"
+                />
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Remember Me</span>
+              </label>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/10"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <span>Sign In to System</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+
+            <div className="mt-6 text-center">
+              <p className="text-xs text-brand-muted font-bold">
+                Don't have an administrator account?{" "}
+                <button
+                  type="button"
+                  onClick={() => { setView('register'); setErrorMsg(null); setSuccessMsg(null); }}
+                  className="text-brand-primary hover:underline font-black"
+                >
+                  Create Account
+                </button>
+              </p>
+            </div>
+          </form>
+        )}
+
+        {/* REGISTER VIEW */}
+        {view === 'register' && (
+          <form onSubmit={handleRegisterSubmit} className="space-y-6 text-left">
+            <div className="text-center mb-4">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Create Admin Account</h3>
+              <p className="text-xs text-brand-muted font-semibold leading-relaxed">Sign up below, then set up your profile details in the next step.</p>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@talibon.gov.ph"
+                  required
+                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                Choose Password
+              </label>
+              <div className="relative">
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/10"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+
+            <button 
+              type="button"
+              onClick={() => { setView('login'); setErrorMsg(null); setSuccessMsg(null); }}
+              className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-brand-muted hover:text-brand-primary transition-colors text-center"
+            >
+              Back to Login
+            </button>
+          </form>
+        )}
+
+        {/* FORGOT PASSWORD VIEW */}
+        {view === 'forgot' && (
+          <form onSubmit={handleForgotPasswordSubmit} className="space-y-6 text-left">
+            <div className="text-center mb-4">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Forgot Password</h3>
+              <p className="text-xs text-brand-muted font-semibold leading-relaxed">Enter your registered administrator email to receive a secure login link.</p>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@talibon.gov.ph"
+                  required
+                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                />
+              </div>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <span>Send Reset Link</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+
+            <button 
+              type="button"
+              onClick={() => { setView('login'); setErrorMsg(null); setSuccessMsg(null); }}
+              className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-brand-muted hover:text-brand-primary transition-colors text-center"
+            >
+              Back to Login
+            </button>
+          </form>
+        )}
+
+        {/* RESET PASSWORD VIEW */}
+        {view === 'reset' && (
+          <form onSubmit={handleResetPasswordSubmit} className="space-y-6 text-left">
+            <div className="text-center mb-4">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Reset Password</h3>
+              <p className="text-xs text-brand-muted font-semibold leading-relaxed">Please set your brand new, secure administrator password.</p>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                New Secure Password
+              </label>
+              <div className="relative">
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <span>Save New Password</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+        )}
+
+        <div className="mt-10 flex items-center justify-center gap-2 text-[8px] font-black text-brand-muted uppercase tracking-[0.2em]">
+          <Lock size={12} /> Secure Portal Active
         </div>
       </motion.div>
     </div>
