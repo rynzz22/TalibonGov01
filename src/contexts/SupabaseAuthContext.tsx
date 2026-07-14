@@ -213,10 +213,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setLoading(true);
     try {
+      // 1. Manually clear any local storage auth tokens immediately
+      // This ensures that even if the API call below fails, the client-side session is gone.
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token") || key.includes("auth-token"))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+
+      const sessionKeysToRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token") || key.includes("auth-token"))) {
+          sessionKeysToRemove.push(key);
+        }
+      }
+      sessionKeysToRemove.forEach(k => sessionStorage.removeItem(k));
+
+      // 2. Call supabase signOut
       await supabase.auth.signOut();
     } catch (err) {
-      console.error("[Auth] Error during supabase.auth.signOut():", err);
+      console.warn("[Auth] Warning during supabase.auth.signOut():", err);
     } finally {
+      // 3. Reset all React states
       setUser(null);
       setProfile(null);
       setSession(null);
@@ -224,6 +246,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (import.meta.env.DEV) {
         console.log("[Auth - DEV] User manually signed out.");
       }
+      // 4. Forcefully redirect to /login to clear page state and memory
+      window.location.href = "/login";
     }
   };
 
