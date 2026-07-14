@@ -3,7 +3,7 @@ import { useAuth, OfficialRole } from "../contexts/SupabaseAuthContext";
 import { BARANGAYS } from "../constants/barangayConfig";
 import { motion, AnimatePresence } from "motion/react";
 import { Globe, Shield, Lock, ArrowRight, CheckCircle2, LayoutDashboard, Eye, EyeOff, Loader2, AlertCircle, Mail, KeyRound } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
@@ -46,14 +46,20 @@ const Login: React.FC = () => {
     }
 
     // Listen to PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setView("reset");
-      }
-    });
+    let subscription: any = null;
+    if (isSupabaseConfigured) {
+      const { data } = supabase.auth.onAuthStateChange((event) => {
+        if (event === "PASSWORD_RECOVERY") {
+          setView("reset");
+        }
+      });
+      subscription = data?.subscription;
+    }
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 

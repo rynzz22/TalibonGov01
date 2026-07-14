@@ -74,19 +74,25 @@ const NewsDetailPage: React.FC = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('news')
-        .select('*')
-        .eq('id', id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('news')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      if (error) {
-        console.warn("Error fetching news detail:", error);
+        if (error) {
+          console.warn("Error fetching news detail:", error);
+          setItem(MOCK_NEWS_DETAILS[id] || null);
+        } else {
+          setItem(data as NewsItem);
+        }
+      } catch (err) {
+        console.warn("Exception while fetching news detail from Supabase, falling back to Mock:", err);
         setItem(MOCK_NEWS_DETAILS[id] || null);
-      } else {
-        setItem(data as NewsItem);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchItem();

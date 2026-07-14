@@ -119,20 +119,26 @@ const NewsCategoryPage: React.FC = () => {
 
     const fetchNews = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('news')
-        .select('*')
-        .eq('category', firestoreCategory)
-        .is('barangay_id', null) // Main site only shows municipal news
-        .order('date', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('news')
+          .select('*')
+          .eq('category', firestoreCategory)
+          .is('barangay_id', null) // Main site only shows municipal news
+          .order('date', { ascending: false });
 
-      if (error) {
-        console.warn("Error fetching news:", error);
+        if (error) {
+          console.warn("Error fetching news:", error);
+          setNews(MOCK_NEWS_CATEGORY[firestoreCategory] || []);
+        } else {
+          setNews(data as NewsItem[]);
+        }
+      } catch (err) {
+        console.warn("Exception while fetching news from Supabase, falling back to Mock:", err);
         setNews(MOCK_NEWS_CATEGORY[firestoreCategory] || []);
-      } else {
-        setNews(data as NewsItem[]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchNews();

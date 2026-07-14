@@ -439,8 +439,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as NewsItem[];
       } catch (e: any) {
-        console.error("Supabase News fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase News fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<NewsItem>("news", INITIAL_NEWS);
@@ -524,8 +523,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as DownloadableItem[];
       } catch (e: any) {
-        console.error("Supabase Downloadables fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase Downloadables fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<DownloadableItem>("downloadables", INITIAL_DOWNLOADS);
@@ -609,8 +607,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as TourismSpotItem[];
       } catch (e: any) {
-        console.error("Supabase Tourism spots fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase Tourism spots fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<TourismSpotItem>("tourism_spots", INITIAL_TOURISM);
@@ -694,8 +691,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as OfficialItem[];
       } catch (e: any) {
-        console.error("Supabase Officials fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase Officials fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<OfficialItem>("officials", INITIAL_OFFICIALS);
@@ -779,8 +775,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as DepartmentItem[];
       } catch (e: any) {
-        console.error("Supabase Departments fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase Departments fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<DepartmentItem>("departments", INITIAL_DEPARTMENTS);
@@ -864,8 +859,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as ServiceCmsItem[];
       } catch (e: any) {
-        console.error("Supabase Services fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase Services fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<ServiceCmsItem>("services_cms", INITIAL_SERVICES);
@@ -949,8 +943,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as CitizensCharterCmsItem[];
       } catch (e: any) {
-        console.error("Supabase Citizen Charter fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase Citizen Charter fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<CitizensCharterCmsItem>("citizens_charter_cms", INITIAL_CHARTERS);
@@ -1034,8 +1027,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as EventItem[];
       } catch (e: any) {
-        console.error("Supabase Events fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase Events fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<EventItem>("events", INITIAL_EVENTS);
@@ -1119,8 +1111,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as AuditLogItem[];
       } catch (e: any) {
-        console.error("Supabase Audit Logs fetch failed:", e.message || e);
-        throw e;
+        console.error("Supabase Audit Logs fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<AuditLogItem>("audit_logs", INITIAL_LOGS);
@@ -1134,8 +1125,7 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as UserProfileItem[];
       } catch (e: any) {
-        console.error("Supabase profiles query failed:", e.message || e);
-        throw e;
+        console.error("Supabase profiles query failed, falling back to LocalStorage:", e.message || e);
       }
     }
     return getStorage<UserProfileItem>("users", INITIAL_USERS);
