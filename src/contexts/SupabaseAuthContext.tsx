@@ -179,13 +179,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     setLoading(true);
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setSession(null);
-    setLoading(false);
-    if (import.meta.env.DEV) {
-      console.log("[Auth - DEV] User manually signed out.");
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("[Auth] Error during supabase.auth.signOut():", err);
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      setLoading(false);
+      if (import.meta.env.DEV) {
+        console.log("[Auth - DEV] User manually signed out.");
+      }
     }
   };
 
