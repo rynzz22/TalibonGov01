@@ -60,9 +60,10 @@ const AdminDashboard: React.FC = () => {
     if (!profile) return;
     try {
       const data = await notificationService.getNotifications(profile);
-      setNotifications(data);
+      setNotifications(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("[AdminDashboard] Error fetching notifications:", err);
+      setNotifications([]);
     }
   }, [profile]);
 
@@ -101,10 +102,24 @@ const AdminDashboard: React.FC = () => {
     if (!profile) return;
     loadNotifications();
 
-    const unsubscribe = notificationService.subscribeToNotifications(profile, () => {
-      loadNotifications();
-    });
-    return () => unsubscribe();
+    let unsubscribe: (() => void) | null = null;
+    try {
+      unsubscribe = notificationService.subscribeToNotifications(profile, () => {
+        loadNotifications();
+      });
+    } catch (err) {
+      console.error("[AdminDashboard] Live notifications subscription failed:", err);
+    }
+
+    return () => {
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (unsubErr) {
+          console.warn("[AdminDashboard] Error during unsubscribe cleanup:", unsubErr);
+        }
+      }
+    };
   }, [profile, loadNotifications]);
 
   // Modal States

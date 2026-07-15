@@ -3,6 +3,7 @@ import { Menu, X, Globe, ChevronDown, ArrowUpRight, Phone, Mail, MapPin, Search,
 import { useState, useEffect } from "react";
 import NotificationBell from "./NotificationBell";
 import NotificationDrawer from "./NotificationDrawer";
+import ErrorBoundary from "./ErrorBoundary";
 import { Link, useLocation } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
@@ -271,7 +272,9 @@ export default function Navbar() {
                 <Globe size={12} />
                 {language === 'en' ? 'EN' : 'CEB'}
               </button>
-              <NotificationBell onClick={() => setIsNotificationOpen(true)} />
+              <ErrorBoundary componentName="NotificationBell">
+                <NotificationBell onClick={() => setIsNotificationOpen(true)} />
+              </ErrorBoundary>
               <button className="hover:text-brand-primary text-brand-text transition-colors"><Accessibility size={16} /></button>
             </div>
           </div>
@@ -538,22 +541,24 @@ export default function Navbar() {
         )}
       </AnimatePresence>
 
-      <NotificationDrawer 
-        isOpen={isNotificationOpen} 
-        onClose={() => setIsNotificationOpen(false)} 
-        onViewAction={(actionUrl) => {
-          // If already on /admin page, update URL parameter or hash so component reacts, otherwise redirect
-          if (window.location.pathname === "/admin") {
-            const searchParams = new URLSearchParams(window.location.search);
-            searchParams.set("tab", actionUrl);
-            window.history.pushState(null, "", `${window.location.pathname}?${searchParams.toString()}`);
-            // Dispatch a window event to let AdminDashboard know the active tab changed
-            window.dispatchEvent(new CustomEvent("talibon_tab_changed", { detail: actionUrl }));
-          } else {
-            window.location.href = `/admin?tab=${actionUrl}`;
-          }
-        }}
-      />
+      <ErrorBoundary componentName="NotificationDrawer">
+        <NotificationDrawer 
+          isOpen={isNotificationOpen} 
+          onClose={() => setIsNotificationOpen(false)} 
+          onViewAction={(actionUrl) => {
+            // If already on /admin page, update URL parameter or hash so component reacts, otherwise redirect
+            if (window.location.pathname === "/admin") {
+              const searchParams = new URLSearchParams(window.location.search);
+              searchParams.set("tab", actionUrl);
+              window.history.pushState(null, "", `${window.location.pathname}?${searchParams.toString()}`);
+              // Dispatch a window event to let AdminDashboard know the active tab changed
+              window.dispatchEvent(new CustomEvent("talibon_tab_changed", { detail: actionUrl }));
+            } else {
+              window.location.href = `/admin?tab=${actionUrl}`;
+            }
+          }}
+        />
+      </ErrorBoundary>
 
       <GlobalSearch 
         isOpen={isSearchOpen} 

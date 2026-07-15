@@ -330,22 +330,35 @@ export const notificationService = {
   subscribeToNotifications(profile: UserProfile | null, onUpdate: () => void): () => void {
     if (!profile) return () => {};
 
+    let removeRealtimeChannel: (() => void) | null = null;
+
     // 1. Live Realtime Subscriptions
     if (isSupabaseConfigured) {
-      const channel = supabase
-        .channel("live-notifications")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "notifications" },
-          () => {
-            onUpdate();
-          }
-        )
-        .subscribe();
+      try {
+        const uniqueId = Math.random().toString(36).substring(2, 11);
+        const channelName = `live-notifications-${uniqueId}`;
+        const channel = supabase
+          .channel(channelName)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "notifications" },
+            () => {
+              onUpdate();
+            }
+          );
+        
+        channel.subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+        removeRealtimeChannel = () => {
+          try {
+            supabase.removeChannel(channel);
+          } catch (removeErr) {
+            console.warn("[NotificationService] Error removing channel:", removeErr);
+          }
+        };
+      } catch (err) {
+        console.warn("[NotificationService] Realtime subscription initialization failed, using fallback polling:", err);
+      }
     }
 
     // 2. Fallback mode: Listening to local window trigger events + light interval backup polling
@@ -359,6 +372,9 @@ export const notificationService = {
     const interval = setInterval(onUpdate, 10000);
 
     return () => {
+      if (removeRealtimeChannel) {
+        removeRealtimeChannel();
+      }
       window.removeEventListener("talibon_notif_added", handleLocalAdded);
       clearInterval(interval);
     };

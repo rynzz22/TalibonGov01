@@ -43,9 +43,10 @@ export default function NotificationDrawer({
     setLoading(true);
     try {
       const data = await notificationService.getNotifications(profile);
-      setNotifications(data);
+      setNotifications(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("[NotificationDrawer] Load error:", err);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
@@ -59,14 +60,33 @@ export default function NotificationDrawer({
 
   useEffect(() => {
     if (!profile) return;
-    // Set up live event listener
-    const unsubscribe = notificationService.subscribeToNotifications(profile, () => {
-      fetchNotifs();
-      if (onNotificationsUpdated) {
-        onNotificationsUpdated();
+    
+    let unsubscribe: (() => void) | null = null;
+    try {
+      // Set up live event listener
+      unsubscribe = notificationService.subscribeToNotifications(profile, () => {
+        fetchNotifs();
+        if (onNotificationsUpdated) {
+          try {
+            onNotificationsUpdated();
+          } catch (updateErr) {
+            console.error("[NotificationDrawer] Parent update handler failed:", updateErr);
+          }
+        }
+      });
+    } catch (err) {
+      console.error("[NotificationDrawer] Failed to subscribe to live notifications:", err);
+    }
+    
+    return () => {
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (unsubErr) {
+          console.warn("[NotificationDrawer] Error during unsubscribe cleanup:", unsubErr);
+        }
       }
-    });
-    return () => unsubscribe();
+    };
   }, [profile]);
 
   // Format timestamps nicely (e.g. "15m ago", "2h ago")
@@ -92,60 +112,71 @@ export default function NotificationDrawer({
 
   // Get matching categoric metadata
   const getCategoryMeta = (category: NotificationCategory) => {
-    switch (category) {
-      case "Citizen Applications":
-        return {
-          icon: FileCheck,
-          color: "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/20 dark:text-blue-400",
-          label: "Citizen Apps"
-        };
-      case "Workflow Updates":
-        return {
-          icon: Workflow,
-          color: "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400",
-          label: "Workflow"
-        };
-      case "Staff Verification":
-        return {
-          icon: ShieldCheck,
-          color: "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400",
-          label: "Staff Registry"
-        };
-      case "News Approval":
-        return {
-          icon: Newspaper,
-          color: "bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-950/20 dark:text-rose-400",
-          label: "News Moderation"
-        };
-      case "Document Updates":
-        return {
-          icon: FolderOpen,
-          color: "bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-950/20 dark:text-indigo-400",
-          label: "Documents"
-        };
-      case "System Messages":
-        return {
-          icon: Clock,
-          color: "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/20 dark:text-red-400",
-          label: "System Alerts"
-        };
-      case "Department Announcements":
-        return {
-          icon: Landmark,
-          color: "bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/20 dark:text-purple-400",
-          label: "Office Bulletins"
-        };
-      default:
-        return {
-          icon: MessageSquare,
-          color: "bg-gray-50 text-gray-600 border-gray-100 dark:bg-gray-900/40 dark:text-gray-400",
-          label: "General Notice"
-        };
+    try {
+      switch (category) {
+        case "Citizen Applications":
+          return {
+            icon: FileCheck,
+            color: "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/20 dark:text-blue-400",
+            label: "Citizen Apps"
+          };
+        case "Workflow Updates":
+          return {
+            icon: Workflow,
+            color: "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400",
+            label: "Workflow"
+          };
+        case "Staff Verification":
+          return {
+            icon: ShieldCheck,
+            color: "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400",
+            label: "Staff Registry"
+          };
+        case "News Approval":
+          return {
+            icon: Newspaper,
+            color: "bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-950/20 dark:text-rose-400",
+            label: "News Moderation"
+          };
+        case "Document Updates":
+          return {
+            icon: FolderOpen,
+            color: "bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-950/20 dark:text-indigo-400",
+            label: "Documents"
+          };
+        case "System Messages":
+          return {
+            icon: Clock,
+            color: "bg-red-50 text-red-600 border-red-100 dark:bg-red-950/20 dark:text-red-400",
+            label: "System Alerts"
+          };
+        case "Department Announcements":
+          return {
+            icon: Landmark,
+            color: "bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-950/20 dark:text-purple-400",
+            label: "Office Bulletins"
+          };
+        default:
+          return {
+            icon: MessageSquare,
+            color: "bg-gray-50 text-gray-600 border-gray-100 dark:bg-gray-900/40 dark:text-gray-400",
+            label: "General Notice"
+          };
+      }
+    } catch (e) {
+      return {
+        icon: MessageSquare,
+        color: "bg-gray-50 text-gray-600 border-gray-100",
+        label: "Notice"
+      };
     }
   };
 
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
   // Filter list by tab criteria
-  const filteredNotifications = notifications.filter((n) => {
+  const filteredNotifications = safeNotifications.filter((n) => {
+    if (!n) return false;
     if (activeTab === "unread") return !n.is_read && !n.is_archived;
     if (activeTab === "all") return !n.is_archived;
     if (activeTab === "archived") return n.is_archived;
