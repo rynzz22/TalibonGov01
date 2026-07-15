@@ -10,9 +10,12 @@ import {
   Folder, Image, Clock, Landmark, Calendar,
   Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock, Workflow
 } from 'lucide-react';
+import { notificationService, AppNotification } from '../services/notificationService';
 import MeetingAssistant from '../components/MeetingAssistant';
 import FileUpload from '../components/FileUpload';
 import { BARANGAYS } from '../constants/barangayConfig';
+import SearchFilterToolbar from '../components/SearchFilterToolbar';
+import StatusBadge from '../components/StatusBadge';
 import {
   cmsService,
   NewsItem,
@@ -48,14 +51,72 @@ const AdminDashboard: React.FC = () => {
     | 'workflows'
   >('overview');
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Notification and Active Tab URL sync states
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  const loadNotifications = useCallback(async () => {
+    if (!profile) return;
+    try {
+      const data = await notificationService.getNotifications(profile);
+      setNotifications(data);
+    } catch (err) {
+      console.error("[AdminDashboard] Error fetching notifications:", err);
+    }
+  }, [profile]);
+
+  // Synchronize Tab from Query Parameter & Listen to Bell Clicks
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      const validTabs = ['overview', 'news', 'downloadables', 'tourism', 'officials', 'departments', 'services', 'charter', 'events', 'media', 'users', 'logs', 'meeting-assistant', 'workflows'];
+      if (validTabs.includes(tabParam)) {
+        setActiveTab(tabParam as any);
+      }
+    }
+
+    const handleTabChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setActiveTab(customEvent.detail);
+      }
+    };
+    window.addEventListener("talibon_tab_changed", handleTabChange);
+    return () => window.removeEventListener("talibon_tab_changed", handleTabChange);
+  }, []);
+
+  // Update query string when activeTab changes
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('tab') !== activeTab) {
+      searchParams.set('tab', activeTab);
+      window.history.replaceState(null, "", `${window.location.pathname}?${searchParams.toString()}`);
+    }
+  }, [activeTab]);
+
+  // Load and Subscribe to Notifications inside Dashboard
+  useEffect(() => {
+    if (!profile) return;
+    loadNotifications();
+
+    const unsubscribe = notificationService.subscribeToNotifications(profile, () => {
+      loadNotifications();
+    });
+    return () => unsubscribe();
+  }, [profile, loadNotifications]);
+
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formStep, setFormStep] = useState(1);
   
   // Feedback Messages
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isTableLoading, setIsTableLoading] = useState(false);
 
   // Stats State
   const [stats, setStats] = useState({
@@ -317,7 +378,7 @@ const AdminDashboard: React.FC = () => {
   // Central fetcher
   const loadAllCmsData = useCallback(async () => {
     if (!canAccessManagement) return;
-    setIsActionLoading(true);
+    setIsTableLoading(true);
     try {
       // 1. Dashboard statistics
       const statsData = await cmsService.getDashboardStats();
@@ -359,7 +420,7 @@ const AdminDashboard: React.FC = () => {
       console.error("[AdminCMS] Fetch error:", err);
       showError("Error loading CMS data. Please make sure database is initialized.");
     } finally {
-      setIsActionLoading(false);
+      setIsTableLoading(false);
     }
   }, [canAccessManagement, profile?.role]);
 
@@ -403,6 +464,7 @@ const AdminDashboard: React.FC = () => {
   // RESET FORMS
   const resetAllForms = () => {
     setEditingId(null);
+    setFormStep(1);
     setNewsForm({
       title: '', slug: '', summary: '', content: '', category: 'ARTICLE',
       image_url: '', file_url: '', date: new Date().toISOString().split('T')[0], status: 'published',
@@ -748,6 +810,19 @@ const AdminDashboard: React.FC = () => {
     try {
       await cmsService.updateUserRole(userId, targetRole, verified, userEmail, departmentId, barangayId);
       showSuccess("User permissions and verification status updated!");
+
+      // Trigger automatic staff verification notification!
+      const roleLabel = targetRole.replace('_', ' ').toUpperCase();
+      const actionText = verified ? "verified & approved" : "deauthorized";
+      const targetEmail = targetUser?.email || "Staff Member";
+      await notificationService.createNotification({
+        title: "Staff Clearance Status Change",
+        message: `Account '${targetEmail}' was ${actionText} as a ${roleLabel} staff member.`,
+        category: "Staff Verification",
+        department_id: departmentId || null,
+        action_url: "users"
+      });
+
       loadAllCmsData();
     } catch (err: any) {
       showError(err.message || "Permissions change error.");
@@ -908,126 +983,164 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {/* MAIN CMS LAYOUT GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                   {/* NAVIGATION SIDEBAR */}
-          <div className="space-y-2 lg:col-span-1">
-            {profile?.department_id ? (
-              <div className="bg-blue-50/50 p-5 rounded-3xl mb-4 border border-blue-100/30">
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-black uppercase tracking-widest rounded-md">Office Assigned</span>
-                <p className="text-xs font-black text-blue-900 mt-2 leading-relaxed">
-                  {departments.find(d => d.id === profile.department_id)?.name || "Department Staff"}
-                </p>
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 items-start">
+          {/* NAVIGATION SIDEBAR */}
+          <div className={`transition-all duration-300 lg:sticky lg:top-6 self-start ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} w-full space-y-4`}>
+            <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xs space-y-3">
+              <div className="flex items-center justify-between px-2 py-1">
+                {!isSidebarCollapsed && (
+                  <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">Nav Modules</span>
+                )}
+                <button
+                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  className="p-1.5 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-gray-800 transition-all flex items-center justify-center shrink-0 ml-auto"
+                  title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                  aria-label={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                >
+                  <ListCollapse size={16} className={`transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} />
+                </button>
               </div>
-            ) : profile?.barangay_id ? (
-              <div className="bg-amber-50/50 p-5 rounded-3xl mb-4 border border-amber-100/30">
-                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-widest rounded-md">Barangay Active</span>
-                <p className="text-xs font-black text-amber-900 mt-2 leading-relaxed">
-                  {BARANGAYS.find(b => b.id === profile.barangay_id)?.name || "Barangay Admin"}
-                </p>
+
+              {profile?.department_id ? (
+                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/30">
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-black uppercase tracking-widest rounded-md">Office Assigned</span>
+                  {!isSidebarCollapsed && (
+                    <p className="text-xs font-black text-blue-900 mt-2 leading-relaxed">
+                      {departments.find(d => d.id === profile.department_id)?.name || "Department Staff"}
+                    </p>
+                  )}
+                </div>
+              ) : profile?.barangay_id ? (
+                <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/30">
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-widest rounded-md">Barangay Active</span>
+                  {!isSidebarCollapsed && (
+                    <p className="text-xs font-black text-amber-900 mt-2 leading-relaxed">
+                      {BARANGAYS.find(b => b.id === profile.barangay_id)?.name || "Barangay Admin"}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              <div className="space-y-1">
+                {!isSidebarCollapsed ? (
+                  <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-2">Core Modules</p>
+                ) : (
+                  <div className="border-t border-gray-50 my-2" />
+                )}
+                <SidebarBtn id="overview" label="Dashboard Stats" icon={LayoutDashboard} active={activeTab} onClick={setActiveTab} visible={isTabVisible('overview')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="workflows" label="Citizen Workflows" icon={Workflow} active={activeTab} onClick={setActiveTab} visible={isTabVisible('workflows')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="news" label="News & Advisory" icon={Newspaper} active={activeTab} onClick={setActiveTab} visible={isTabVisible('news')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="downloadables" label="Document Library" icon={Folder} active={activeTab} onClick={setActiveTab} visible={isTabVisible('downloadables')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="tourism" label="Tourism Spots" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('tourism')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="events" label="Public Events" icon={Calendar} active={activeTab} onClick={setActiveTab} visible={isTabVisible('events')} collapsed={isSidebarCollapsed} />
               </div>
-            ) : null}
 
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mb-3">Core Modules</p>
-            <SidebarBtn id="overview" label="Dashboard Stats" icon={LayoutDashboard} active={activeTab} onClick={setActiveTab} visible={isTabVisible('overview')} />
-            <SidebarBtn id="workflows" label="Citizen Workflows" icon={Workflow} active={activeTab} onClick={setActiveTab} visible={isTabVisible('workflows')} />
-            <SidebarBtn id="news" label="News & Advisory" icon={Newspaper} active={activeTab} onClick={setActiveTab} visible={isTabVisible('news')} />
-            <SidebarBtn id="downloadables" label="Document Library" icon={Folder} active={activeTab} onClick={setActiveTab} visible={isTabVisible('downloadables')} />
-            <SidebarBtn id="tourism" label="Tourism Spots" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('tourism')} />
-            <SidebarBtn id="events" label="Public Events" icon={Calendar} active={activeTab} onClick={setActiveTab} visible={isTabVisible('events')} />
-            
-            {(isTabVisible('officials') || isTabVisible('departments') || isTabVisible('services') || isTabVisible('charter')) && (
-              <>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mt-6 mb-3">Municipality Structure</p>
-                <SidebarBtn id="officials" label="Officials Directory" icon={Users} active={activeTab} onClick={setActiveTab} visible={isTabVisible('officials')} />
-                <SidebarBtn id="departments" label="Departments" icon={Landmark} active={activeTab} onClick={setActiveTab} visible={isTabVisible('departments')} />
-                <SidebarBtn id="services" label="Municipal Services" icon={Building2} active={activeTab} onClick={setActiveTab} visible={isTabVisible('services')} />
-                <SidebarBtn id="charter" label="Citizen's Charter" icon={Gavel} active={activeTab} onClick={setActiveTab} visible={isTabVisible('charter')} />
-              </>
-            )}
+              {(isTabVisible('officials') || isTabVisible('departments') || isTabVisible('services') || isTabVisible('charter')) && (
+                <div className="space-y-1 pt-2">
+                  {!isSidebarCollapsed ? (
+                    <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-4">Structure</p>
+                  ) : (
+                    <div className="border-t border-gray-50 my-2" />
+                  )}
+                  <SidebarBtn id="officials" label="Officials Directory" icon={Users} active={activeTab} onClick={setActiveTab} visible={isTabVisible('officials')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="departments" label="Departments" icon={Landmark} active={activeTab} onClick={setActiveTab} visible={isTabVisible('departments')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="services" label="Municipal Services" icon={Building2} active={activeTab} onClick={setActiveTab} visible={isTabVisible('services')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="charter" label="Citizen's Charter" icon={Gavel} active={activeTab} onClick={setActiveTab} visible={isTabVisible('charter')} collapsed={isSidebarCollapsed} />
+                </div>
+              )}
 
-            {(isTabVisible('media') || isTabVisible('users') || isTabVisible('logs') || isTabVisible('meeting-assistant')) && (
-              <>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4 mt-6 mb-3">Utilities & Control</p>
-                <SidebarBtn id="media" label="Media Library" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('media')} />
-                <SidebarBtn id="users" label="User Permissions" icon={Key} active={activeTab} onClick={setActiveTab} visible={isTabVisible('users')} />
-                <SidebarBtn id="logs" label="Administrative Logs" icon={Activity} active={activeTab} onClick={setActiveTab} visible={isTabVisible('logs')} />
-                <SidebarBtn id="meeting-assistant" label="AI Meeting Scribe" icon={Mic} active={activeTab} onClick={setActiveTab} visible={isTabVisible('meeting-assistant')} />
-              </>
-            )}
+              {(isTabVisible('media') || isTabVisible('users') || isTabVisible('logs') || isTabVisible('meeting-assistant')) && (
+                <div className="space-y-1 pt-2">
+                  {!isSidebarCollapsed ? (
+                    <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-4">Utilities</p>
+                  ) : (
+                    <div className="border-t border-gray-50 my-2" />
+                  )}
+                  <SidebarBtn id="media" label="Media Library" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('media')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="users" label="User Permissions" icon={Key} active={activeTab} onClick={setActiveTab} visible={isTabVisible('users')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="logs" label="Administrative Logs" icon={Activity} active={activeTab} onClick={setActiveTab} visible={isTabVisible('logs')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="meeting-assistant" label="AI Meeting Scribe" icon={Mic} active={activeTab} onClick={setActiveTab} visible={isTabVisible('meeting-assistant')} collapsed={isSidebarCollapsed} />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* MAIN DATA PANELS */}
-          <div className="lg:col-span-3">
+          <div className="w-full">
             <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden min-h-[60vh] p-8 md:p-12">
               
               {/* PANEL SEARCH BOX FOR FILTERING CODES */}
               {activeTab !== 'overview' && activeTab !== 'media' && activeTab !== 'meeting-assistant' && activeTab !== 'logs' && (
-                <div className="flex flex-col md:flex-row gap-4 mb-8">
-                  <div className="relative grow">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Search managed entries..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 pl-12 pr-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs"
-                    />
-                  </div>
-                  
-                  {/* Category / Status Filter Dropdowns based on Tab */}
-                  {activeTab === 'news' && (
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs max-w-xs"
-                    >
-                      <option value="ALL">All Categories</option>
-                      <option value="ARTICLE">Article</option>
-                      <option value="ADVISORY">Advisory</option>
-                      <option value="UPDATE">Update</option>
-                      <option value="COMMUNITY">Community</option>
-                      <option value="NOTICE">Notice</option>
-                    </select>
-                  )}
-                  {activeTab === 'downloadables' && (
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs max-w-xs"
-                    >
-                      <option value="ALL">All Document Types</option>
-                      <option value="forms">Official Form</option>
-                      <option value="ordinances">Ordinance / Legislation</option>
-                      <option value="disclosure">Disclosure File</option>
-                      <option value="reports">Report / Budget</option>
-                    </select>
-                  )}
-                  {activeTab === 'officials' && (
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs max-w-xs"
-                    >
-                      <option value="ALL">All Levels</option>
-                      <option value="1">Level 1 (Mayor)</option>
-                      <option value="2">Level 2 (Vice Mayor)</option>
-                      <option value="3">Level 3 (Council)</option>
-                      <option value="4">Level 4 (Barangay)</option>
-                    </select>
-                  )}
-                  {activeTab === 'services' && (
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs max-w-xs"
-                    >
-                      <option value="ALL">All Statuses</option>
-                      <option value="available">Available</option>
-                      <option value="coming-soon">Coming Soon</option>
-                      <option value="maintenance">Under Maintenance</option>
-                    </select>
-                  )}
-                </div>
+                <SearchFilterToolbar
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  placeholder={
+                    activeTab === 'news' ? "Search news and advisories..." :
+                    activeTab === 'downloadables' ? "Search files and documents..." :
+                    activeTab === 'tourism' ? "Search eco-tourism spots..." :
+                    activeTab === 'officials' ? "Search officials directory..." :
+                    activeTab === 'services' ? "Search municipal services..." :
+                    activeTab === 'charter' ? "Search citizen's charter..." :
+                    activeTab === 'workflows' ? "Search citizen requests..." :
+                    "Search managed entries..."
+                  }
+                  filterValue={
+                    ['news', 'downloadables', 'officials', 'services'].includes(activeTab)
+                      ? categoryFilter
+                      : undefined
+                  }
+                  onFilterChange={
+                    ['news', 'downloadables', 'officials', 'services'].includes(activeTab)
+                      ? setCategoryFilter
+                      : undefined
+                  }
+                  filterOptions={
+                    activeTab === 'news'
+                      ? [
+                          { value: 'ALL', label: 'All Categories' },
+                          { value: 'ARTICLE', label: 'Article' },
+                          { value: 'ADVISORY', label: 'Advisory' },
+                          { value: 'UPDATE', label: 'Update' },
+                          { value: 'COMMUNITY', label: 'Community' },
+                          { value: 'NOTICE', label: 'Notice' }
+                        ]
+                      : activeTab === 'downloadables'
+                      ? [
+                          { value: 'ALL', label: 'All Document Types' },
+                          { value: 'forms', label: 'Official Form' },
+                          { value: 'ordinances', label: 'Ordinance / Legislation' },
+                          { value: 'disclosure', label: 'Disclosure File' },
+                          { value: 'reports', label: 'Report / Budget' }
+                        ]
+                      : activeTab === 'officials'
+                      ? [
+                          { value: 'ALL', label: 'All Levels' },
+                          { value: '1', label: 'Level 1 (Mayor)' },
+                          { value: '2', label: 'Level 2 (Vice Mayor)' },
+                          { value: '3', label: 'Level 3 (Council)' },
+                          { value: '4', label: 'Level 4 (Barangay)' }
+                        ]
+                      : activeTab === 'services'
+                      ? [
+                          { value: 'ALL', label: 'All Statuses' },
+                          { value: 'available', label: 'Available' },
+                          { value: 'coming-soon', label: 'Coming Soon' },
+                          { value: 'maintenance', label: 'Under Maintenance' }
+                        ]
+                      : undefined
+                  }
+                  actions={
+                    canWriteTab(activeTab) && ['news', 'downloadables', 'tourism', 'officials', 'departments', 'services', 'charter', 'events'].includes(activeTab) ? (
+                      <button
+                        onClick={() => { resetAllForms(); setEditingId(null); setIsModalOpen(true); }}
+                        className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-500/10 flex items-center gap-1.5 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
+                      >
+                        <Plus size={12} />
+                        Add New
+                      </button>
+                    ) : undefined
+                  }
+                />
               )}
 
               {/* OVERVIEW PANEL */}
@@ -1036,193 +1149,391 @@ const AdminDashboard: React.FC = () => {
                   <div>
                     <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">CMS Status Overview</h2>
                     <p className="text-gray-400 font-bold text-xs">Real-time counts of municipal web elements managed by this account.</p>
-                  </div>                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <StatBox count={stats.totalNews} label="News Posts" icon={Newspaper} color="bg-blue-50 text-blue-600" />
-                    <StatBox count={stats.totalDownloadables} label="Files & Forms" icon={Folder} color="bg-indigo-50 text-indigo-600" />
-                    <StatBox count={stats.totalTourism} label="Tourism Spots" icon={Image} color="bg-emerald-50 text-emerald-600" />
-                    <StatBox count={stats.totalOfficials} label="Org Officials" icon={Users} color="bg-amber-50 text-amber-600" />
-                    <StatBox count={stats.totalDepartments} label="Offices" icon={Landmark} color="bg-purple-50 text-purple-600" />
-                    <StatBox count={stats.totalServices} label="Citizen Services" icon={Building2} color="bg-teal-50 text-teal-600" />
                   </div>
 
-                  {/* DEPARTMENT SPECIFIC WIDGETS */}
-                  {profile?.department_id && (() => {
-                    const deptId = profile.department_id;
-                    const deptName = departments.find(d => d.id === deptId)?.name || "Your Department";
-                    
-                    if (deptId === "dept-1") { // BPLO
-                      return (
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50/30 p-8 rounded-[2rem] border border-blue-100/40 space-y-6">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Operational Dashboard</span>
-                              <h3 className="text-base font-black text-blue-900 uppercase tracking-tight mt-2">{deptName}</h3>
-                              <p className="text-gray-500 font-bold text-xs mt-1">Real-time status of business clearings & municipal compliance reviews.</p>
-                            </div>
-                            <Workflow className="text-blue-500" size={24} />
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Pending Clearances</p>
-                              <p className="text-2xl font-black text-blue-950 mt-1">14</p>
-                              <span className="text-[10px] text-emerald-600 font-bold">● 4 urgent priority</span>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Active Taxpayers Registered</p>
-                              <p className="text-2xl font-black text-blue-950 mt-1">1,480</p>
-                              <span className="text-[10px] text-gray-400 font-bold">12 new this quarter</span>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Avg Resolution Speed</p>
-                              <p className="text-2xl font-black text-blue-950 mt-1">12.4m</p>
-                              <span className="text-[10px] text-blue-600 font-bold">Within SLA target</span>
-                            </div>
-                          </div>
-
-                          <div className="bg-white/80 p-5 rounded-2xl border border-blue-100/10">
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-3">Licensing Fast-Track Tasks</p>
-                            <div className="space-y-3 text-xs">
-                              <div className="flex justify-between items-center bg-blue-50/30 p-3 rounded-xl border border-blue-100/10">
-                                <span className="font-bold text-blue-950">Review Unified Form: Bohol Divers Co.</span>
-                                <span className="px-2 py-0.5 bg-amber-100 text-amber-700 font-black text-[8px] uppercase tracking-wider rounded">Zoning Check</span>
-                              </div>
-                              <div className="flex justify-between items-center bg-blue-50/30 p-3 rounded-xl border border-blue-100/10">
-                                <span className="font-bold text-blue-950">Approve Clearance: Calituban Marine Supply</span>
-                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-black text-[8px] uppercase tracking-wider rounded">Ready</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (deptId === "dept-2") { // MTO
-                      return (
-                        <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50/30 p-8 rounded-[2rem] border border-purple-100/40 space-y-6">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className="px-2.5 py-1 bg-purple-100 text-purple-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Financial Portal</span>
-                              <h3 className="text-base font-black text-purple-900 uppercase tracking-tight mt-2">{deptName}</h3>
-                              <p className="text-gray-500 font-bold text-xs mt-1">Current collections ledger, community tax logs, and general accounting.</p>
-                            </div>
-                            <Landmark className="text-purple-500" size={24} />
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">CTC Forms Issued Today</p>
-                              <p className="text-2xl font-black text-purple-950 mt-1">142</p>
-                              <span className="text-[10px] text-purple-600 font-bold">Total revenue: ₱3,550</span>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Treasury Daily Collections</p>
-                              <p className="text-2xl font-black text-purple-950 mt-1">₱184,250</p>
-                              <span className="text-[10px] text-emerald-600 font-bold">▲ 8% vs yesterday</span>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Tax Assessment Queue</p>
-                              <p className="text-2xl font-black text-purple-950 mt-1">18</p>
-                              <span className="text-[10px] text-amber-600 font-bold">Avg wait: 4.8 mins</span>
-                            </div>
-                          </div>
-
-                          <div className="bg-white/80 p-5 rounded-2xl border border-purple-100/10">
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-3">Treasury Ledger Audits</p>
-                            <div className="space-y-3 text-xs">
-                              <div className="flex justify-between items-center bg-purple-50/30 p-3 rounded-xl border border-purple-100/10">
-                                <span className="font-bold text-purple-950">Verify Community Tax Receipt Batch 04A</span>
-                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 font-black text-[8px] uppercase tracking-wider rounded">Auditing</span>
-                              </div>
-                              <div className="flex justify-between items-center bg-purple-50/30 p-3 rounded-xl border border-purple-100/10">
-                                <span className="font-bold text-purple-950">Reconcile BPLO Clearance Permits</span>
-                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 font-black text-[8px] uppercase tracking-wider rounded">Pending</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    // Fallback for general departments
-                    return (
-                      <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4">
-                        <p className="text-xs font-black text-gray-900 uppercase tracking-wider">{deptName} Dashboard</p>
-                        <p className="text-xs text-gray-500 font-bold">Departmental workflow queues are active. View the Citizen Workflows tab to process received requests.</p>
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+                    {/* LEFT COLUMN: MAIN STATS & OPERATIONS */}
+                    <div className="xl:col-span-2 space-y-8">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <StatBox count={stats.totalNews} label="News Posts" icon={Newspaper} color="bg-blue-50 text-blue-600" />
+                        <StatBox count={stats.totalDownloadables} label="Files & Forms" icon={Folder} color="bg-indigo-50 text-indigo-600" />
+                        <StatBox count={stats.totalTourism} label="Tourism Spots" icon={Image} color="bg-emerald-50 text-emerald-600" />
+                        <StatBox count={stats.totalOfficials} label="Org Officials" icon={Users} color="bg-amber-50 text-amber-600" />
+                        <StatBox count={stats.totalDepartments} label="Offices" icon={Landmark} color="bg-purple-50 text-purple-600" />
+                        <StatBox count={stats.totalServices} label="Citizen Services" icon={Building2} color="bg-teal-50 text-teal-600" />
                       </div>
-                    );
-                  })()}
 
-                  {/* BARANGAY SPECIFIC WIDGETS */}
-                  {profile?.barangay_id && (() => {
-                    const brgyName = BARANGAYS.find(b => b.id === profile.barangay_id)?.name || "Assigned Barangay";
-                    return (
-                      <div className="bg-gradient-to-br from-amber-50 to-orange-50/30 p-8 rounded-[2rem] border border-amber-100/40 space-y-6">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Barangay Administration</span>
-                            <h3 className="text-base font-black text-amber-900 uppercase tracking-tight mt-2">{brgyName}</h3>
-                            <p className="text-gray-500 font-bold text-xs mt-1">Localized communication bulletins, residency declarations, and resident support requests.</p>
-                          </div>
-                          <Globe className="text-amber-500" size={24} />
-                        </div>
+                      {/* DEPARTMENT SPECIFIC WIDGETS */}
+                      {profile?.department_id && (() => {
+                        const deptId = profile.department_id;
+                        const deptName = departments.find(d => d.id === deptId)?.name || "Your Department";
+                        
+                        if (deptId === "dept-1") { // BPLO
+                          return (
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50/30 p-8 rounded-[2rem] border border-blue-100/40 space-y-6">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Operational Dashboard</span>
+                                  <h3 className="text-base font-black text-blue-900 uppercase tracking-tight mt-2">{deptName}</h3>
+                                  <p className="text-gray-500 font-bold text-xs mt-1">Real-time status of business clearings & municipal compliance reviews.</p>
+                                </div>
+                                <Workflow className="text-blue-500" size={24} />
+                              </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Active News Advisories</p>
-                            <p className="text-2xl font-black text-amber-950 mt-1">
-                              {news.filter(n => n.barangay_id === profile.barangay_id).length}
-                            </p>
-                            <span className="text-[10px] text-gray-400 font-bold">Posted to localized feed</span>
-                          </div>
-                          <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Residency Applications</p>
-                            <p className="text-2xl font-black text-amber-950 mt-1">5</p>
-                            <span className="text-[10px] text-amber-600 font-bold">● 2 pending signature</span>
-                          </div>
-                          <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Assigned Officials</p>
-                            <p className="text-2xl font-black text-amber-950 mt-1">8</p>
-                            <span className="text-[10px] text-emerald-600 font-bold">Active directory live</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Pending Clearances</p>
+                                  <p className="text-2xl font-black text-blue-950 mt-1">14</p>
+                                  <span className="text-[10px] text-emerald-600 font-bold">● 4 urgent priority</span>
+                                </div>
+                                <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Active Taxpayers Registered</p>
+                                  <p className="text-2xl font-black text-blue-950 mt-1">1,480</p>
+                                  <span className="text-[10px] text-gray-400 font-bold">12 new this quarter</span>
+                                </div>
+                                <div className="bg-white p-5 rounded-2xl border border-blue-100/20 shadow-xs">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Avg Resolution Speed</p>
+                                  <p className="text-2xl font-black text-blue-950 mt-1">12.4m</p>
+                                  <span className="text-[10px] text-blue-600 font-bold">Within SLA target</span>
+                                </div>
+                              </div>
 
-                  <div className="p-8 bg-gray-50 rounded-3xl border border-gray-100 flex flex-col md:flex-row items-center gap-6 justify-between">
-                    <div>
-                      <h4 className="font-black text-gray-900 uppercase tracking-wider text-xs mb-1">Database Connectivity</h4>
-                      <p className="text-gray-400 text-xs font-bold leading-relaxed">
-                        {isSupabaseConfigured
-                          ? "Connected to Live Supabase Backend database. Content changes will propagate immediately to the citizen-facing portal."
-                          : "Supabase credentials not configured in environmental variables. Falling back to secure Browser Storage mode with identical schemas."
+                              <div className="bg-white/80 p-5 rounded-2xl border border-blue-100/10">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-3">Licensing Fast-Track Tasks</p>
+                                <div className="space-y-3 text-xs">
+                                  <div className="flex justify-between items-center bg-blue-50/30 p-3 rounded-xl border border-blue-100/10">
+                                    <span className="font-bold text-blue-950">Review Unified Form: Bohol Divers Co.</span>
+                                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 font-black text-[8px] uppercase tracking-wider rounded">Zoning Check</span>
+                                  </div>
+                                  <div className="flex justify-between items-center bg-blue-50/30 p-3 rounded-xl border border-blue-100/10">
+                                    <span className="font-bold text-blue-950">Approve Clearance: Calituban Marine Supply</span>
+                                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-black text-[8px] uppercase tracking-wider rounded">Ready</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
                         }
-                      </p>
-                    </div>
-                    <span className={`px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest ${isSupabaseConfigured ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                      {isSupabaseConfigured ? "LIVE DB CONNECTED" : "OFFLINE FALLBACK"}
-                    </span>
-                  </div>
 
-                  {/* RECENT ACTIVITY FEED */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Recent Administrative Activities</h3>
-                    <div className="divide-y divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-white">
-                      {auditLogs.slice(0, 5).map((log) => (
-                        <div key={log.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
-                          <div>
-                            <p className="text-xs font-black text-gray-900">
-                              {log.user_email} <span className="text-blue-600 font-bold">[{log.action}]</span> {log.target_table} ({log.target_id})
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{new Date(log.timestamp).toLocaleString()}</p>
+                        if (deptId === "dept-2") { // MTO
+                          return (
+                            <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50/30 p-8 rounded-[2rem] border border-purple-100/40 space-y-6">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <span className="px-2.5 py-1 bg-purple-100 text-purple-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Financial Portal</span>
+                                  <h3 className="text-base font-black text-purple-900 uppercase tracking-tight mt-2">{deptName}</h3>
+                                  <p className="text-gray-500 font-bold text-xs mt-1">Current collections ledger, community tax logs, and general accounting.</p>
+                                </div>
+                                <Landmark className="text-purple-500" size={24} />
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">CTC Forms Issued Today</p>
+                                  <p className="text-2xl font-black text-purple-950 mt-1">142</p>
+                                  <span className="text-[10px] text-purple-600 font-bold">Total revenue: ₱3,550</span>
+                                </div>
+                                <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Treasury Daily Collections</p>
+                                  <p className="text-2xl font-black text-purple-950 mt-1">₱184,250</p>
+                                  <span className="text-[10px] text-emerald-600 font-bold">▲ 8% vs yesterday</span>
+                                </div>
+                                <div className="bg-white p-5 rounded-2xl border border-purple-100/20 shadow-xs">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Tax Assessment Queue</p>
+                                  <p className="text-2xl font-black text-purple-950 mt-1">18</p>
+                                  <span className="text-[10px] text-amber-600 font-bold">Avg wait: 4.8 mins</span>
+                                </div>
+                              </div>
+
+                              <div className="bg-white/80 p-5 rounded-2xl border border-purple-100/10">
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-3">Treasury Ledger Audits</p>
+                                <div className="space-y-3 text-xs">
+                                  <div className="flex justify-between items-center bg-purple-50/30 p-3 rounded-xl border border-purple-100/10">
+                                    <span className="font-bold text-purple-950">Verify Community Tax Receipt Batch 04A</span>
+                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 font-black text-[8px] uppercase tracking-wider rounded">Auditing</span>
+                                  </div>
+                                  <div className="flex justify-between items-center bg-purple-50/30 p-3 rounded-xl border border-purple-100/10">
+                                    <span className="font-bold text-purple-950">Reconcile BPLO Clearance Permits</span>
+                                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 font-black text-[8px] uppercase tracking-wider rounded">Pending</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // Fallback for general departments
+                        return (
+                          <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4">
+                            <p className="text-xs font-black text-gray-900 uppercase tracking-wider">{deptName} Dashboard</p>
+                            <p className="text-xs text-gray-500 font-bold">Departmental workflow queues are active. View the Citizen Workflows tab to process received requests.</p>
                           </div>
-                          <Activity size={16} className="text-gray-300" />
+                        );
+                      })()}
+
+                      {/* BARANGAY SPECIFIC WIDGETS */}
+                      {profile?.barangay_id && (() => {
+                        const brgyName = BARANGAYS.find(b => b.id === profile.barangay_id)?.name || "Assigned Barangay";
+                        return (
+                          <div className="bg-gradient-to-br from-amber-50 to-orange-50/30 p-8 rounded-[2rem] border border-amber-100/40 space-y-6">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest rounded-lg">Barangay Administration</span>
+                                <h3 className="text-base font-black text-amber-900 uppercase tracking-tight mt-2">{brgyName}</h3>
+                                <p className="text-gray-500 font-bold text-xs mt-1">Localized communication bulletins, residency declarations, and resident support requests.</p>
+                              </div>
+                              <Globe className="text-amber-500" size={24} />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Active News Advisories</p>
+                                <p className="text-2xl font-black text-amber-950 mt-1">
+                                  {news.filter(n => n.barangay_id === profile.barangay_id).length}
+                                </p>
+                                <span className="text-[10px] text-gray-400 font-bold">Posted to localized feed</span>
+                              </div>
+                              <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Residency Applications</p>
+                                <p className="text-2xl font-black text-amber-950 mt-1">5</p>
+                                <span className="text-[10px] text-amber-600 font-bold">● 2 pending signature</span>
+                              </div>
+                              <div className="bg-white p-5 rounded-2xl border border-amber-100/20 shadow-xs">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Assigned Officials</p>
+                                <p className="text-2xl font-black text-amber-950 mt-1">8</p>
+                                <span className="text-[10px] text-emerald-600 font-bold">Active directory live</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      <div className="p-8 bg-gray-50/50 rounded-3xl border border-gray-100 flex flex-col md:flex-row items-center gap-6 justify-between">
+                        <div>
+                          <h4 className="font-black text-gray-900 uppercase tracking-wider text-xs mb-1">Database Connectivity</h4>
+                          <p className="text-gray-400 text-xs font-bold leading-relaxed">
+                            {isSupabaseConfigured
+                              ? "Connected to Live Supabase Backend database. Content changes will propagate immediately to the citizen-facing portal."
+                              : "Supabase credentials not configured in environmental variables. Falling back to secure Browser Storage mode with identical schemas."
+                            }
+                          </p>
                         </div>
-                      ))}
-                      {auditLogs.length === 0 && (
-                        <p className="p-6 text-center text-gray-400 font-bold text-xs">No admin logs recorded yet.</p>
-                      )}
+                        <span className={`px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shrink-0 ${isSupabaseConfigured ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                          {isSupabaseConfigured ? "LIVE DB CONNECTED" : "OFFLINE FALLBACK"}
+                        </span>
+                      </div>
+
+                      {/* RECENT ACTIVITY FEED */}
+                      <div className="space-y-4">
+                        <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">Recent Administrative Activities</h3>
+                        <div className="divide-y divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-white">
+                          {auditLogs.slice(0, 5).map((log) => (
+                            <div key={log.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                              <div>
+                                <p className="text-xs font-black text-gray-900">
+                                  {log.user_email} <span className="text-blue-600 font-bold">[{log.action}]</span> {log.target_table} ({log.target_id})
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{new Date(log.timestamp).toLocaleString()}</p>
+                              </div>
+                              <Activity size={16} className="text-gray-300" />
+                            </div>
+                          ))}
+                          {auditLogs.length === 0 && (
+                            <p className="p-6 text-center text-gray-400 font-bold text-xs">No admin logs recorded yet.</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: QUICK ACTIONS & PENDING SYSTEM TASKS */}
+                    <div className="space-y-6">
+                      {/* QUICK ACTIONS CARD */}
+                      <div className="bg-white border border-gray-100 rounded-[2.5rem] p-6 shadow-xs space-y-4">
+                        <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">Quick Actions</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            onClick={() => { setActiveTab('news'); resetAllForms(); setIsModalOpen(true); }}
+                            className="p-4 bg-gray-50 hover:bg-blue-50 hover:text-blue-700 rounded-2xl text-left border border-transparent hover:border-blue-100 transition-all space-y-2 group cursor-pointer animate-none"
+                          >
+                            <Newspaper size={18} className="text-gray-400 group-hover:text-blue-600 transition-colors" />
+                            <p className="text-[10px] font-black uppercase tracking-wider">Post Advisory</p>
+                          </button>
+                          <button
+                            onClick={() => { setActiveTab('downloadables'); resetAllForms(); setIsModalOpen(true); }}
+                            className="p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-700 rounded-2xl text-left border border-transparent hover:border-indigo-100 transition-all space-y-2 group cursor-pointer"
+                          >
+                            <Folder size={18} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
+                            <p className="text-[10px] font-black uppercase tracking-wider">Upload File</p>
+                          </button>
+                          <button
+                            onClick={() => { setActiveTab('workflows'); }}
+                            className="p-4 bg-gray-50 hover:bg-emerald-50 hover:text-emerald-700 rounded-2xl text-left border border-transparent hover:border-emerald-100 transition-all space-y-2 group cursor-pointer"
+                          >
+                            <Workflow size={18} className="text-gray-400 group-hover:text-emerald-600 transition-colors" />
+                            <p className="text-[10px] font-black uppercase tracking-wider">Manage Tasks</p>
+                          </button>
+                          <button
+                            onClick={() => { setActiveTab('meeting-assistant'); }}
+                            className="p-4 bg-gray-50 hover:bg-amber-50 hover:text-amber-700 rounded-2xl text-left border border-transparent hover:border-amber-100 transition-all space-y-2 group cursor-pointer"
+                          >
+                            <Mic size={18} className="text-gray-400 group-hover:text-amber-600 transition-colors" />
+                            <p className="text-[10px] font-black uppercase tracking-wider">AI Scribe</p>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* LATEST NOTIFICATIONS WIDGET */}
+                      <div className="bg-white border border-gray-100 rounded-[2.5rem] p-6 shadow-xs space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">Latest Notifications</h3>
+                          <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-black uppercase tracking-widest rounded-md">Inbox Feed</span>
+                        </div>
+                        <div className="space-y-3">
+                          {notifications.slice(0, 3).map((notif) => {
+                            let catColor = "bg-gray-100 text-gray-600";
+                            if (notif.category === "Citizen Applications") catColor = "bg-blue-50 text-blue-600";
+                            else if (notif.category === "Workflow Updates") catColor = "bg-emerald-50 text-emerald-600";
+                            else if (notif.category === "Staff Verification") catColor = "bg-amber-50 text-amber-600";
+                            else if (notif.category === "News Approval") catColor = "bg-rose-50 text-rose-600";
+
+                            return (
+                              <div 
+                                key={notif.id} 
+                                className={`p-4 rounded-2xl border transition-all flex items-start gap-3 justify-between ${notif.is_read ? 'bg-white border-gray-100' : 'bg-blue-50/10 border-blue-100/30'}`}
+                              >
+                                <div className="space-y-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className={`text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${catColor}`}>
+                                      {notif.category}
+                                    </span>
+                                    {!notif.is_read && (
+                                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] font-black text-gray-950 truncate">{notif.title}</p>
+                                  <p className="text-[10px] text-gray-500 font-medium leading-relaxed line-clamp-2">{notif.message}</p>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {!notif.is_read && (
+                                    <button 
+                                      onClick={async (e) => { e.stopPropagation(); await notificationService.markAsRead(notif.id); loadNotifications(); }}
+                                      className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                      title="Mark as read"
+                                    >
+                                      <CheckCircle size={12} />
+                                    </button>
+                                  )}
+                                  <button 
+                                    onClick={() => {
+                                      notificationService.markAsRead(notif.id);
+                                      if (notif.action_url) setActiveTab(notif.action_url as any);
+                                    }}
+                                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="View"
+                                  >
+                                    <Eye size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {notifications.length === 0 && (
+                            <p className="p-4 text-center text-gray-400 font-bold text-[10px] uppercase tracking-wider">Your inbox is clear</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* PENDING ACTIONS CHECKLIST WIDGET */}
+                      {(() => {
+                        const pendingStaff = (usersList || []).filter(u => !u.is_verified).length;
+                        const pendingWorkflows = citizenRequests.filter(req => req.status === 'PENDING').length;
+                        const draftNews = news.filter(n => n.status === 'draft').length;
+                        const totalPending = (isSuperAdminOrAdmin ? pendingStaff : 0) + pendingWorkflows + draftNews;
+
+                        return (
+                          <div className="bg-white border border-gray-100 rounded-[2.5rem] p-6 shadow-xs space-y-4">
+                            <div className="flex justify-between items-center">
+                              <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">Pending Actions</h3>
+                              <span className={`px-2.5 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-md ${totalPending > 0 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                                {totalPending > 0 ? "Action Required" : "All Caught Up"}
+                              </span>
+                            </div>
+                            <div className="space-y-3">
+                              {pendingWorkflows > 0 && (
+                                <div className="p-4 bg-amber-50/50 border border-amber-100/50 rounded-2xl flex items-start gap-3 justify-between">
+                                  <div className="flex gap-3">
+                                    <Clock size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                                    <div>
+                                      <p className="text-[10px] font-black text-amber-900 uppercase tracking-wider">Citizen Workflow Requests</p>
+                                      <p className="text-[10px] text-amber-700 font-medium mt-1 leading-relaxed">
+                                        {pendingWorkflows} incoming permit assessments need priority triage.
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <button 
+                                    onClick={() => setActiveTab('workflows')}
+                                    className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all"
+                                  >
+                                    Resolve
+                                  </button>
+                                </div>
+                              )}
+
+                              {isSuperAdminOrAdmin && pendingStaff > 0 && (
+                                <div className="p-4 bg-red-50/50 border border-red-100/50 rounded-2xl flex items-start gap-3 justify-between">
+                                  <div className="flex gap-3">
+                                    <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                                    <div>
+                                      <p className="text-[10px] font-black text-red-900 uppercase tracking-wider">Review Staff Signups</p>
+                                      <p className="text-[10px] text-red-700 font-medium mt-1 leading-relaxed">
+                                        {pendingStaff} registration requests are pending verification.
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <button 
+                                    onClick={() => setActiveTab('users')}
+                                    className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all"
+                                  >
+                                    Verify
+                                  </button>
+                                </div>
+                              )}
+
+                              {draftNews > 0 && (
+                                <div className="p-4 bg-blue-50/50 border border-blue-100/50 rounded-2xl flex items-start gap-3 justify-between">
+                                  <div className="flex gap-3">
+                                    <Newspaper size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                                    <div>
+                                      <p className="text-[10px] font-black text-blue-900 uppercase tracking-wider">News Approval Queue</p>
+                                      <p className="text-[10px] text-blue-700 font-medium mt-1 leading-relaxed">
+                                        {draftNews} unpublished news drafts require review.
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <button 
+                                    onClick={() => setActiveTab('news')}
+                                    className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all"
+                                  >
+                                    Review
+                                  </button>
+                                </div>
+                              )}
+
+                              {totalPending === 0 && (
+                                <div className="p-4 bg-green-50/50 border border-green-100/50 rounded-2xl flex items-start gap-3">
+                                  <ShieldCheck size={16} className="text-green-500 shrink-0 mt-0.5" />
+                                  <div>
+                                    <p className="text-[10px] font-black text-green-900 uppercase tracking-wider">No Pending Actions</p>
+                                    <p className="text-[10px] text-green-700 font-medium mt-1 leading-relaxed">
+                                      All operations, staff reviews, and citizen applications are fully processed.
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1244,40 +1555,46 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredNews.length} of {news.length} Items</span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Article / Title</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Publish Date</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Article / Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Category</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Publish Date</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedNews.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                              <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{item.title}</td>
-                              <td className="px-6 py-4">
-                                <span className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest">{item.category}</span>
-                              </td>
-                              <td className="px-6 py-4 text-gray-400 font-bold">{item.date}</td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => { setViewingItem(item); setViewingTab('news'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
-                                  {canWriteTab('news', item) ? (
-                                    <>
-                                      <button onClick={() => openEditEntity('news', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
-                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'news', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
-                                    </>
-                                  ) : (
-                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredNews.length === 0 && <NoDataRow colSpan={4} />}
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={4} />
+                          ) : (
+                            <>
+                              {paginatedNews.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{item.title}</td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge status={item.category} />
+                                  </td>
+                                  <td className="px-6 py-4 text-gray-400 font-bold">{item.date}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <button onClick={() => { setViewingItem(item); setViewingTab('news'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
+                                      {canWriteTab('news', item) ? (
+                                        <>
+                                          <button onClick={() => openEditEntity('news', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
+                                          <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'news', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
+                                        </>
+                                      ) : (
+                                        <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredNews.length === 0 && <NoDataRow colSpan={4} />}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -1308,40 +1625,46 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredDownloadables.length} of {downloadables.length} Assets</span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Title</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">File Size</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Category</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">File Size</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedDownloadables.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                              <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{item.title}</td>
-                              <td className="px-6 py-4">
-                                <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest">{item.category}</span>
-                              </td>
-                              <td className="px-6 py-4 text-gray-400 font-bold">{item.file_size}</td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => { setViewingItem(item); setViewingTab('downloadables'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
-                                  {canWriteTab('downloadables', item) ? (
-                                    <>
-                                      <button onClick={() => openEditEntity('downloadables', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
-                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'downloadables', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
-                                    </>
-                                  ) : (
-                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredDownloadables.length === 0 && <NoDataRow colSpan={4} />}
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={4} />
+                          ) : (
+                            <>
+                              {paginatedDownloadables.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{item.title}</td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge status={item.category} />
+                                  </td>
+                                  <td className="px-6 py-4 text-gray-400 font-bold">{item.file_size}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <button onClick={() => { setViewingItem(item); setViewingTab('downloadables'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
+                                      {canWriteTab('downloadables', item) ? (
+                                        <>
+                                          <button onClick={() => openEditEntity('downloadables', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
+                                          <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'downloadables', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
+                                        </>
+                                      ) : (
+                                        <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredDownloadables.length === 0 && <NoDataRow colSpan={4} />}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -1372,38 +1695,60 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {paginatedTourism.map((item) => (
-                        <div key={item.id} className="border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm flex flex-col hover:shadow-md transition-all">
-                          {item.featured_image && (
-                            <div className="h-44 w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.featured_image})` }} />
-                          )}
-                          <div className="p-6 flex-grow space-y-3">
-                            <h4 className="font-black text-gray-900 uppercase tracking-tight text-sm">{item.name}</h4>
-                            <p className="text-gray-400 text-xs line-clamp-3 leading-relaxed">{item.description}</p>
-                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5 pt-2">
-                              <Clock size={12} /> Hours: {item.opening_hours}
+                      {isTableLoading ? (
+                        [...Array(2)].map((_, i) => (
+                          <div key={i} className="border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm flex flex-col animate-pulse">
+                            <div className="h-44 w-full bg-gray-150" />
+                            <div className="p-6 space-y-4 flex-grow bg-white">
+                              <div className="h-4 bg-gray-200 rounded w-2/3" />
+                              <div className="space-y-2">
+                                <div className="h-3 bg-gray-100 rounded w-full" />
+                                <div className="h-3 bg-gray-100 rounded w-5/6" />
+                              </div>
+                              <div className="h-3 bg-gray-100 rounded w-1/3 pt-2" />
+                            </div>
+                            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                              <div className="h-8 bg-gray-200 rounded w-16" />
+                              <div className="h-8 bg-gray-200 rounded w-16" />
                             </div>
                           </div>
-                          <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-                            <button onClick={() => { setViewingItem(item); setViewingTab('tourism'); }} className="px-4 py-2 text-xs font-black bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all flex items-center gap-1" title="View details">
-                              <Eye size={12} /> View
-                            </button>
-                            {canWriteTab('tourism', item) ? (
-                              <>
-                                <button onClick={() => openEditEntity('tourism', item)} className="px-4 py-2 text-xs font-black bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-all flex items-center gap-1">
-                                  <Edit3 size={12} /> Edit
+                        ))
+                      ) : (
+                        <>
+                          {paginatedTourism.map((item) => (
+                            <div key={item.id} className="border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm flex flex-col hover:shadow-md transition-all bg-white">
+                              {item.featured_image && (
+                                <div className="h-44 w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.featured_image})` }} />
+                              )}
+                              <div className="p-6 flex-grow space-y-3">
+                                <h4 className="font-black text-gray-900 uppercase tracking-tight text-sm">{item.name}</h4>
+                                <p className="text-gray-400 text-xs line-clamp-3 leading-relaxed">{item.description}</p>
+                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5 pt-2">
+                                  <Clock size={12} /> Hours: {item.opening_hours}
+                                </div>
+                              </div>
+                              <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                                <button onClick={() => { setViewingItem(item); setViewingTab('tourism'); }} className="px-4 py-2 text-xs font-black bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all flex items-center gap-1 cursor-pointer" title="View details">
+                                  <Eye size={12} /> View
                                 </button>
-                                <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'tourism', name: item.name })} className="px-4 py-2 text-xs font-black bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition-all flex items-center gap-1">
-                                  <Trash2 size={12} /> Delete
-                                </button>
-                              </>
-                            ) : (
-                              <span className="px-4 py-2 text-gray-400 flex items-center gap-1.5 font-bold uppercase text-[10px] tracking-widest"><Lock size={12} /> Read Only</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      {filteredTourism.length === 0 && <p className="col-span-2 text-center py-12 text-gray-400 font-bold text-xs">No registered tourist spots found.</p>}
+                                {canWriteTab('tourism', item) ? (
+                                  <>
+                                    <button onClick={() => openEditEntity('tourism', item)} className="px-4 py-2 text-xs font-black bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-all flex items-center gap-1 cursor-pointer">
+                                      <Edit3 size={12} /> Edit
+                                    </button>
+                                    <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'tourism', name: item.name })} className="px-4 py-2 text-xs font-black bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition-all flex items-center gap-1 cursor-pointer">
+                                      <Trash2 size={12} /> Delete
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="px-4 py-2 text-gray-400 flex items-center gap-1.5 font-bold uppercase text-[10px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {filteredTourism.length === 0 && <p className="col-span-2 text-center py-12 text-gray-400 font-bold text-xs">No registered tourist spots found.</p>}
+                        </>
+                      )}
                     </div>
 
                     <Pagination
@@ -1430,41 +1775,47 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredEvents.length} of {events.length} Events</span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Event Title</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date & Time</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Venue</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Event Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Date & Time</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Venue</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedEvents.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                              <td className="px-6 py-4 font-black text-gray-900">{item.title}</td>
-                              <td className="px-6 py-4 text-gray-500">
-                                <span className="font-bold block text-gray-900">{item.date}</span>
-                                <span className="text-[10px]">{item.time}</span>
-                              </td>
-                              <td className="px-6 py-4 text-gray-400 font-bold">{item.venue}</td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => { setViewingItem(item); setViewingTab('events'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
-                                  {canWriteTab('events', item) ? (
-                                    <>
-                                      <button onClick={() => openEditEntity('events', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
-                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'events', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
-                                    </>
-                                  ) : (
-                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredEvents.length === 0 && <NoDataRow colSpan={4} />}
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={4} />
+                          ) : (
+                            <>
+                              {paginatedEvents.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900">{item.title}</td>
+                                  <td className="px-6 py-4 text-gray-500">
+                                    <span className="font-bold block text-gray-900">{item.date}</span>
+                                    <span className="text-[10px]">{item.time}</span>
+                                  </td>
+                                  <td className="px-6 py-4 text-gray-400 font-bold">{item.venue}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <button onClick={() => { setViewingItem(item); setViewingTab('events'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
+                                      {canWriteTab('events', item) ? (
+                                        <>
+                                          <button onClick={() => openEditEntity('events', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
+                                          <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'events', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
+                                        </>
+                                      ) : (
+                                        <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredEvents.length === 0 && <NoDataRow colSpan={4} />}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -1495,38 +1846,44 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredOfficials.length} of {officials.length} Officials</span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Name</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Position / Title</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Department</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Name</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Position / Title</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Department</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedOfficials.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                              <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
-                              <td className="px-6 py-4 text-blue-600 font-black">{item.role}</td>
-                              <td className="px-6 py-4 text-gray-400 font-bold">{item.department || "LGU"}</td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => { setViewingItem(item); setViewingTab('officials'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
-                                  {canWriteTab('officials', item) ? (
-                                    <>
-                                      <button onClick={() => openEditEntity('officials', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
-                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'officials', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
-                                    </>
-                                  ) : (
-                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredOfficials.length === 0 && <NoDataRow colSpan={4} />}
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={4} />
+                          ) : (
+                            <>
+                              {paginatedOfficials.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
+                                  <td className="px-6 py-4 text-blue-600 font-black">{item.role}</td>
+                                  <td className="px-6 py-4 text-gray-400 font-bold">{item.department || "LGU"}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <button onClick={() => { setViewingItem(item); setViewingTab('officials'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
+                                      {canWriteTab('officials', item) ? (
+                                        <>
+                                          <button onClick={() => openEditEntity('officials', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
+                                          <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'officials', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
+                                        </>
+                                      ) : (
+                                        <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredOfficials.length === 0 && <NoDataRow colSpan={4} />}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -1555,38 +1912,44 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredDepartments.length} of {departments.length} Offices</span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Office Name</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Head of Office</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email Contact</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Office Name</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Head of Office</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Email Contact</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedDepartments.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                              <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
-                              <td className="px-6 py-4 font-bold text-gray-700">{item.head_of_office || "Unspecified"}</td>
-                              <td className="px-6 py-4 text-gray-400 font-bold">{item.email || "N/A"}</td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => { setViewingItem(item); setViewingTab('departments'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
-                                  {canWriteTab('departments', item) ? (
-                                    <>
-                                      <button onClick={() => openEditEntity('departments', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
-                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'departments', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
-                                    </>
-                                  ) : (
-                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredDepartments.length === 0 && <NoDataRow colSpan={4} />}
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={4} />
+                          ) : (
+                            <>
+                              {paginatedDepartments.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
+                                  <td className="px-6 py-4 font-bold text-gray-700">{item.head_of_office || "Unspecified"}</td>
+                                  <td className="px-6 py-4 text-gray-400 font-bold">{item.email || "N/A"}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <button onClick={() => { setViewingItem(item); setViewingTab('departments'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
+                                      {canWriteTab('departments', item) ? (
+                                        <>
+                                          <button onClick={() => openEditEntity('departments', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
+                                          <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'departments', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
+                                        </>
+                                      ) : (
+                                        <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredDepartments.length === 0 && <NoDataRow colSpan={4} />}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -1617,46 +1980,46 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredServices.length} of {services.length} Services</span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service Name</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Slug Route</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status Badge</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Service Name</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Slug Route</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Status Badge</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedServices.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                              <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
-                              <td className="px-6 py-4 font-mono text-gray-400 text-[10px]">{item.slug}</td>
-                              <td className="px-6 py-4">
-                                <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                  item.status === 'available' ? 'bg-green-100 text-green-700' :
-                                  item.status === 'coming-soon' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-red-100 text-red-700'
-                                }`}>
-                                  {item.status.replace('-', ' ')}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => { setViewingItem(item); setViewingTab('services'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
-                                  {canWriteTab('services', item) ? (
-                                    <>
-                                      <button onClick={() => openEditEntity('services', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
-                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'services', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
-                                    </>
-                                  ) : (
-                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredServices.length === 0 && <NoDataRow colSpan={4} />}
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={4} />
+                          ) : (
+                            <>
+                              {paginatedServices.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
+                                  <td className="px-6 py-4 font-mono text-gray-400 text-[10px]">{item.slug}</td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge status={item.status} />
+                                  </td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <button onClick={() => { setViewingItem(item); setViewingTab('services'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
+                                      {canWriteTab('services', item) ? (
+                                        <>
+                                          <button onClick={() => openEditEntity('services', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
+                                          <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'services', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
+                                        </>
+                                      ) : (
+                                        <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredServices.length === 0 && <NoDataRow colSpan={4} />}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -1685,38 +2048,44 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredCharters.length} of {charters.length} items</span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Office / Section</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service Item</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Steps</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Office / Section</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Service Item</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Total Steps</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedCharters.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors text-xs">
-                              <td className="px-6 py-4 font-black text-gray-900">{item.office}</td>
-                              <td className="px-6 py-4 font-bold text-gray-700">{item.service_name}</td>
-                              <td className="px-6 py-4 text-blue-600 font-black">{item.steps?.length || 0} steps</td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <button onClick={() => { setViewingItem(item); setViewingTab('charter'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all" title="View details"><Eye size={16} /></button>
-                                  {canWriteTab('charter', item) ? (
-                                    <>
-                                      <button onClick={() => openEditEntity('charter', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Edit item"><Edit3 size={16} /></button>
-                                      <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'charter', name: item.service_name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete item"><Trash2 size={16} /></button>
-                                    </>
-                                  ) : (
-                                    <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredCharters.length === 0 && <NoDataRow colSpan={4} />}
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={4} />
+                          ) : (
+                            <>
+                              {paginatedCharters.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900">{item.office}</td>
+                                  <td className="px-6 py-4 font-bold text-gray-700">{item.service_name}</td>
+                                  <td className="px-6 py-4 text-blue-600 font-black">{item.steps?.length || 0} steps</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <button onClick={() => { setViewingItem(item); setViewingTab('charter'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
+                                      {canWriteTab('charter', item) ? (
+                                        <>
+                                          <button onClick={() => openEditEntity('charter', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
+                                          <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'charter', name: item.service_name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
+                                        </>
+                                      ) : (
+                                        <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredCharters.length === 0 && <NoDataRow colSpan={4} />}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -1845,6 +2214,17 @@ const AdminDashboard: React.FC = () => {
                     if (req.id === reqId) {
                       const deptName = departments.find(d => d.id === deptId)?.name || "Unassigned";
                       showSuccess(`Request ${req.trackingNumber} routed to ${deptName}!`);
+                      
+                      if (deptId) {
+                        notificationService.createNotification({
+                          title: "New Citizen Application Routed",
+                          message: `Request ${req.trackingNumber} (${req.type}) has been routed to the ${deptName} for clearance review.`,
+                          category: "Citizen Applications",
+                          department_id: deptId,
+                          action_url: "workflows"
+                        });
+                      }
+                      
                       return { ...req, assignedDeptId: deptId, status: deptId ? 'ROUTED' : 'PENDING' };
                     }
                     return req;
@@ -1855,6 +2235,15 @@ const AdminDashboard: React.FC = () => {
                   setCitizenRequests(prev => prev.map(req => {
                     if (req.id === reqId) {
                       showSuccess(`Request ${req.trackingNumber} status updated to ${newStatus}!`);
+                      
+                      notificationService.createNotification({
+                        title: "Workflow Status Update",
+                        message: `Citizen request ${req.trackingNumber} (${req.type}) status was changed to ${newStatus}.`,
+                        category: "Workflow Updates",
+                        department_id: req.assignedDeptId,
+                        action_url: "workflows"
+                      });
+                      
                       return { ...req, status: newStatus };
                     }
                     return req;
@@ -1894,12 +2283,7 @@ const AdminDashboard: React.FC = () => {
                                 <h4 className="font-black text-gray-900 mt-2 text-sm">{req.citizenName}</h4>
                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{req.type}</span>
                               </div>
-                              <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${
-                                req.priority === 'HIGH' ? 'bg-red-100 text-red-700' : 
-                                req.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                              }`}>
-                                {req.priority} Priority
-                              </span>
+                              <StatusBadge status={req.priority} label={`${req.priority} Priority`} />
                             </div>
 
                             <p className="text-xs text-gray-600 font-bold leading-relaxed">
@@ -1945,12 +2329,7 @@ const AdminDashboard: React.FC = () => {
 
                             <div className="flex justify-between items-center pt-2 text-[9px] text-gray-400 font-bold uppercase tracking-wider">
                               <span>Submitted: {new Date(req.submittedAt).toLocaleDateString()}</span>
-                              <span className={`h-2 w-2 rounded-full ${
-                                req.status === 'COMPLETED' ? 'bg-green-500' :
-                                req.status === 'PROCESSING' ? 'bg-blue-500' :
-                                req.status === 'ROUTED' ? 'bg-indigo-500' :
-                                req.status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500'
-                              }`} />
+                              <StatusBadge status={req.status} />
                             </div>
                           </div>
                         );
@@ -1981,86 +2360,90 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredUsers.length} of {usersList.length} staff</span>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email address</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Role</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Department Assignment</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Barangay (if applicable)</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Verification Status</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Email address</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Current Role</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Department Assignment</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Barangay (if applicable)</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Verification Status</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Actions</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedUsers.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-6 py-4 font-black text-gray-900">{item.email}</td>
-                              <td className="px-6 py-4">
-                                <select
-                                  value={item.role}
-                                  disabled={item.role === 'super_admin' && profile?.role !== 'super_admin'}
-                                  onChange={(e) => handleUpdateUserRole(item.id, e.target.value, item.is_verified, item.department_id, item.barangay_id)}
-                                  className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {(profile?.role === 'super_admin' || item.role === 'super_admin') && (
-                                    <option value="super_admin">Super Admin</option>
-                                  )}
-                                  <option value="admin">Admin</option>
-                                  <option value="editor">Editor</option>
-                                  <option value="municipal_admin">Municipal Admin</option>
-                                  <option value="barangay_admin">Barangay Admin</option>
-                                </select>
-                              </td>
-                              <td className="px-6 py-4">
-                                <select
-                                  value={item.department_id || ""}
-                                  disabled={['super_admin', 'barangay_admin'].includes(item.role)}
-                                  onChange={(e) => handleUpdateUserRole(item.id, item.role, item.is_verified, e.target.value || null, item.barangay_id)}
-                                  className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <option value="">-- No Department --</option>
-                                  {departments.map((d) => (
-                                    <option key={d.id} value={d.id}>{d.name}</option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td className="px-6 py-4">
-                                <select
-                                  value={item.barangay_id || ""}
-                                  disabled={item.role !== 'barangay_admin'}
-                                  onChange={(e) => handleUpdateUserRole(item.id, item.role, item.is_verified, item.department_id, e.target.value || null)}
-                                  className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <option value="">-- No Barangay --</option>
-                                  {BARANGAYS.map((b) => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${item.is_verified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                  {item.is_verified ? "Verified" : "Pending Verification"}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <button
-                                  onClick={() => handleUpdateUserRole(item.id, item.role, !item.is_verified, item.department_id, item.barangay_id)}
-                                  disabled={item.role === 'super_admin' && profile?.role !== 'super_admin'}
-                                  className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                                    item.role === 'super_admin' && profile?.role !== 'super_admin'
-                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-                                      : item.is_verified
-                                      ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                                      : 'bg-green-50 text-green-600 hover:bg-green-100'
-                                  }`}
-                                >
-                                  {item.is_verified ? "Deauthorize" : "Verify / Approve"}
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={6} />
+                          ) : (
+                            <>
+                              {paginatedUsers.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900">{item.email}</td>
+                                  <td className="px-6 py-4">
+                                    <select
+                                      value={item.role}
+                                      disabled={item.role === 'super_admin' && profile?.role !== 'super_admin'}
+                                      onChange={(e) => handleUpdateUserRole(item.id, e.target.value, item.is_verified, item.department_id, item.barangay_id)}
+                                      className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                      {(profile?.role === 'super_admin' || item.role === 'super_admin') && (
+                                        <option value="super_admin">Super Admin</option>
+                                      )}
+                                      <option value="admin">Admin</option>
+                                      <option value="editor">Editor</option>
+                                      <option value="municipal_admin">Municipal Admin</option>
+                                      <option value="barangay_admin">Barangay Admin</option>
+                                    </select>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <select
+                                      value={item.department_id || ""}
+                                      disabled={['super_admin', 'barangay_admin'].includes(item.role)}
+                                      onChange={(e) => handleUpdateUserRole(item.id, item.role, item.is_verified, e.target.value || null, item.barangay_id)}
+                                      className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                      <option value="">-- No Department --</option>
+                                      {departments.map((d) => (
+                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <select
+                                      value={item.barangay_id || ""}
+                                      disabled={item.role !== 'barangay_admin'}
+                                      onChange={(e) => handleUpdateUserRole(item.id, item.role, item.is_verified, item.department_id, e.target.value || null)}
+                                      className="bg-gray-50 border border-gray-200 rounded-lg p-2 font-bold text-gray-800 text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                      <option value="">-- No Barangay --</option>
+                                      {BARANGAYS.map((b) => (
+                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge status={item.is_verified ? "approved" : "pending"} label={item.is_verified ? "Verified" : "Pending"} />
+                                  </td>
+                                  <td className="px-6 py-4 text-right">
+                                    <button
+                                      onClick={() => handleUpdateUserRole(item.id, item.role, !item.is_verified, item.department_id, item.barangay_id)}
+                                      disabled={item.role === 'super_admin' && profile?.role !== 'super_admin'}
+                                      className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer ${
+                                        item.role === 'super_admin' && profile?.role !== 'super_admin'
+                                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+                                          : item.is_verified
+                                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                                          : 'bg-green-50 text-green-600 hover:bg-green-100'
+                                      }`}
+                                    >
+                                      {item.is_verified ? "Deauthorize" : "Verify / Approve"}
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -2089,32 +2472,45 @@ const AdminDashboard: React.FC = () => {
                       <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredLogs.length} of {auditLogs.length} entries</span>
                     </div>
 
-                    <div className="divide-y divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden text-xs">
-                      {paginatedLogs.map((log) => (
-                        <div key={log.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-gray-50">
-                          <div>
-                            <p className="font-black text-gray-900">
-                              {log.user_email}
-                            </p>
-                            <p className="text-gray-400 font-bold mt-0.5">
-                              Modified <span className="text-blue-600">[{log.target_table}]</span> entry {log.target_id}
-                            </p>
-                          </div>
-                          <div className="text-right flex items-center gap-4">
-                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                              log.action === 'CREATE' ? 'bg-green-100 text-green-700' :
-                              log.action === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {log.action}
-                            </span>
-                            <span className="text-[10px] text-gray-400 font-bold">{new Date(log.timestamp).toLocaleString()}</span>
-                          </div>
-                        </div>
-                      ))}
-                      {filteredLogs.length === 0 && (
-                        <p className="p-8 text-center text-gray-400 font-bold">No system changes recorded yet.</p>
-                      )}
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] bg-white">
+                      <div className="divide-y divide-gray-100">
+                        {isTableLoading ? (
+                          [...Array(3)].map((_, i) => (
+                            <div key={i} className="p-6 flex items-center justify-between animate-pulse">
+                              <div className="space-y-2">
+                                <div className="h-4 bg-gray-100 rounded w-48" />
+                                <div className="h-3 bg-gray-50 rounded w-36" />
+                              </div>
+                              <div className="flex gap-4">
+                                <div className="h-6 bg-gray-100 rounded w-16" />
+                                <div className="h-4 bg-gray-50 rounded w-24" />
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <>
+                            {paginatedLogs.map((log) => (
+                              <div key={log.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-2 hover:bg-gray-50">
+                                <div>
+                                  <p className="font-black text-gray-900">
+                                    {log.user_email}
+                                  </p>
+                                  <p className="text-gray-400 font-bold mt-0.5">
+                                    Modified <span className="text-blue-600">[{log.target_table}]</span> entry {log.target_id}
+                                  </p>
+                                </div>
+                                <div className="text-right flex items-center gap-4">
+                                  <StatusBadge status={log.action} />
+                                  <span className="text-[10px] text-gray-400 font-bold">{new Date(log.timestamp).toLocaleString()}</span>
+                                </div>
+                              </div>
+                            ))}
+                            {filteredLogs.length === 0 && (
+                              <p className="p-8 text-center text-gray-400 font-bold">No system changes recorded yet.</p>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     <Pagination
@@ -2388,235 +2784,391 @@ const AdminDashboard: React.FC = () => {
                 {/* 6. SERVICES FORM */}
                 {activeTab === 'services' && (
                   <form onSubmit={handleSaveEntity} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-name">Service Name *</label>
-                      <input id="srv-name" type="text" required value={serviceForm.name} onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-slug">Slug Route (optional)</label>
-                      <input id="srv-slug" type="text" placeholder="e.g. apply-permit" value={serviceForm.slug} onChange={(e) => setServiceForm({ ...serviceForm, slug: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-desc">Description *</label>
-                      <textarea id="srv-desc" required rows={3} value={serviceForm.description} onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-purpose">Core Purpose / Target Audience</label>
-                      <textarea id="srv-purpose" rows={2} value={serviceForm.purpose} onChange={(e) => setServiceForm({ ...serviceForm, purpose: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    {/* DYNAMIC REQUIREMENTS LIST */}
-                    <div className="space-y-3 p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Requirements Checklist</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Add requirement bullet..."
-                          value={tempReqInput}
-                          onChange={(e) => setTempReqInput(e.target.value)}
-                          className="grow bg-white border border-gray-200 rounded-xl py-3 px-4 font-bold text-gray-900 focus:outline-none text-xs"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (tempReqInput.trim()) {
-                              setServiceForm({ ...serviceForm, requirements: [...serviceForm.requirements, tempReqInput.trim()] });
-                              setTempReqInput('');
-                            }
-                          }}
-                          className="px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs"
-                        >
-                          Add
-                        </button>
+                    {/* Step indicators */}
+                    <div className="flex items-center justify-between pb-6 border-b border-gray-100 mb-6">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${formStep === 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-100 text-gray-500'}`}>1</span>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Step 1</p>
+                          <p className={`text-xs font-black uppercase tracking-tight ${formStep === 1 ? 'text-blue-600' : 'text-gray-500'}`}>Basic Information</p>
+                        </div>
                       </div>
-                      <div className="space-y-1.5 pt-2">
-                        {serviceForm.requirements.map((req, index) => (
-                          <div key={index} className="flex justify-between items-center bg-white border border-gray-100 px-4 py-2 rounded-xl text-xs">
-                            <span className="font-bold text-gray-800">{req}</span>
-                            <button
-                              type="button"
-                              onClick={() => setServiceForm({ ...serviceForm, requirements: serviceForm.requirements.filter((_, i) => i !== index) })}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <X size={14} />
-                            </button>
+                      <div className="h-0.5 bg-gray-100 grow mx-6" />
+                      <div className="flex items-center gap-3">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${formStep === 2 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-100 text-gray-500'}`}>2</span>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Step 2</p>
+                          <p className={`text-xs font-black uppercase tracking-tight ${formStep === 2 ? 'text-blue-600' : 'text-gray-500'}`}>Requirements & Forms</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {formStep === 1 ? (
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-name">Service Name *</label>
+                          <input id="srv-name" type="text" required value={serviceForm.name} onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                          <p className="text-[10px] text-gray-400 font-bold">Provide the official title of the citizen service (e.g., "Business Permit Application").</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-slug">Slug Route (optional)</label>
+                          <input id="srv-slug" type="text" placeholder="e.g. apply-permit" value={serviceForm.slug} onChange={(e) => setServiceForm({ ...serviceForm, slug: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                          <p className="text-[10px] text-gray-400 font-bold">The URL-friendly identifier. If blank, it will auto-generate from the name.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-desc">Description *</label>
+                          <textarea id="srv-desc" required rows={3} value={serviceForm.description} onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                          <p className="text-[10px] text-gray-400 font-bold">Clear, helpful overview explaining what this service delivers to residents.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-purpose">Core Purpose / Target Audience</label>
+                          <textarea id="srv-purpose" rows={2} value={serviceForm.purpose} onChange={(e) => setServiceForm({ ...serviceForm, purpose: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                          <p className="text-[10px] text-gray-400 font-bold">Who qualifies to apply for this service (e.g., "All local business owners").</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-time">Processing Time</label>
+                            <input id="srv-time" type="text" value={serviceForm.processing_time} onChange={(e) => setServiceForm({ ...serviceForm, processing_time: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-fees">Fees / Dues</label>
+                            <input id="srv-fees" type="text" value={serviceForm.fees} onChange={(e) => setServiceForm({ ...serviceForm, fees: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                          </div>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-time">Processing Time</label>
-                        <input id="srv-time" type="text" value={serviceForm.processing_time} onChange={(e) => setServiceForm({ ...serviceForm, processing_time: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-fees">Fees / Dues</label>
-                        <input id="srv-fees" type="text" value={serviceForm.fees} onChange={(e) => setServiceForm({ ...serviceForm, fees: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                    </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-office">Office Responsible</label>
+                            <input id="srv-office" type="text" value={serviceForm.office_responsible} onChange={(e) => setServiceForm({ ...serviceForm, office_responsible: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-status">Availability Status</label>
+                            <select id="srv-status" value={serviceForm.status} onChange={(e) => setServiceForm({ ...serviceForm, status: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs">
+                              <option value="available">Available</option>
+                              <option value="coming-soon">Coming Soon</option>
+                              <option value="maintenance">Under Maintenance</option>
+                            </select>
+                          </div>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-office">Office Responsible</label>
-                        <input id="srv-office" type="text" value={serviceForm.office_responsible} onChange={(e) => setServiceForm({ ...serviceForm, office_responsible: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-status">Availability Status</label>
-                        <select id="srv-status" value={serviceForm.status} onChange={(e) => setServiceForm({ ...serviceForm, status: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs">
-                          <option value="available">Available</option>
-                          <option value="coming-soon">Coming Soon</option>
-                          <option value="maintenance">Under Maintenance</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* ATTACHED FORMS SECTION */}
-                    <div className="space-y-3 p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-sans">Attached Downloadable Forms</label>
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          placeholder="Form title (e.g. Unified Form)"
-                          value={tempFormTitle}
-                          onChange={(e) => setTempFormTitle(e.target.value)}
-                          className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 font-bold text-gray-900 focus:outline-none text-xs"
-                        />
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Direct URL (e.g. https://...)"
-                            value={tempFormUrl}
-                            onChange={(e) => setTempFormUrl(e.target.value)}
-                            className="grow bg-white border border-gray-200 rounded-xl py-3 px-4 font-bold text-gray-900 focus:outline-none text-xs"
-                          />
+                        <div className="flex justify-end pt-4 border-t border-gray-50">
                           <button
                             type="button"
                             onClick={() => {
-                              if (tempFormTitle.trim() && tempFormUrl.trim()) {
-                                const newForm = { title: tempFormTitle.trim(), url: tempFormUrl.trim(), fileSize: tempFormSize };
-                                setServiceForm({ ...serviceForm, downloadable_forms: [...(serviceForm.downloadable_forms || []), newForm] });
-                                setTempFormTitle('');
-                                setTempFormUrl('');
+                              if (!serviceForm.name.trim()) {
+                                showError("Validation Error: Service Name is required.");
+                                return;
                               }
+                              if (!serviceForm.description.trim()) {
+                                showError("Validation Error: Description is required.");
+                                return;
+                              }
+                              setFormStep(2);
                             }}
-                            className="px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs"
+                            className="px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl cursor-pointer"
                           >
-                            Attach
+                            Continue to Step 2
                           </button>
                         </div>
                       </div>
-                      <div className="space-y-1.5 pt-2">
-                        {serviceForm.downloadable_forms?.map((formItem, index) => (
-                          <div key={index} className="flex justify-between items-center bg-white border border-gray-100 px-4 py-2 rounded-xl text-xs">
-                            <span className="font-bold text-indigo-600">{formItem.title}</span>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* DYNAMIC REQUIREMENTS LIST */}
+                        <div className="space-y-3 p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Requirements Checklist</label>
+                          <p className="text-[10px] text-gray-400 font-bold mb-2">List any mandatory documents or credentials the citizen must bring or upload.</p>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="e.g. Barangay Clearance (Original)"
+                              value={tempReqInput}
+                              onChange={(e) => setTempReqInput(e.target.value)}
+                              className="grow bg-white border border-gray-200 rounded-xl py-3 px-4 font-bold text-gray-900 focus:outline-none text-xs"
+                            />
                             <button
                               type="button"
-                              onClick={() => setServiceForm({ ...serviceForm, downloadable_forms: serviceForm.downloadable_forms?.filter((_, i) => i !== index) })}
-                              className="text-red-500 hover:text-red-700"
+                              onClick={() => {
+                                if (tempReqInput.trim()) {
+                                  setServiceForm({ ...serviceForm, requirements: [...serviceForm.requirements, tempReqInput.trim()] });
+                                  setTempReqInput('');
+                                }
+                              }}
+                              className="px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs cursor-pointer"
                             >
-                              <X size={14} />
+                              Add
                             </button>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                          <div className="space-y-1.5 pt-2">
+                            {serviceForm.requirements.map((req, index) => (
+                              <div key={index} className="flex justify-between items-center bg-white border border-gray-100 px-4 py-2 rounded-xl text-xs">
+                                <span className="font-bold text-gray-800">{req}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setServiceForm({ ...serviceForm, requirements: serviceForm.requirements.filter((_, i) => i !== index) })}
+                                  className="text-red-500 hover:text-red-700 cursor-pointer"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ))}
+                            {serviceForm.requirements.length === 0 && (
+                              <p className="text-[10px] text-gray-400 font-bold italic">No specific requirements added yet.</p>
+                            )}
+                          </div>
+                        </div>
 
-                    <SubmitBtn label={editingId ? "Update service details" : "Register digital service"} isLoading={isActionLoading} />
+                        {/* ATTACHED FORMS SECTION */}
+                        <div className="space-y-3 p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-sans">Attached Downloadable Forms</label>
+                          <p className="text-[10px] text-gray-400 font-bold mb-2 font-sans">Attach template documents (PDF/DOCX) that citizens can pre-fill.</p>
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              placeholder="Form title (e.g. Unified Business Application Form)"
+                              value={tempFormTitle}
+                              onChange={(e) => setTempFormTitle(e.target.value)}
+                              className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 font-bold text-gray-900 focus:outline-none text-xs"
+                            />
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Direct URL (e.g. https://... or use Media Library)"
+                                value={tempFormUrl}
+                                onChange={(e) => setTempFormUrl(e.target.value)}
+                                className="grow bg-white border border-gray-200 rounded-xl py-3 px-4 font-bold text-gray-900 focus:outline-none text-xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (tempFormTitle.trim() && tempFormUrl.trim()) {
+                                    const newForm = { title: tempFormTitle.trim(), url: tempFormUrl.trim(), fileSize: tempFormSize };
+                                    setServiceForm({ ...serviceForm, downloadable_forms: [...(serviceForm.downloadable_forms || []), newForm] });
+                                    setTempFormTitle('');
+                                    setTempFormUrl('');
+                                  }
+                                }}
+                                className="px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs cursor-pointer"
+                              >
+                                Attach
+                              </button>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5 pt-2">
+                            {serviceForm.downloadable_forms?.map((formItem, index) => (
+                              <div key={index} className="flex justify-between items-center bg-white border border-gray-100 px-4 py-2 rounded-xl text-xs">
+                                <span className="font-bold text-indigo-600">{formItem.title}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setServiceForm({ ...serviceForm, downloadable_forms: serviceForm.downloadable_forms?.filter((_, i) => i !== index) })}
+                                  className="text-red-500 hover:text-red-700 cursor-pointer"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ))}
+                            {(!serviceForm.downloadable_forms || serviceForm.downloadable_forms.length === 0) && (
+                              <p className="text-[10px] text-gray-400 font-bold italic font-sans">No downloadable forms attached yet.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-50">
+                          <button
+                            type="button"
+                            onClick={() => setFormStep(1)}
+                            className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black text-xs uppercase tracking-widest rounded-2xl cursor-pointer"
+                          >
+                            Back to Step 1
+                          </button>
+                          <SubmitBtn label={editingId ? "Update service details" : "Register digital service"} isLoading={isActionLoading} />
+                        </div>
+                      </div>
+                    )}
                   </form>
                 )}
 
                 {/* 7. CITIZEN CHARTER FORM */}
                 {activeTab === 'charter' && (
                   <form onSubmit={handleSaveEntity} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="cc-office">Department / Office Name *</label>
-                        <input id="cc-office" type="text" required value={charterForm.office} onChange={(e) => setCharterForm({ ...charterForm, office: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    {/* Step indicators */}
+                    <div className="flex items-center justify-between pb-6 border-b border-gray-100 mb-6">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${formStep === 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-100 text-gray-500'}`}>1</span>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Step 1</p>
+                          <p className={`text-xs font-black uppercase tracking-tight ${formStep === 1 ? 'text-blue-600' : 'text-gray-500'}`}>General Details</p>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="cc-name">Chartered Service Name *</label>
-                        <input id="cc-name" type="text" required value={charterForm.service_name} onChange={(e) => setCharterForm({ ...charterForm, service_name: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      <div className="h-0.5 bg-gray-100 grow mx-6" />
+                      <div className="flex items-center gap-3">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${formStep === 2 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-gray-100 text-gray-500'}`}>2</span>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Step 2</p>
+                          <p className={`text-xs font-black uppercase tracking-tight ${formStep === 2 ? 'text-blue-600' : 'text-gray-500'}`}>Timeline Steps</p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* STEPS TIMELINE WRAPPER */}
-                    <div className="space-y-4 p-6 bg-gray-50 rounded-3xl border border-gray-100 text-xs">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Workflow Timeline Steps</label>
-                      
-                      <div className="grid grid-cols-2 gap-3 bg-white p-4 rounded-2xl border border-gray-100">
-                        <div className="col-span-2 font-black text-[10px] text-gray-400 uppercase tracking-widest">New step details</div>
-                        <input
-                          type="text"
-                          placeholder="Client steps..."
-                          value={tempStepClient}
-                          onChange={(e) => setTempStepClient(e.target.value)}
-                          className="col-span-2 bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs focus:outline-none"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Office action / Activity..."
-                          value={tempStepActivity}
-                          onChange={(e) => setTempStepActivity(e.target.value)}
-                          className="col-span-2 bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs focus:outline-none"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Duration (e.g. 10 mins)..."
-                          value={tempStepDuration}
-                          onChange={(e) => setTempStepDuration(e.target.value)}
-                          className="bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (tempStepActivity.trim()) {
-                              const newStep = {
-                                stepNumber: charterForm.steps.length + 1,
-                                activity: tempStepActivity.trim(),
-                                officeResponsible: tempStepOffice || charterForm.office,
-                                duration: tempStepDuration || '5 mins',
-                                clientSteps: tempStepClient || 'Submit forms'
-                              };
-                              setCharterForm({ ...charterForm, steps: [...charterForm.steps, newStep] });
-                              setTempStepActivity('');
-                              setTempStepClient('');
-                              setTempStepDuration('');
-                            }
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-sans uppercase tracking-widest text-[9px]"
-                        >
-                          Push Step
-                        </button>
-                      </div>
-
-                      <div className="space-y-1.5 pt-2">
-                        {charterForm.steps.map((st, i) => (
-                          <div key={i} className="bg-white border border-gray-100 p-3 rounded-xl flex justify-between items-center">
-                            <div>
-                              <span className="font-black text-blue-600">Step {st.stepNumber}: </span>
-                              <span className="font-bold text-gray-800">{st.activity}</span>
-                              <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-widest">{st.duration} — {st.clientSteps}</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const filtered = charterForm.steps.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, stepNumber: idx + 1 }));
-                                setCharterForm({ ...charterForm, steps: filtered });
-                              }}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <X size={14} />
-                            </button>
+                    {formStep === 1 ? (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="cc-office">Department / Office Name *</label>
+                            <input id="cc-office" type="text" required value={charterForm.office} onChange={(e) => setCharterForm({ ...charterForm, office: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                            <p className="text-[10px] text-gray-400 font-bold">Office delivering the charter (e.g., "MTO").</p>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="cc-name">Chartered Service Name *</label>
+                            <input id="cc-name" type="text" required value={charterForm.service_name} onChange={(e) => setCharterForm({ ...charterForm, service_name: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                            <p className="text-[10px] text-gray-400 font-bold">Name of the official chartered process.</p>
+                          </div>
+                        </div>
 
-                    <SubmitBtn label={editingId ? "Update citizens charter" : "Publish citizens charter"} isLoading={isActionLoading} />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="cc-fees">Fees / Cost</label>
+                            <input id="cc-fees" type="text" value={charterForm.fees} onChange={(e) => setCharterForm({ ...charterForm, fees: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                            <p className="text-[10px] text-gray-400 font-bold">Use "No Fees" or write the breakdown.</p>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="cc-time">Total Processing Time</label>
+                            <input id="cc-time" type="text" value={charterForm.processing_time} onChange={(e) => setCharterForm({ ...charterForm, processing_time: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                            <p className="text-[10px] text-gray-400 font-bold">Total duration from start to final release.</p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end pt-4 border-t border-gray-50">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!charterForm.office.trim()) {
+                                showError("Validation Error: Office Name is required.");
+                                return;
+                              }
+                              if (!charterForm.service_name.trim()) {
+                                showError("Validation Error: Chartered Service Name is required.");
+                                return;
+                              }
+                              setFormStep(2);
+                            }}
+                            className="px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl cursor-pointer"
+                          >
+                            Continue to Step 2
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* STEPS TIMELINE WRAPPER */}
+                        <div className="space-y-4 p-6 bg-gray-50 rounded-3xl border border-gray-100 text-xs">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Workflow Timeline Steps</label>
+                          <p className="text-[10px] text-gray-400 font-bold mb-2">Build the step-by-step transaction timeline. Order is managed automatically.</p>
+                          
+                          <div className="grid grid-cols-2 gap-3 bg-white p-4 rounded-2xl border border-gray-100">
+                            <div className="col-span-2 font-black text-[10px] text-gray-400 uppercase tracking-widest">New step details</div>
+                            
+                            <div className="col-span-2 space-y-1">
+                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">What the client does</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. Submits required files to Counter 1"
+                                value={tempStepClient}
+                                onChange={(e) => setTempStepClient(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs focus:outline-none font-bold"
+                              />
+                            </div>
+
+                            <div className="col-span-2 space-y-1">
+                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">What the office does (Activity)</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. Verifies checklist credentials"
+                                value={tempStepActivity}
+                                onChange={(e) => setTempStepActivity(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs focus:outline-none font-bold"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Duration</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. 10 mins"
+                                value={tempStepDuration}
+                                onChange={(e) => setTempStepDuration(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-xs focus:outline-none font-bold"
+                              />
+                            </div>
+
+                            <div className="flex items-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (tempStepActivity.trim()) {
+                                    const newStep = {
+                                      stepNumber: charterForm.steps.length + 1,
+                                      activity: tempStepActivity.trim(),
+                                      officeResponsible: tempStepOffice || charterForm.office,
+                                      duration: tempStepDuration || '5 mins',
+                                      clientSteps: tempStepClient || 'Submit forms'
+                                    };
+                                    setCharterForm({ ...charterForm, steps: [...charterForm.steps, newStep] });
+                                    setTempStepActivity('');
+                                    setTempStepClient('');
+                                    setTempStepDuration('');
+                                  } else {
+                                    showError("Please fill out the 'Office Activity' field to push the step.");
+                                  }
+                                }}
+                                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black font-sans uppercase tracking-widest text-[9px] cursor-pointer"
+                              >
+                                Push Step
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5 pt-2">
+                            {charterForm.steps.map((st, i) => (
+                              <div key={i} className="bg-white border border-gray-100 p-3 rounded-xl flex justify-between items-center">
+                                <div>
+                                  <span className="font-black text-blue-600">Step {st.stepNumber}: </span>
+                                  <span className="font-bold text-gray-800">{st.activity}</span>
+                                  <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-widest">{st.duration} — {st.clientSteps}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const filtered = charterForm.steps.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, stepNumber: idx + 1 }));
+                                    setCharterForm({ ...charterForm, steps: filtered });
+                                  }}
+                                  className="text-red-500 hover:text-red-700 cursor-pointer"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ))}
+                            {charterForm.steps.length === 0 && (
+                              <p className="text-[10px] text-gray-400 font-bold italic text-center py-4">No steps added to this charter timeline yet.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-50">
+                          <button
+                            type="button"
+                            onClick={() => setFormStep(1)}
+                            className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-black text-xs uppercase tracking-widest rounded-2xl cursor-pointer"
+                          >
+                            Back to Step 1
+                          </button>
+                          <SubmitBtn label={editingId ? "Update citizens charter" : "Publish citizens charter"} isLoading={isActionLoading} />
+                        </div>
+                      </div>
+                    )}
                   </form>
                 )}
 
@@ -2955,21 +3507,31 @@ interface SidebarBtnProps {
   active: string;
   onClick: (val: any) => void;
   visible?: boolean;
+  collapsed?: boolean;
 }
-const SidebarBtn: React.FC<SidebarBtnProps> = ({ id, label, icon: Icon, active, onClick, visible = true }) => {
+const SidebarBtn: React.FC<SidebarBtnProps> = ({ id, label, icon: Icon, active, onClick, visible = true, collapsed = false }) => {
   if (!visible) return null;
   const isSelected = active === id;
   return (
     <button
       onClick={() => onClick(id)}
-      className={`w-full px-5 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3.5 transition-all text-left ${
+      className={`w-full px-4 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center transition-all text-left relative group ${
+        collapsed ? 'justify-center lg:px-0' : 'gap-3.5'
+      } ${
         isSelected
           ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/10'
-          : 'text-gray-400 hover:bg-white hover:text-gray-800'
+          : 'text-gray-400 hover:bg-gray-50 hover:text-gray-800'
       }`}
     >
-      <Icon size={14} className={isSelected ? "text-white" : "text-gray-400"} />
-      {label}
+      <Icon size={14} className={isSelected ? "text-white" : "text-gray-400 group-hover:scale-110 transition-transform"} />
+      <span className={`transition-opacity duration-300 ${collapsed ? 'lg:hidden' : 'block'}`}>
+        {label}
+      </span>
+      {collapsed && (
+        <div className="hidden lg:group-hover:block absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap z-50 shadow-md">
+          {label}
+        </div>
+      )}
     </button>
   );
 };
@@ -2983,15 +3545,19 @@ interface StatBoxProps {
 }
 const StatBox: React.FC<StatBoxProps> = ({ count, label, icon: Icon, color }) => {
   return (
-    <div className="border border-gray-100 rounded-[2rem] p-6 hover:shadow-md transition-all flex items-center justify-between bg-white">
-      <div className="space-y-1">
-        <span className="text-2xl font-black text-gray-900 block tracking-tight">{count}</span>
-        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">{label}</span>
+    <motion.div 
+      whileHover={{ y: -4, scale: 1.02 }}
+      className="border border-gray-100 rounded-[2rem] p-6 shadow-xs hover:shadow-lg hover:shadow-gray-100/50 transition-all flex items-center justify-between bg-white overflow-hidden relative group"
+    >
+      <div className="absolute right-0 top-0 w-32 h-32 bg-radial from-gray-50/20 to-transparent rounded-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125" />
+      <div className="space-y-1.5 relative z-10">
+        <span className="text-3xl font-black text-gray-900 block tracking-tight font-display">{count}</span>
+        <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block">{label}</span>
       </div>
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color}`}>
-        <Icon size={20} />
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:rotate-6 relative z-10 ${color}`}>
+        <Icon size={22} />
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -3012,10 +3578,35 @@ const SubmitBtn: React.FC<{ label: string; isLoading: boolean }> = ({ label, isL
 const NoDataRow: React.FC<{ colSpan: number }> = ({ colSpan }) => {
   return (
     <tr>
-      <td colSpan={colSpan} className="text-center py-12 text-gray-400 font-bold text-xs uppercase tracking-widest">
-        No records found matching search queries.
+      <td colSpan={colSpan} className="text-center py-16">
+        <div className="flex flex-col items-center justify-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-300">
+            <Search size={20} />
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-900 uppercase tracking-wider">No Records Found</p>
+            <p className="text-[10px] text-gray-400 font-bold mt-1">Try adjusting your filters or search keywords.</p>
+          </div>
+        </div>
       </td>
     </tr>
+  );
+};
+
+// COMPONENT: TABLE LOADING SKELETON
+const TableSkeleton: React.FC<{ cols: number }> = ({ cols }) => {
+  return (
+    <>
+      {[1, 2, 3, 4].map((rowIdx) => (
+        <tr key={rowIdx} className="animate-pulse border-b border-gray-50">
+          {Array.from({ length: cols }).map((_, colIdx) => (
+            <td key={colIdx} className="px-6 py-4">
+              <div className="h-4 bg-gray-100 rounded-md w-full" />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
   );
 };
 
@@ -3041,14 +3632,14 @@ const Pagination: React.FC<{
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="px-4 py-2 text-[9px] font-black uppercase tracking-widest bg-gray-50 border border-gray-100 text-gray-500 rounded-xl hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-gray-50 transition-all"
+          className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest bg-white border border-gray-100 text-gray-500 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-all shadow-xs flex items-center justify-center min-w-16 cursor-pointer"
         >
           Prev
         </button>
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="px-4 py-2 text-[9px] font-black uppercase tracking-widest bg-gray-50 border border-gray-100 text-gray-500 rounded-xl hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-gray-50 transition-all"
+          className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest bg-white border border-gray-100 text-gray-500 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-all shadow-xs flex items-center justify-center min-w-16 cursor-pointer"
         >
           Next
         </button>

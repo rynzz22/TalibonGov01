@@ -268,3 +268,55 @@ insert into public.services_cms (name, slug, description, purpose, requirements,
 values 
   ('Apply for Permit', 'apply-permit', 'Secure municipal permits, zoning clearance, and construction approvals.', 'To regulate and support business establishment.', array['Application Form', 'Barangay Clearance'], '3 to 5 business days', 'BPLO', 'Ground Floor, Executive Building', 'available', '[]'::jsonb)
 on conflict do nothing;
+
+-- ====================================================================
+-- SPRINT 4C: NOTIFICATION CENTER SCHEMA
+-- ====================================================================
+
+create table if not exists public.notifications (
+  id uuid default gen_random_uuid() primary key,
+  title text not null,
+  message text not null,
+  category text not null check (category in (
+    'Citizen Applications',
+    'Workflow Updates',
+    'Staff Verification',
+    'News Approval',
+    'Document Updates',
+    'System Messages',
+    'Department Announcements'
+  )),
+  department_id text,           -- e.g. "dept-1" (BPLO), "dept-2" (MTO), or NULL for broadcast
+  user_id uuid,                 -- Optional: target specific user (references auth.users)
+  is_read boolean not null default false,
+  is_archived boolean not null default false,
+  action_url text,              -- Tab or route target on View
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- Enable RLS
+alter table public.notifications enable row level security;
+
+-- Policies
+create policy "Allow users to view authorized notifications" on public.notifications
+  for select using (
+    exists (
+      select 1 from public.profiles
+      where public.profiles.id = auth.uid()
+      and (
+        public.profiles.role in ('super_admin', 'admin') 
+        or public.notifications.department_id is null   
+        or public.notifications.department_id = public.profiles.department_id 
+        or public.notifications.user_id = auth.uid()    
+      )
+    )
+  );
+
+create policy "Allow authorized staff to modify notifications" on public.notifications
+  for all using (
+    exists (
+      select 1 from public.profiles
+      where public.profiles.id = auth.uid()
+      and public.profiles.is_verified = true
+    )
+  );

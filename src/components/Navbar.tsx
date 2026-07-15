@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, Globe, ChevronDown, ArrowUpRight, Phone, Mail, MapPin, Search, Accessibility, Bell, Clock, LogIn, LayoutDashboard, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
+import NotificationBell from "./NotificationBell";
+import NotificationDrawer from "./NotificationDrawer";
 import { Link, useLocation } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
@@ -13,6 +15,7 @@ export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
   const { user, profile, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([]);
   const location = useLocation();
   
@@ -268,7 +271,7 @@ export default function Navbar() {
                 <Globe size={12} />
                 {language === 'en' ? 'EN' : 'CEB'}
               </button>
-              <button className="hover:text-brand-accent text-brand-text transition-colors"><Bell size={16} /></button>
+              <NotificationBell onClick={() => setIsNotificationOpen(true)} />
               <button className="hover:text-brand-primary text-brand-text transition-colors"><Accessibility size={16} /></button>
             </div>
           </div>
@@ -534,6 +537,23 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <NotificationDrawer 
+        isOpen={isNotificationOpen} 
+        onClose={() => setIsNotificationOpen(false)} 
+        onViewAction={(actionUrl) => {
+          // If already on /admin page, update URL parameter or hash so component reacts, otherwise redirect
+          if (window.location.pathname === "/admin") {
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set("tab", actionUrl);
+            window.history.pushState(null, "", `${window.location.pathname}?${searchParams.toString()}`);
+            // Dispatch a window event to let AdminDashboard know the active tab changed
+            window.dispatchEvent(new CustomEvent("talibon_tab_changed", { detail: actionUrl }));
+          } else {
+            window.location.href = `/admin?tab=${actionUrl}`;
+          }
+        }}
+      />
 
       <GlobalSearch 
         isOpen={isSearchOpen} 
