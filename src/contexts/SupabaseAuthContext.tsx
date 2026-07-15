@@ -66,15 +66,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from("profiles")
         .select("*")
         .eq("id", targetUser.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code !== 'PGRST116') {
-          console.error("[Auth] Profile fetch error:", error.message);
-        }
+        console.error("[Auth] Profile fetch error:", error.message);
         setProfile(null);
         if (import.meta.env.DEV) {
-          console.warn(`[Auth - DEV] Profile database load failed for ${targetUser.email} with code ${error.code}: ${error.message}`);
+          console.warn(`[Auth - DEV] Profile database load failed for ${targetUser.email}: ${error.message}`);
         }
         return;
       }
@@ -98,52 +96,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Initial session load
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        console.warn("[Auth - DEV] Error getting session on init:", error.message);
-        if (error.message.includes("Refresh Token") || error.message.includes("invalid") || error.message.includes("not found")) {
-          // Clean invalid state
-          supabase.auth.signOut().catch(() => {});
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          setLoading(false);
-          return;
-        }
-      }
+    let active = true;
+    let initialized = false;
 
-      const currentSession = data?.session ?? null;
-      setSession(currentSession);
-      const currentUser = currentSession?.user ?? null;
-      setUser(currentUser);
-      
-      if (currentUser) {
+    const initializeAuth = async () => {
+      try {
         if (import.meta.env.DEV) {
-          console.log("[Auth - DEV] Session restored successfully for:", currentUser.email);
+          console.log("[Auth - DEV] Initializing authentication state...");
         }
-        refreshProfile(currentUser).finally(() => setLoading(false));
-      } else {
-        if (import.meta.env.DEV) {
-          console.log("[Auth - DEV] No initial session found. User is guest.");
+
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn("[Auth - DEV] Error getting session on init:", error.message);
+          if (error.message.includes("Refresh Token") || error.message.includes("invalid") || error.message.includes("not found")) {
+            await supabase.auth.signOut().catch(() => {});
+            if (active) {
+              setSession(null);
+              setUser(null);
+              setProfile(null);
+              setLoading(false);
+            }
+            return;
+          }
         }
-        setLoading(false);
+
+        if (!active) return;
+
+        const currentSession = data?.session ?? null;
+        setSession(currentSession);
+        const currentUser = currentSession?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          if (import.meta.env.DEV) {
+            console.log("[Auth - DEV] Session restored successfully for:", currentUser.email);
+          }
+          await refreshProfile(currentUser);
+        } else {
+          if (import.meta.env.DEV) {
+            console.log("[Auth - DEV] No initial session found. User is guest.");
+          }
+          setProfile(null);
+        }
+      } catch (err) {
+        console.error("[Auth] Fatal error during auth initialization:", err);
+      } finally {
+        if (active) {
+          initialized = true;
+          setLoading(false);
+        }
       }
-    }).catch((err) => {
-      console.error("[Auth] Fatal error on initial getSession():", err);
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!active) return;
+
+      if (import.meta.env.DEV) {
+        console.log(`[Auth - DEV] Auth state change event occurred: ${event} for ${session?.user?.email || "No User"}`);
+      }
+
+      // Ignore INITIAL_SESSION event if we have already initialized synchronously to prevent race conditions
+      if (event === "INITIAL_SESSION" && initialized) {
+        return;
+      }
+
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      
-      if (import.meta.env.DEV) {
-        console.log(`[Auth - DEV] Auth state change event occurred: ${event} for ${currentUser?.email || "No User"}`);
-      }
-      
+
       if (currentUser) {
         await refreshProfile(currentUser);
       } else {
@@ -156,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
+      active = false;
       subscription.unsubscribe();
     };
   }, []);

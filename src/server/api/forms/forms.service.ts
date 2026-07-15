@@ -152,7 +152,7 @@ export class FormsService {
           .from("certificate_requests")
           .select("*")
           .eq("ticket_id", ticketId)
-          .single();
+          .maybeSingle();
         
         if (!error && data) {
           return {

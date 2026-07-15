@@ -79,7 +79,7 @@ const NewsDetailPage: React.FC = () => {
           .from('news')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.warn("Error fetching news detail:", error);

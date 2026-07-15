@@ -23,86 +23,8 @@ export interface AppNotification {
   created_at: string;
 }
 
-// Initial mock notifications to make the center immediately beautiful and testable
-const INITIAL_MOCK_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: "notif-1",
-    title: "New Business Permit Application",
-    message: "Jose Rizal Macalinao has submitted a Business Permit clearance application for 'Bohol Divers Beach Resort'.",
-    category: "Citizen Applications",
-    department_id: "dept-1", // BPLO
-    is_read: false,
-    is_archived: false,
-    action_url: "workflows",
-    created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString() // 15 mins ago
-  },
-  {
-    id: "notif-2",
-    title: "Tax Dispute Assessment Pending",
-    message: "A Tax Assessment Dispute query has been routed to your treasury team by Ma. Elena Sanchez.",
-    category: "Workflow Updates",
-    department_id: "dept-2", // MTO
-    is_read: false,
-    is_archived: false,
-    action_url: "workflows",
-    created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString() // 45 mins ago
-  },
-  {
-    id: "notif-3",
-    title: "New Staff Registration",
-    message: "Staff member 'Anna Garcia' registered under the Health Department and is awaiting credential verification.",
-    category: "Staff Verification",
-    department_id: null, // Global / Admin
-    is_read: false,
-    is_archived: false,
-    action_url: "users",
-    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString() // 2 hours ago
-  },
-  {
-    id: "notif-4",
-    title: "Press Release Awaiting Approval",
-    message: "Mayor's Office drafted a news advisory: 'Seafood Festival 2026' which requires content editor review.",
-    category: "News Approval",
-    department_id: null,
-    is_read: true,
-    is_archived: false,
-    action_url: "news",
-    created_at: new Date(Date.now() - 1000 * 60 * 240).toISOString() // 4 hours ago
-  },
-  {
-    id: "notif-5",
-    title: "New PDF Ordinance Uploaded",
-    message: "Document Library updated with: 'Talibon Local Ordinance No. 14-2026 - Marine Protection Guidelines'.",
-    category: "Document Updates",
-    department_id: null,
-    is_read: false,
-    is_archived: false,
-    action_url: "downloadables",
-    created_at: new Date(Date.now() - 1000 * 60 * 480).toISOString() // 8 hours ago
-  },
-  {
-    id: "notif-6",
-    title: "Quarterly Budget Reconciliation",
-    message: "Treasury budget allocation files uploaded for review by the Municipal Accountant.",
-    category: "Department Announcements",
-    department_id: "dept-2", // MTO
-    is_read: true,
-    is_archived: false,
-    action_url: "downloadables",
-    created_at: new Date(Date.now() - 1000 * 60 * 1440).toISOString() // 1 day ago
-  },
-  {
-    id: "notif-7",
-    title: "Scheduled Cloud Ingress Maintenance",
-    message: "The CMS data portal will undergo minor routing updates on Sunday at 2:00 AM PST.",
-    category: "System Messages",
-    department_id: null,
-    is_read: false,
-    is_archived: false,
-    action_url: "overview",
-    created_at: new Date(Date.now() - 1000 * 60 * 2880).toISOString() // 2 days ago
-  }
-];
+// Initial mock notifications (empty array since we are using only live Supabase notifications)
+const INITIAL_MOCK_NOTIFICATIONS: AppNotification[] = [];
 
 // Helper to load fallback local state
 const getLocalNotifications = (): AppNotification[] => {
@@ -114,8 +36,7 @@ const getLocalNotifications = (): AppNotification[] => {
       console.error("[NotificationService] Parse error loading notifications:", e);
     }
   }
-  localStorage.setItem("talibon_notifications", JSON.stringify(INITIAL_MOCK_NOTIFICATIONS));
-  return INITIAL_MOCK_NOTIFICATIONS;
+  return [];
 };
 
 // Helper to save fallback local state
@@ -337,19 +258,34 @@ export const notificationService = {
       try {
         const uniqueId = Math.random().toString(36).substring(2, 11);
         const channelName = `live-notifications-${uniqueId}`;
+        
+        if (import.meta.env.DEV) {
+          console.log(`[Notification - DEV] Subscribing to live Supabase notifications channel: ${channelName} for user: ${profile.email}`);
+        }
+
         const channel = supabase
           .channel(channelName)
           .on(
             "postgres_changes",
             { event: "*", schema: "public", table: "notifications" },
-            () => {
+            (payload) => {
+              if (import.meta.env.DEV) {
+                console.log(`[Notification - DEV] Realtime notification change event received:`, payload);
+              }
               onUpdate();
             }
           );
         
-        channel.subscribe();
+        channel.subscribe((status) => {
+          if (import.meta.env.DEV) {
+            console.log(`[Notification - DEV] Subscription status for ${channelName}: ${status}`);
+          }
+        });
 
         removeRealtimeChannel = () => {
+          if (import.meta.env.DEV) {
+            console.log(`[Notification - DEV] Unsubscribing from live notifications channel: ${channelName}`);
+          }
           try {
             supabase.removeChannel(channel);
           } catch (removeErr) {

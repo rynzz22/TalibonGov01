@@ -480,7 +480,7 @@ export const cmsService = {
   async createNews(item: Omit<NewsItem, "id">, userEmail: string): Promise<NewsItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("news").insert([item]).select().single();
+        const { data, error } = await supabase.from("news").insert([item]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "news", data.id);
@@ -504,7 +504,7 @@ export const cmsService = {
   async updateNews(id: string, item: Partial<NewsItem>, userEmail: string): Promise<NewsItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("news").update(item).eq("id", id).select().single();
+        const { data, error } = await supabase.from("news").update(item).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "news", id);
@@ -564,7 +564,7 @@ export const cmsService = {
   async createDownloadable(item: Omit<DownloadableItem, "id">, userEmail: string): Promise<DownloadableItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("downloadables").insert([item]).select().single();
+        const { data, error } = await supabase.from("downloadables").insert([item]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "downloadables", data.id);
@@ -588,7 +588,7 @@ export const cmsService = {
   async updateDownloadable(id: string, item: Partial<DownloadableItem>, userEmail: string): Promise<DownloadableItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("downloadables").update(item).eq("id", id).select().single();
+        const { data, error } = await supabase.from("downloadables").update(item).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "downloadables", id);
@@ -648,7 +648,7 @@ export const cmsService = {
   async createTourismSpot(item: Omit<TourismSpotItem, "id">, userEmail: string): Promise<TourismSpotItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("tourism_spots").insert([item]).select().single();
+        const { data, error } = await supabase.from("tourism_spots").insert([item]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "tourism_spots", data.id);
@@ -672,7 +672,7 @@ export const cmsService = {
   async updateTourismSpot(id: string, item: Partial<TourismSpotItem>, userEmail: string): Promise<TourismSpotItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("tourism_spots").update(item).eq("id", id).select().single();
+        const { data, error } = await supabase.from("tourism_spots").update(item).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "tourism_spots", id);
@@ -732,7 +732,7 @@ export const cmsService = {
   async createOfficial(item: Omit<OfficialItem, "id">, userEmail: string): Promise<OfficialItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("officials").insert([item]).select().single();
+        const { data, error } = await supabase.from("officials").insert([item]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "officials", data.id);
@@ -756,7 +756,7 @@ export const cmsService = {
   async updateOfficial(id: string, item: Partial<OfficialItem>, userEmail: string): Promise<OfficialItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("officials").update(item).eq("id", id).select().single();
+        const { data, error } = await supabase.from("officials").update(item).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "officials", id);
@@ -816,7 +816,7 @@ export const cmsService = {
   async createDepartment(item: Omit<DepartmentItem, "id">, userEmail: string): Promise<DepartmentItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("departments").insert([item]).select().single();
+        const { data, error } = await supabase.from("departments").insert([item]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "departments", data.id);
@@ -840,7 +840,7 @@ export const cmsService = {
   async updateDepartment(id: string, item: Partial<DepartmentItem>, userEmail: string): Promise<DepartmentItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("departments").update(item).eq("id", id).select().single();
+        const { data, error } = await supabase.from("departments").update(item).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "departments", id);
@@ -900,7 +900,7 @@ export const cmsService = {
   async createService(item: Omit<ServiceCmsItem, "id">, userEmail: string): Promise<ServiceCmsItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("services_cms").insert([item]).select().single();
+        const { data, error } = await supabase.from("services_cms").insert([item]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "services_cms", data.id);
@@ -924,7 +924,7 @@ export const cmsService = {
   async updateService(id: string, item: Partial<ServiceCmsItem>, userEmail: string): Promise<ServiceCmsItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("services_cms").update(item).eq("id", id).select().single();
+        const { data, error } = await supabase.from("services_cms").update(item).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "services_cms", id);
@@ -984,7 +984,7 @@ export const cmsService = {
   async createCitizensCharter(item: Omit<CitizensCharterCmsItem, "id">, userEmail: string): Promise<CitizensCharterCmsItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("citizens_charter_cms").insert([item]).select().single();
+        const { data, error } = await supabase.from("citizens_charter_cms").insert([item]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "citizens_charter_cms", data.id);
@@ -1008,7 +1008,7 @@ export const cmsService = {
   async updateCitizensCharter(id: string, item: Partial<CitizensCharterCmsItem>, userEmail: string): Promise<CitizensCharterCmsItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("citizens_charter_cms").update(item).eq("id", id).select().single();
+        const { data, error } = await supabase.from("citizens_charter_cms").update(item).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "citizens_charter_cms", id);
@@ -1068,7 +1068,7 @@ export const cmsService = {
   async createEvent(item: Omit<EventItem, "id">, userEmail: string): Promise<EventItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("events").insert([item]).select().single();
+        const { data, error } = await supabase.from("events").insert([item]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "events", data.id);
@@ -1092,7 +1092,7 @@ export const cmsService = {
   async updateEvent(id: string, item: Partial<EventItem>, userEmail: string): Promise<EventItem> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("events").update(item).eq("id", id).select().single();
+        const { data, error } = await supabase.from("events").update(item).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "events", id);
@@ -1182,7 +1182,7 @@ export const cmsService = {
           .update(updatePayload)
           .eq("id", id)
           .select()
-          .single();
+          .maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE_USER", "profiles", id);

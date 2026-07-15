@@ -163,9 +163,28 @@ create policy "Allow public read on services_cms" on public.services_cms for sel
 create policy "Allow public read on citizens_charter_cms" on public.citizens_charter_cms for select using (true);
 create policy "Allow public read on events" on public.events for select using (true);
 
--- WRITE/MODIFY RULES: REQUIRES VERIFIED ADMIN/EDITOR ROLES
-create policy "Allow verified admins to edit profiles" on public.profiles
-  for all using (
+-- PROFILE POLICIES: SAFE, RECURSION-FREE AND STABLE
+create policy "Allow authenticated users to read profiles" on public.profiles
+  for select using (auth.uid() is not null);
+
+create policy "Allow users to insert their own profile" on public.profiles
+  for insert with check (auth.uid() = id);
+
+create policy "Allow users to update their own profile" on public.profiles
+  for update using (auth.uid() = id);
+
+create policy "Allow verified admins to update any profile" on public.profiles
+  for update using (
+    exists (
+      select 1 from public.profiles
+      where public.profiles.id = auth.uid()
+      and public.profiles.is_verified = true
+      and public.profiles.role in ('super_admin', 'admin', 'municipal_admin')
+    )
+  );
+
+create policy "Allow verified admins to delete profiles" on public.profiles
+  for delete using (
     exists (
       select 1 from public.profiles
       where public.profiles.id = auth.uid()
