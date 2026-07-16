@@ -52,7 +52,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   accept = '*',
   folder = 'uploads',
   currentValue,
-  bucket = 'public-assets',
+  bucket = 'public-cms',
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);

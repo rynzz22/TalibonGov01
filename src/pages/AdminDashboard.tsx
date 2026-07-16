@@ -494,7 +494,7 @@ const AdminDashboard: React.FC = () => {
     }
     setMediaLoading(true);
     try {
-      const { data, error } = await supabase.storage.from('public-assets').list('', {
+      const { data, error } = await supabase.storage.from('public-cms').list('', {
         limit: 100,
         sortBy: { column: 'name', order: 'asc' }
       });
@@ -898,7 +898,7 @@ const AdminDashboard: React.FC = () => {
       return;
     }
     try {
-      const { error } = await supabase.storage.from('public-assets').remove([name]);
+      const { error } = await supabase.storage.from('public-cms').remove([name]);
       if (error) throw error;
       showSuccess("Media asset removed.");
       fetchMediaFiles();
@@ -2237,7 +2237,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-2">Centralized Media Library</h3>
-                    <p className="text-gray-400 text-xs font-bold mb-6">Browse and upload image and document attachments in your Supabase `public-assets` bucket.</p>
+                    <p className="text-gray-400 text-xs font-bold mb-6">Browse and upload image and document attachments in your Supabase `public-cms` bucket.</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2247,6 +2247,7 @@ const AdminDashboard: React.FC = () => {
                         label="Direct Upload"
                         accept="*/*"
                         folder="media"
+                        bucket="public-cms"
                         onUploadComplete={(url) => {
                           if (url) {
                             showSuccess("Media uploaded successfully!");
@@ -2276,7 +2277,7 @@ const AdminDashboard: React.FC = () => {
                           {mediaFiles.filter(f => f.name.toLowerCase().includes(mediaSearch.toLowerCase())).map((file) => {
                             const isImage = file.name.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || file.metadata?.mimetype?.startsWith('image/');
                             const publicUrl = isSupabaseConfigured
-                              ? supabase.storage.from('public-assets').getPublicUrl(file.name).data.publicUrl
+                              ? supabase.storage.from('public-cms').getPublicUrl(file.name).data.publicUrl
                               : "#";
 
                             return (
@@ -2807,7 +2808,7 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    <FileUpload label="Secure File Attachment" folder="attachments" currentValue={downloadForm.file_url} onUploadComplete={(url) => setDownloadForm({ ...downloadForm, file_url: url })} />
+                    <FileUpload label="Secure File Attachment" folder="attachments" bucket="public-documents" currentValue={downloadForm.file_url} onUploadComplete={(url) => setDownloadForm({ ...downloadForm, file_url: url })} />
 
                     <SubmitBtn label={editingId ? "Update library asset" : "Save library asset"} isLoading={isActionLoading} />
                   </form>
@@ -2847,7 +2848,7 @@ const AdminDashboard: React.FC = () => {
                       <input id="tour-maps" type="text" value={tourismForm.google_maps_link} onChange={(e) => setTourismForm({ ...tourismForm, google_maps_link: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
                     </div>
 
-                    <FileUpload label="Featured Landscape Image" folder="tourism" currentValue={tourismForm.featured_image} onUploadComplete={(url) => setTourismForm({ ...tourismForm, featured_image: url, gallery_images: url ? [url] : [] })} />
+                    <FileUpload label="Featured Landscape Image" folder="tourism" bucket="public-cms" currentValue={tourismForm.featured_image} onUploadComplete={(url) => setTourismForm({ ...tourismForm, featured_image: url, gallery_images: url ? [url] : [] })} />
 
                     <SubmitBtn label={editingId ? "Update tourist spot details" : "Register tourist spot"} isLoading={isActionLoading} />
                   </form>
@@ -2893,7 +2894,7 @@ const AdminDashboard: React.FC = () => {
                       <textarea id="off-bio" rows={3} value={officialForm.biography} onChange={(e) => setOfficialForm({ ...officialForm, biography: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
                     </div>
 
-                    <FileUpload label="Profile Portrait Photo" folder="officials" currentValue={officialForm.image_url} onUploadComplete={(url) => setOfficialForm({ ...officialForm, image_url: url })} />
+                    <FileUpload label="Profile Portrait Photo" folder="officials" bucket="public-cms" currentValue={officialForm.image_url} onUploadComplete={(url) => setOfficialForm({ ...officialForm, image_url: url })} />
 
                     <SubmitBtn label={editingId ? "Update official profile" : "Create official profile"} isLoading={isActionLoading} />
                   </form>
@@ -3363,7 +3364,7 @@ const AdminDashboard: React.FC = () => {
                       <textarea id="evt-desc" required rows={3} value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
                     </div>
 
-                    <FileUpload label="Event Banner Landscape Image" folder="event_banners" currentValue={eventForm.banner_image} onUploadComplete={(url) => setEventForm({ ...eventForm, banner_image: url })} />
+                    <FileUpload label="Event Banner Landscape Image" folder="event_banners" bucket="public-cms" currentValue={eventForm.banner_image} onUploadComplete={(url) => setEventForm({ ...eventForm, banner_image: url })} />
 
                     <SubmitBtn label={editingId ? "Update scheduled event" : "Publish scheduled event"} isLoading={isActionLoading} />
                   </form>
