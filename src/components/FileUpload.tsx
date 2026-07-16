@@ -9,6 +9,7 @@ interface FileUploadProps {
   accept?: string;
   folder?: string;
   currentValue?: string;
+  bucket?: string;
 }
 
 const MAX_FILE_SIZE_MB = 10;
@@ -51,6 +52,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   accept = '*',
   folder = 'uploads',
   currentValue,
+  bucket = 'public-assets',
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -144,7 +146,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       setUploadProgress(30);
 
       const { data, error: uploadError } = await supabase.storage
-        .from('public-assets')
+        .from(bucket)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false,
@@ -158,7 +160,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
       const {
         data: { publicUrl },
-      } = supabase.storage.from('public-assets').getPublicUrl(data.path);
+      } = supabase.storage.from(bucket).getPublicUrl(data.path);
 
       if (!publicUrl) throw new Error('Failed to generate public URL.');
 

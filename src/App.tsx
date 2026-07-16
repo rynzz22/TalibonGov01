@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, Link, Navigate } from "react-router-dom";
 import { motion } from "motion/react";
 import Navbar from "./components/Navbar";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Home from "./pages/Home";
 import ContentPage from "./pages/ContentPage";
 import OfficialSealPage from "./pages/OfficialSealPage";
@@ -99,10 +101,129 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
+        <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Loading System Core...</span>
+      </div>
+    );
+  }
+
+  if (user && profile && profile.is_verified) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function StaffRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
+        <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Loading System Core...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!profile) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const staffRoles = ["super_admin", "admin", "municipal_admin", "department_admin", "barangay_admin", "editor"];
+  if (!profile.is_verified || !staffRoles.includes(profile.role)) {
+    return <AccessDenied />;
+  }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
+        <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Loading System Core...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!profile) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const adminRoles = ["super_admin", "admin", "municipal_admin"];
+  if (!profile.is_verified || !adminRoles.includes(profile.role)) {
+    return <AccessDenied />;
+  }
+
+  return <>{children}</>;
+}
+
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
+        <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Loading System Core...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!profile) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!profile.is_verified || profile.role !== "super_admin") {
+    return <AccessDenied />;
+  }
+
+  return <>{children}</>;
+}
+
 function AppLayout() {
   const location = useLocation();
   const isHome = location.pathname === "/";
   const isLogin = location.pathname === "/login";
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-brand-bg font-sans selection:bg-brand-primary selection:text-white relative overflow-hidden">
@@ -111,21 +232,32 @@ function AppLayout() {
           <div className="absolute top-0 left-0 w-full h-full opacity-[0.2]" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
         </div>
 
+        {/* Offline Indicator */}
+        {isOffline && (
+          <div className="fixed bottom-4 right-4 z-50 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 animate-pulse">
+            <span className="text-sm">⚠️</span>
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] font-black uppercase tracking-widest">Offline Mode</span>
+              <span className="text-[9px] font-mono text-amber-600 uppercase">Operating on cached local core.</span>
+            </div>
+          </div>
+        )}
+
         <div className="relative z-10">
           {!isLogin && <Navbar />}
           <div className={isHome || isLogin ? "" : "pt-[180px] lg:pt-[260px]"}>
             <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/e-services" element={<EServicesPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/brgy/:slug" element={<BarangayHome />} />
           
           {/* Protected CMS Control Core */}
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/cms" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/manage/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={<StaffRoute><AdminDashboard /></StaffRoute>} />
+          <Route path="/dashboard" element={<StaffRoute><AdminDashboard /></StaffRoute>} />
+          <Route path="/cms" element={<StaffRoute><AdminDashboard /></StaffRoute>} />
+          <Route path="/manage/*" element={<StaffRoute><AdminDashboard /></StaffRoute>} />
           
           <Route path="/downloads" element={<DownloadsPage />} />
           <Route path="/services/:slug" element={<ServiceInfoPage />} />
@@ -193,13 +325,33 @@ function AppLayout() {
 }
 
 export default function App() {
+  const globalFallback = (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
+      <div className="w-16 h-16 bg-red-50 text-red-600 rounded-[1.5rem] flex items-center justify-center text-2xl font-black mb-4 shadow-xs">
+        ⚠️
+      </div>
+      <h1 className="text-sm font-black uppercase tracking-widest text-slate-800">System Core Interruption</h1>
+      <p className="text-[10px] font-mono text-slate-500 mt-2 max-w-xs leading-relaxed uppercase">
+        An unexpected error occurred in the Municipal digital core runtime.
+      </p>
+      <button 
+        onClick={() => window.location.reload()} 
+        className="mt-6 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-[9px] rounded-full uppercase tracking-widest shadow-xs transition-all"
+      >
+        Reboot Digital Core
+      </button>
+    </div>
+  );
+
   return (
     <LanguageProvider>
       <AuthProvider>
-        <Router>
-          <ScrollToTop />
-          <AppLayout />
-        </Router>
+        <ErrorBoundary fallback={globalFallback} componentName="GlobalSystemCore">
+          <Router>
+            <ScrollToTop />
+            <AppLayout />
+          </Router>
+        </ErrorBoundary>
       </AuthProvider>
     </LanguageProvider>
   );

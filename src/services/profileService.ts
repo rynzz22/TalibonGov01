@@ -1,0 +1,181 @@
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { logCmsAction, UserProfileItem } from "./cmsService";
+
+const INITIAL_USERS: UserProfileItem[] = [
+  {
+    id: "usr-1",
+    email: "superadmin@talibon.gov.ph",
+    full_name: "Municipal Admin",
+    role: "super_admin",
+    is_verified: true,
+    department_id: null,
+    barangay_id: null,
+  },
+  {
+    id: "usr-2",
+    email: "editor1@talibon.gov.ph",
+    full_name: "Municipal Editor",
+    role: "editor",
+    is_verified: true,
+    department_id: "dept-1", // BPLO
+    barangay_id: null,
+  },
+  {
+    id: "usr-3",
+    email: "bplostaff@talibon.gov.ph",
+    full_name: "BPLO Licensing Clerk",
+    role: "municipal_admin",
+    is_verified: true,
+    department_id: "dept-1", // BPLO
+    barangay_id: null,
+  },
+  {
+    id: "usr-4",
+    email: "treasurystaff@talibon.gov.ph",
+    full_name: "MTO Cashier",
+    role: "editor",
+    is_verified: true,
+    department_id: "dept-2", // MTO (Treasury)
+    barangay_id: null,
+  },
+  {
+    id: "usr-5",
+    email: "sanpedroadmin@talibon.gov.ph",
+    full_name: "San Pedro Brgy Secretary",
+    role: "barangay_admin",
+    is_verified: true,
+    department_id: null,
+    barangay_id: "san_pedro",
+  }
+];
+
+function getStorageUsers(): UserProfileItem[] {
+  const data = localStorage.getItem("cms_data:users");
+  if (!data) {
+    localStorage.setItem("cms_data:users", JSON.stringify(INITIAL_USERS));
+    return INITIAL_USERS;
+  }
+  return JSON.parse(data);
+}
+
+function setStorageUsers(data: UserProfileItem[]): void {
+  localStorage.setItem("cms_data:users", JSON.stringify(data));
+}
+
+export const profileService = {
+  /**
+   * Get all user profiles
+   */
+  async getProfiles(): Promise<UserProfileItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        if (data) return data as UserProfileItem[];
+      } catch (e: any) {
+        console.error("[ProfileService] Supabase profiles query failed, falling back to LocalStorage:", e.message || e);
+      }
+    }
+    return getStorageUsers();
+  },
+
+  /**
+   * Get a single user profile by ID
+   */
+  async getProfile(id: string): Promise<UserProfileItem | null> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+        if (error) throw error;
+        return data as UserProfileItem;
+      } catch (e: any) {
+        console.error(`[ProfileService] Fetch profile ${id} failed:`, e.message || e);
+      }
+    }
+    const list = getStorageUsers();
+    return list.find(u => u.id === id) || null;
+  },
+
+  /**
+   * Update a user profile directly
+   */
+  async updateProfile(id: string, updates: Partial<UserProfileItem>, userEmail: string): Promise<UserProfileItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .update(updates)
+          .eq("id", id)
+          .select()
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          await logCmsAction(userEmail, "UPDATE_PROFILE", "profiles", id);
+          return data as UserProfileItem;
+        }
+      } catch (e: any) {
+        console.error("[ProfileService] Supabase profile update failed:", e.message || e);
+        throw e;
+      }
+    }
+
+    const list = getStorageUsers();
+    const index = list.findIndex(u => u.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...updates };
+      setStorageUsers(list);
+      await logCmsAction(userEmail, "UPDATE_PROFILE", "profiles", id);
+      return list[index];
+    }
+    throw new Error("User profile not found");
+  },
+
+  /**
+   * Update user role and verify using standard flow or secure RPC (approve_user)
+   */
+  async updateUserRole(
+    id: string,
+    role: string,
+    isVerified: boolean,
+    userEmail: string,
+    departmentId?: string | null,
+    barangayId?: string | null
+  ): Promise<UserProfileItem> {
+    // If we're verifying / approving a user, attempt the `approve_user` RPC
+    if (isSupabaseConfigured && isVerified) {
+      try {
+        const { data, error } = await supabase.rpc("approve_user", {
+          p_user_id: id,
+          p_role: role
+        });
+
+        if (error) throw error;
+
+        // Since approve_user doesn't set department/barangay directly, 
+        // we can follow up with a standard update if those are specified.
+        if (data && (departmentId !== undefined || barangayId !== undefined)) {
+          return await this.updateProfile(id, { department_id: departmentId, barangay_id: barangayId }, userEmail);
+        } else if (data) {
+          await logCmsAction(userEmail, "APPROVE_USER_RPC", "profiles", id);
+          return data as UserProfileItem;
+        }
+      } catch (e: any) {
+        console.warn("[ProfileService] approve_user RPC failed, falling back to direct update:", e.message || e);
+      }
+    }
+
+    // Direct update fallback (or if not setting verified)
+    const updatePayload: Partial<UserProfileItem> = { role: role as any, is_verified: isVerified };
+    if (departmentId !== undefined) updatePayload.department_id = departmentId;
+    if (barangayId !== undefined) updatePayload.barangay_id = barangayId;
+
+    return await this.updateProfile(id, updatePayload, userEmail);
+  }
+};

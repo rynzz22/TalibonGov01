@@ -11,6 +11,8 @@ import {
   Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock, Workflow
 } from 'lucide-react';
 import { notificationService, AppNotification } from '../services/notificationService';
+import { certificateService } from '../services/certificateService';
+import { dashboardService } from '../services/dashboardService';
 import MeetingAssistant from '../components/MeetingAssistant';
 import FileUpload from '../components/FileUpload';
 import { BARANGAYS } from '../constants/barangayConfig';
@@ -29,6 +31,9 @@ import {
   AuditLogItem,
   UserProfileItem
 } from '../services/cmsService';
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell
+} from 'recharts';
 
 const AdminDashboard: React.FC = () => {
   const { user, profile, loading, signOut } = useAuth();
@@ -132,6 +137,11 @@ const AdminDashboard: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isTableLoading, setIsTableLoading] = useState(false);
+
+  // Analytics State
+  const [aggregates, setAggregates] = useState<any>(null);
+  const [monthlyStats, setMonthlyStats] = useState<any[]>([]);
+  const [gadStats, setGadStats] = useState<any[]>([]);
 
   // Stats State
   const [stats, setStats] = useState({
@@ -399,6 +409,20 @@ const AdminDashboard: React.FC = () => {
       const statsData = await cmsService.getDashboardStats();
       setStats(statsData);
 
+      // Load analytics stats from live views
+      try {
+        const aggs = await dashboardService.getDashboardAggregates();
+        setAggregates(aggs);
+        
+        const mStats = await dashboardService.getMonthlyRequestStats();
+        setMonthlyStats(mStats);
+
+        const gStats = await dashboardService.getGADSectoralStats();
+        setGadStats(gStats);
+      } catch (analErr) {
+        console.error("Failed to load dashboard analytics:", analErr);
+      }
+
       // 2. Tab-specific data fetches
       const newsData = await cmsService.getNews();
       setNews(newsData);
@@ -426,6 +450,26 @@ const AdminDashboard: React.FC = () => {
 
       const logsData = await cmsService.getAuditLogs();
       setAuditLogs(logsData);
+
+      // Load real certificate requests from Supabase
+      try {
+        const certRequests = await certificateService.getAllRequests();
+        const mappedRequests = certRequests.map(req => ({
+          id: req.id || `req-${req.ticketId}`,
+          citizenName: req.fullName,
+          type: req.documentType,
+          description: req.purpose || `${req.documentType} application submitted for barangay ${req.barangay}.`,
+          submittedAt: req.submittedAt || new Date().toISOString(),
+          assignedDeptId: req.barangay === "dept-1" || req.barangay === "dept-2" || req.barangay === "dept-3" ? req.barangay : null,
+          status: (req.status || "PENDING").toUpperCase(),
+          priority: req.documentType.toLowerCase().includes("urgent") || req.purpose.toLowerCase().includes("urgent") ? "HIGH" : "MEDIUM",
+          trackingNumber: req.ticketId,
+          attachments: req.attachments || []
+        }));
+        setCitizenRequests(mappedRequests);
+      } catch (certErr) {
+        console.error("Failed to load certificate requests, falling back to mock:", certErr);
+      }
 
       if (isSuperAdminOrAdmin) {
         const usersData = await cmsService.getUsers();
@@ -1178,6 +1222,55 @@ const AdminDashboard: React.FC = () => {
                         <StatBox count={stats.totalServices} label="Citizen Services" icon={Building2} color="bg-teal-50 text-teal-600" />
                       </div>
 
+                      {/* LIVE DATABASE ANALYTICS VIEWS */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* CHART 1: MONTHLY CITIZEN REQUESTS */}
+                        <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-xs space-y-4">
+                          <div>
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-widest rounded-md">View: Monthly Request Stats</span>
+                            <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mt-1">E-Services Volume</h3>
+                          </div>
+                          <div className="h-[200px] w-full text-xs font-mono">
+                            {monthlyStats.length > 0 ? (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={monthlyStats}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                                  <XAxis dataKey="document_type" tick={{ fill: '#9ca3af', fontSize: 9 }} tickLine={false} axisLine={false} />
+                                  <YAxis tick={{ fill: '#9ca3af', fontSize: 9 }} tickLine={false} axisLine={false} />
+                                  <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '10px' }} />
+                                  <Bar dataKey="total_requests" name="Requests" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            ) : (
+                              <div className="h-full flex items-center justify-center text-gray-400">Loading live request volume...</div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* CHART 2: GAD BENEFICIARIES SECTORAL DISTRIBUTION */}
+                        <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-xs space-y-4">
+                          <div>
+                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest rounded-md">View: GAD Sectoral Stats</span>
+                            <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest mt-1">Beneficiary Distribution</h3>
+                          </div>
+                          <div className="h-[200px] w-full text-xs font-mono">
+                            {gadStats.length > 0 ? (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={gadStats}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                                  <XAxis dataKey="civil_status" tick={{ fill: '#9ca3af', fontSize: 9 }} tickLine={false} axisLine={false} />
+                                  <YAxis tick={{ fill: '#9ca3af', fontSize: 9 }} tickLine={false} axisLine={false} />
+                                  <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '10px' }} />
+                                  <Bar dataKey="count" name="Residents Count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            ) : (
+                              <div className="h-full flex items-center justify-center text-gray-400">Loading live GAD beneficiaries...</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
                       {/* DEPARTMENT SPECIFIC WIDGETS */}
                       {profile?.department_id && (() => {
                         const deptId = profile.department_id;
@@ -1576,13 +1669,14 @@ const AdminDashboard: React.FC = () => {
                           <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
                             <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Article / Title</th>
                             <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Category</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Status</th>
                             <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Publish Date</th>
                             <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100/60 bg-white">
                           {isTableLoading ? (
-                            <TableSkeleton cols={4} />
+                            <TableSkeleton cols={5} />
                           ) : (
                             <>
                               {paginatedNews.map((item) => (
@@ -1591,12 +1685,35 @@ const AdminDashboard: React.FC = () => {
                                   <td className="px-6 py-4">
                                     <StatusBadge status={item.category} />
                                   </td>
+                                  <td className="px-6 py-4">
+                                    <StatusBadge status={item.status || 'published'} />
+                                  </td>
                                   <td className="px-6 py-4 text-gray-400 font-bold">{item.date}</td>
                                   <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end gap-1">
                                       <button onClick={() => { setViewingItem(item); setViewingTab('news'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
                                       {canWriteTab('news', item) ? (
                                         <>
+                                          {item.status === 'draft' && (
+                                            <button
+                                              onClick={async () => {
+                                                setIsActionLoading(true);
+                                                try {
+                                                  await cmsService.publishNewsRpc(item.id, user?.email || "unknown@talibon.gov.ph");
+                                                  showSuccess("News article published successfully via RPC!");
+                                                  loadAllCmsData();
+                                                } catch (err: any) {
+                                                  showError(err.message || "Failed to publish news.");
+                                                } finally {
+                                                  setIsActionLoading(false);
+                                                }
+                                              }}
+                                              className="p-2.5 text-amber-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
+                                              title="Publish now via RPC"
+                                            >
+                                              <Globe size={16} />
+                                            </button>
+                                          )}
                                           <button onClick={() => openEditEntity('news', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
                                           <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'news', name: item.title })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
                                         </>
@@ -1607,7 +1724,7 @@ const AdminDashboard: React.FC = () => {
                                   </td>
                                 </tr>
                               ))}
-                              {filteredNews.length === 0 && <NoDataRow colSpan={4} />}
+                              {filteredNews.length === 0 && <NoDataRow colSpan={5} />}
                             </>
                           )}
                         </tbody>
@@ -2246,23 +2363,46 @@ const AdminDashboard: React.FC = () => {
                   }));
                 };
 
-                const handleUpdateReqStatus = (reqId: string, newStatus: string) => {
+                const handleUpdateReqStatus = async (reqId: string, newStatus: string) => {
+                  // Optimistic local update
                   setCitizenRequests(prev => prev.map(req => {
                     if (req.id === reqId) {
-                      showSuccess(`Request ${req.trackingNumber} status updated to ${newStatus}!`);
-                      
-                      notificationService.createNotification({
-                        title: "Workflow Status Update",
-                        message: `Citizen request ${req.trackingNumber} (${req.type}) status was changed to ${newStatus}.`,
-                        category: "Workflow Updates",
-                        department_id: req.assignedDeptId,
-                        action_url: "workflows"
-                      });
-                      
                       return { ...req, status: newStatus };
                     }
                     return req;
                   }));
+
+                  try {
+                    let dbStatus = "Submitted";
+                    if (newStatus === "ROUTED" || newStatus === "PROCESSING") {
+                      dbStatus = "Under Review";
+                    } else if (newStatus === "COMPLETED") {
+                      dbStatus = "Completed";
+                    } else if (newStatus === "REJECTED") {
+                      dbStatus = "Rejected";
+                    }
+
+                    const reqItem = citizenRequests.find(r => r.id === reqId);
+                    const remarks = `Status updated to ${newStatus} in portal.`;
+                    
+                    if (reqItem) {
+                      await certificateService.updateRequestStatus(reqId, dbStatus, remarks, profile?.email || "admin@talibon.gov.ph");
+                      showSuccess(`Request ${reqItem.trackingNumber} status updated to ${newStatus} on live database!`);
+                    } else {
+                      showSuccess(`Request status updated to ${newStatus}!`);
+                    }
+
+                    notificationService.createNotification({
+                      title: "Workflow Status Update",
+                      message: `Citizen request ${reqItem?.trackingNumber || ""} (${reqItem?.type || "Application"}) status was changed to ${newStatus}.`,
+                      category: "Workflow Updates",
+                      department_id: reqItem?.assignedDeptId,
+                      action_url: "workflows"
+                    });
+                  } catch (e: any) {
+                    console.error("Error updating request status in live DB:", e);
+                    showError("Could not persist status change to live database.");
+                  }
                 };
 
                 return (
@@ -2582,7 +2722,7 @@ const AdminDashboard: React.FC = () => {
                       <input id="news-title" type="text" required value={newsForm.title} onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="news-cat">Category</label>
                         <select id="news-cat" value={newsForm.category} onChange={(e) => setNewsForm({ ...newsForm, category: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs">
@@ -2596,6 +2736,13 @@ const AdminDashboard: React.FC = () => {
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="news-date">Publication Date</label>
                         <input id="news-date" type="date" required value={newsForm.date} onChange={(e) => setNewsForm({ ...newsForm, date: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="news-status">Status</label>
+                        <select id="news-status" value={newsForm.status} onChange={(e) => setNewsForm({ ...newsForm, status: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs">
+                          <option value="draft">Draft (Unpublished)</option>
+                          <option value="published">Published</option>
+                        </select>
                       </div>
                     </div>
 
@@ -2615,7 +2762,7 @@ const AdminDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    <FileUpload label="Featured Image (Optional)" accept="image/*" folder="news_images" currentValue={newsForm.image_url} onUploadComplete={(url) => setNewsForm({ ...newsForm, image_url: url })} />
+                    <FileUpload label="Featured Image (Optional)" accept="image/*" folder="news_images" bucket="public-cms" currentValue={newsForm.image_url} onUploadComplete={(url) => setNewsForm({ ...newsForm, image_url: url })} />
 
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="news-summary">Short Summary *</label>
