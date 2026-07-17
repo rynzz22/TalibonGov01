@@ -15,7 +15,6 @@ export const lazyLoad = (importFunc: () => Promise<{ default: React.ComponentTyp
 export const LazyHome = React.lazy(() => import("../pages/Home"));
 export const LazyLogin = React.lazy(() => import("../pages/Login"));
 export const LazyAuthCallback = React.lazy(() => import("../pages/AuthCallback"));
-export const LazyBarangayHome = React.lazy(() => import("../pages/BarangayHome"));
 export const LazyAdminDashboard = React.lazy(() => import("../pages/AdminDashboard"));
 export const LazyDownloadsPage = React.lazy(() => import("../pages/DownloadsPage"));
 export const LazyPaymentSuccess = React.lazy(() => import("../pages/PaymentSuccess"));

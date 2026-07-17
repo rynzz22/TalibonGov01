@@ -25,6 +25,7 @@ import {
   TourismSpotItem,
   OfficialItem,
   DepartmentItem,
+  BarangayItem,
   ServiceCmsItem,
   CitizensCharterCmsItem,
   EventItem,
@@ -46,6 +47,7 @@ const AdminDashboard: React.FC = () => {
     | 'tourism'
     | 'officials'
     | 'departments'
+    | 'barangays'
     | 'services'
     | 'charter'
     | 'events'
@@ -160,6 +162,7 @@ const AdminDashboard: React.FC = () => {
   const [tourismSpots, setTourismSpots] = useState<TourismSpotItem[]>([]);
   const [officials, setOfficials] = useState<OfficialItem[]>([]);
   const [departments, setDepartments] = useState<DepartmentItem[]>([]);
+  const [barangaysList, setBarangaysList] = useState<BarangayItem[]>([]);
   const [services, setServices] = useState<ServiceCmsItem[]>([]);
   const [charters, setCharters] = useState<CitizensCharterCmsItem[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -268,6 +271,11 @@ const AdminDashboard: React.FC = () => {
   const [departmentForm, setDepartmentForm] = useState<Omit<DepartmentItem, 'id'>>({
     name: '', description: '', head_of_office: '', contact_number: '', email: '',
     office_hours: 'Monday to Friday, 8:00 AM - 5:00 PM', location: ''
+  });
+
+  const [barangayForm, setBarangayForm] = useState<Omit<BarangayItem, 'id'>>({
+    name: '', captain: '', population: 0, contact_number: '', office_address: '',
+    office_hours: 'Monday to Friday, 8:00 AM - 5:00 PM', cover_image: ''
   });
 
   const [serviceForm, setServiceForm] = useState<Omit<ServiceCmsItem, 'id'>>({
@@ -442,6 +450,9 @@ const AdminDashboard: React.FC = () => {
       const deptsData = await cmsService.getDepartments();
       setDepartments(deptsData);
 
+      const brgysData = await cmsService.getBarangays();
+      setBarangaysList(brgysData);
+
       const srvData = await cmsService.getServices();
       setServices(srvData);
 
@@ -547,6 +558,10 @@ const AdminDashboard: React.FC = () => {
       name: '', description: '', head_of_office: '', contact_number: '', email: '',
       office_hours: 'Monday to Friday, 8:00 AM - 5:00 PM', location: ''
     });
+    setBarangayForm({
+      name: '', captain: '', population: 0, contact_number: '', office_address: '',
+      office_hours: 'Monday to Friday, 8:00 AM - 5:00 PM', cover_image: ''
+    });
     setServiceForm({
       name: '', slug: '', description: '', purpose: '', requirements: [],
       processing_time: '3 to 5 business days', fees: 'None', office_responsible: '',
@@ -608,6 +623,12 @@ const AdminDashboard: React.FC = () => {
         contact_number: item.contact_number || '', email: item.email || '',
         office_hours: item.office_hours || 'Monday to Friday, 8:00 AM - 5:00 PM', location: item.location || ''
       });
+    } else if (tab === 'barangays') {
+      setBarangayForm({
+        name: item.name, captain: item.captain || '', population: item.population || 0,
+        contact_number: item.contact_number || '', office_address: item.office_address || '',
+        office_hours: item.office_hours || 'Monday to Friday, 8:00 AM - 5:00 PM', cover_image: item.cover_image || ''
+      });
     } else if (tab === 'services') {
       setServiceForm({
         name: item.name, slug: item.slug, description: item.description, purpose: item.purpose || '',
@@ -642,6 +663,7 @@ const AdminDashboard: React.FC = () => {
       else if (tab === 'tourism') success = await cmsService.deleteTourismSpot(id, userEmail);
       else if (tab === 'officials') success = await cmsService.deleteOfficial(id, userEmail);
       else if (tab === 'departments') success = await cmsService.deleteDepartment(id, userEmail);
+      else if (tab === 'barangays') success = await cmsService.deleteBarangay(id, userEmail);
       else if (tab === 'services') success = await cmsService.deleteService(id, userEmail);
       else if (tab === 'charter') success = await cmsService.deleteCitizensCharter(id, userEmail);
       else if (tab === 'events') success = await cmsService.deleteEvent(id, userEmail);
@@ -802,6 +824,14 @@ const AdminDashboard: React.FC = () => {
         } else {
           await cmsService.createDepartment(departmentForm, userEmail);
           showSuccess("New municipal department created!");
+        }
+      } else if (activeTab === 'barangays') {
+        if (editingId) {
+          await cmsService.updateBarangay(editingId, barangayForm, userEmail);
+          showSuccess("Barangay record updated successfully!");
+        } else {
+          await cmsService.createBarangay(barangayForm, userEmail);
+          showSuccess("New Barangay profile created!");
         }
       } else if (activeTab === 'services') {
         const slug = serviceForm.slug || serviceForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -1114,7 +1144,7 @@ const AdminDashboard: React.FC = () => {
                 <SidebarBtn id="events" label="Public Events" icon={Calendar} active={activeTab} onClick={setActiveTab} visible={isTabVisible('events')} collapsed={isSidebarCollapsed} />
               </div>
 
-              {(isTabVisible('officials') || isTabVisible('departments') || isTabVisible('services') || isTabVisible('charter')) && (
+              {(isTabVisible('officials') || isTabVisible('departments') || isTabVisible('barangays') || isTabVisible('services') || isTabVisible('charter')) && (
                 <div className="space-y-1 pt-2">
                   {!isSidebarCollapsed ? (
                     <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-4">Structure</p>
@@ -1123,6 +1153,7 @@ const AdminDashboard: React.FC = () => {
                   )}
                   <SidebarBtn id="officials" label="Officials Directory" icon={Users} active={activeTab} onClick={setActiveTab} visible={isTabVisible('officials')} collapsed={isSidebarCollapsed} />
                   <SidebarBtn id="departments" label="Departments" icon={Landmark} active={activeTab} onClick={setActiveTab} visible={isTabVisible('departments')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="barangays" label="Barangays" icon={Globe} active={activeTab} onClick={setActiveTab} visible={isTabVisible('barangays')} collapsed={isSidebarCollapsed} />
                   <SidebarBtn id="services" label="Municipal Services" icon={Building2} active={activeTab} onClick={setActiveTab} visible={isTabVisible('services')} collapsed={isSidebarCollapsed} />
                   <SidebarBtn id="charter" label="Citizen's Charter" icon={Gavel} active={activeTab} onClick={setActiveTab} visible={isTabVisible('charter')} collapsed={isSidebarCollapsed} />
                 </div>
@@ -1158,6 +1189,8 @@ const AdminDashboard: React.FC = () => {
                     activeTab === 'downloadables' ? "Search files and documents..." :
                     activeTab === 'tourism' ? "Search eco-tourism spots..." :
                     activeTab === 'officials' ? "Search officials directory..." :
+                    activeTab === 'departments' ? "Search departments..." :
+                    activeTab === 'barangays' ? "Search barangays..." :
                     activeTab === 'services' ? "Search municipal services..." :
                     activeTab === 'charter' ? "Search citizen's charter..." :
                     activeTab === 'workflows' ? "Search citizen requests..." :
@@ -1209,7 +1242,7 @@ const AdminDashboard: React.FC = () => {
                       : undefined
                   }
                   actions={
-                    canWriteTab(activeTab) && ['news', 'downloadables', 'tourism', 'officials', 'departments', 'services', 'charter', 'events'].includes(activeTab) ? (
+                    canWriteTab(activeTab) && ['news', 'downloadables', 'tourism', 'officials', 'departments', 'barangays', 'services', 'charter', 'events'].includes(activeTab) ? (
                       <button
                         onClick={() => { resetAllForms(); setEditingId(null); setIsModalOpen(true); }}
                         className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-500/10 flex items-center gap-1.5 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -2116,6 +2149,74 @@ const AdminDashboard: React.FC = () => {
                 );
               })()}
 
+              {/* BARANGAYS PANEL */}
+              {activeTab === 'barangays' && (() => {
+                const filteredBarangays = barangaysList.filter(b => {
+                  return b.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (b.captain || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (b.contact_number || "").toLowerCase().includes(searchTerm.toLowerCase());
+                });
+                const paginatedBarangays = filteredBarangays.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+                return (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Barangays Directory</h3>
+                      <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{filteredBarangays.length} of {barangaysList.length} Barangays</span>
+                    </div>
+
+                    <div className="overflow-x-auto relative max-h-[60vh] custom-scrollbar border border-gray-100 rounded-[2rem] shadow-sm">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Barangay Name</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Barangay Captain</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-transparent">Population</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right bg-transparent">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100/60 bg-white">
+                          {isTableLoading ? (
+                            <TableSkeleton cols={4} />
+                          ) : (
+                            <>
+                              {paginatedBarangays.map((item) => (
+                                <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
+                                  <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
+                                  <td className="px-6 py-4 font-bold text-gray-700">{item.captain || "Unspecified"}</td>
+                                  <td className="px-6 py-4 text-gray-400 font-bold">{item.population ? Number(item.population).toLocaleString() : "N/A"}</td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <button onClick={() => { setViewingItem(item); setViewingTab('barangays'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
+                                      {canWriteTab('barangays', item) ? (
+                                        <>
+                                          <button onClick={() => openEditEntity('barangays', item)} className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer" title="Edit item"><Edit3 size={16} /></button>
+                                          <button onClick={() => setDeleteConfirmItem({ id: item.id, tab: 'barangays', name: item.name })} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer" title="Delete item"><Trash2 size={16} /></button>
+                                        </>
+                                      ) : (
+                                        <span className="p-2.5 text-gray-300 flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-widest"><Lock size={12} /> Read Only</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                              {filteredBarangays.length === 0 && <NoDataRow colSpan={4} />}
+                            </>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Pagination
+                      currentPage={currentPage}
+                      totalItems={filteredBarangays.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                );
+              })()}
+
               {/* SERVICES CMS PANEL */}
               {activeTab === 'services' && (() => {
                 const filteredServices = services.filter(s => {
@@ -2964,6 +3065,47 @@ const AdminDashboard: React.FC = () => {
                   </form>
                 )}
 
+                {/* 5b. BARANGAYS FORM */}
+                {activeTab === 'barangays' && (
+                  <form onSubmit={handleSaveEntity} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="brgy-name">Barangay Name *</label>
+                      <input id="brgy-name" type="text" required value={barangayForm.name} onChange={(e) => setBarangayForm({ ...barangayForm, name: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="brgy-captain">Barangay Captain *</label>
+                        <input id="brgy-captain" type="text" required value={barangayForm.captain || ""} onChange={(e) => setBarangayForm({ ...barangayForm, captain: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="brgy-pop">Population</label>
+                        <input id="brgy-pop" type="number" value={barangayForm.population || 0} onChange={(e) => setBarangayForm({ ...barangayForm, population: Number(e.target.value) })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="brgy-contact">Contact Number</label>
+                        <input id="brgy-contact" type="text" value={barangayForm.contact_number || ""} onChange={(e) => setBarangayForm({ ...barangayForm, contact_number: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="brgy-hours">Office Hours</label>
+                        <input id="brgy-hours" type="text" value={barangayForm.office_hours || ""} onChange={(e) => setBarangayForm({ ...barangayForm, office_hours: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="brgy-addr">Office Address</label>
+                      <input id="brgy-addr" type="text" value={barangayForm.office_address || ""} onChange={(e) => setBarangayForm({ ...barangayForm, office_address: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <FileUpload label="Cover Image" folder="barangays" bucket="public-cms" currentValue={barangayForm.cover_image || ""} onUploadComplete={(url) => setBarangayForm({ ...barangayForm, cover_image: url })} />
+
+                    <SubmitBtn label={editingId ? "Update Barangay Profile" : "Create Barangay Profile"} isLoading={isActionLoading} />
+                  </form>
+                )}
+
                 {/* 6. SERVICES FORM */}
                 {activeTab === 'services' && (
                   <form onSubmit={handleSaveEntity} className="space-y-6">
@@ -3607,6 +3749,40 @@ const AdminDashboard: React.FC = () => {
                       <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
                         <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Phone Contact</span>
                         <span className="font-bold text-gray-800">{viewingItem.phone || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {viewingTab === 'barangays' && (
+                  <div className="space-y-6">
+                    {viewingItem.cover_image && (
+                      <div className="w-full h-40 rounded-3xl overflow-hidden border border-gray-100">
+                        <img src={viewingItem.cover_image} alt={viewingItem.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">{viewingItem.name}</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Barangay Captain: <span className="text-gray-800 font-black">{viewingItem.captain || 'Unspecified'}</span></p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Total Population</span>
+                        <span className="font-bold text-gray-800">{viewingItem.population ? Number(viewingItem.population).toLocaleString() : 'N/A'}</span>
+                      </div>
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Contact Number</span>
+                        <span className="font-bold text-gray-800">{viewingItem.contact_number || 'N/A'}</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Office Hours</span>
+                        <span className="font-bold text-gray-800">{viewingItem.office_hours || 'N/A'}</span>
+                      </div>
+                      <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-1">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Office Address</span>
+                        <span className="font-bold text-gray-800">{viewingItem.office_address || 'N/A'}</span>
                       </div>
                     </div>
                   </div>

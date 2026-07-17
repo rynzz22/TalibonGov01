@@ -1,52 +1,48 @@
 import React from "react";
-import { BARANGAYS } from "../constants/barangayConfig";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowUpRight, MapPin } from "lucide-react";
+import { ArrowUpRight, MapPin, Users, User } from "lucide-react";
+import { INITIAL_BARANGAYS } from "../services/cmsService";
 
 const BarangaySelector: React.FC = () => {
+  // Show 6 representative barangays
+  const previewBarangays = INITIAL_BARANGAYS.slice(0, 6);
+
   return (
     <section className="py-32 bg-brand-bg overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-24">
           <div className="max-w-2xl">
-            <span className="section-label">Communities</span>
-            <h2 className="section-title">Barangay Microsites</h2>
+            <span className="section-label">Municipal Communities</span>
+            <h2 className="section-title">Barangays of Talibon</h2>
             <p className="text-xl text-brand-muted font-medium">
-              Access dedicated digital portals for each of Talibon's 25 barangays. Each site provides localized news, services, and official updates.
+              Explore the official profiles, leadership, and directories for each of Talibon's 25 local barangay units.
             </p>
           </div>
           <div className="flex gap-4">
-             <div className="flex -space-x-4">
-                {BARANGAYS.map((b, i) => (
-                  <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-brand-surface flex items-center justify-center text-brand-primary font-black text-xs">
-                    {b.name.charAt(b.name.length - 1)}
-                  </div>
-                ))}
-             </div>
+            <div className="flex -space-x-4">
+              {INITIAL_BARANGAYS.slice(0, 8).map((b, i) => (
+                <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-brand-surface flex items-center justify-center text-brand-primary font-black text-xs shadow-sm">
+                  {b.name.charAt(0)}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {BARANGAYS.slice(0, 6).map((brgy, idx) => (
+          {previewBarangays.map((brgy, idx) => (
             <motion.div
-              key={brgy.slug}
+              key={brgy.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
               viewport={{ once: true }}
             >
               <Link 
-                to={`/brgy/${brgy.slug}`}
-                className="group block relative p-12 bg-brand-surface rounded-[3rem] border border-brand-border hover:bg-white hover:shadow-2xl hover:border-brand-primary transition-all duration-500 overflow-hidden"
-                style={{ '--brgy-primary': brgy.theme.primary } as any}
+                to="/about/barangays"
+                className="group block relative p-12 bg-brand-surface rounded-[3rem] border border-brand-border hover:bg-white hover:shadow-2xl hover:border-brand-primary/30 transition-all duration-500 overflow-hidden text-left"
               >
-                {/* Visual Accent */}
-                <div 
-                  className="absolute top-0 right-0 w-32 h-32 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity"
-                  style={{ backgroundColor: brgy.theme.primary, borderRadius: '0 0 0 100%' }}
-                />
-
                 <div className="relative z-10 space-y-6">
                   <div className="flex justify-between items-start">
                     <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all">
@@ -59,14 +55,17 @@ const BarangaySelector: React.FC = () => {
                     <h3 className="text-2xl font-black text-brand-text mb-2 group-hover:text-brand-primary transition-colors uppercase tracking-tight">
                       {brgy.name}
                     </h3>
-                    <p className="text-sm font-medium text-brand-muted leading-relaxed">
-                      {brgy.description}
-                    </p>
+                    <div className="flex items-center gap-2 text-xs font-bold text-brand-muted uppercase tracking-wider">
+                      <User size={12} className="text-brand-primary/60" />
+                      Captain: {brgy.captain || "Not Specified"}
+                    </div>
                   </div>
 
                   <div className="pt-6 border-t border-brand-border/50 flex justify-between items-center">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary">Official Portal</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Population: {brgy.population}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary group-hover:underline">View Directory</span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-brand-muted flex items-center gap-1">
+                      <Users size={12} /> {brgy.population.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </Link>

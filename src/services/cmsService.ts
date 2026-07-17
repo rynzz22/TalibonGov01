@@ -71,6 +71,19 @@ export interface DepartmentItem {
   created_at?: string;
 }
 
+export interface BarangayItem {
+  id: string;
+  name: string;
+  captain: string | null;
+  population: number;
+  contact_number?: string | null;
+  office_address?: string | null;
+  office_hours?: string | null;
+  cover_image?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ServiceCmsItem {
   id: string;
   name: string;
@@ -243,6 +256,34 @@ const INITIAL_DEPARTMENTS: DepartmentItem[] = [
     office_hours: "Monday to Friday, 8:00 AM - 5:00 PM",
     location: "Ground Floor, Main Lobby",
   }
+];
+
+export const INITIAL_BARANGAYS: BarangayItem[] = [
+  { id: "poblacion", name: "Poblacion", captain: "Hon. Juan dela Cruz", population: 4500, contact_number: "+63 912 345 6789", office_address: "Barangay Hall, Poblacion, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_francisco", name: "San Francisco", captain: "Hon. Maria Clara", population: 3200, contact_number: "+63 923 456 7890", office_address: "Barangay Hall, San Francisco, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_jose", name: "San Jose", captain: "Hon. Jose Rizal", population: 2800, contact_number: "+63 934 567 8901", office_address: "Barangay Hall, San Jose, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_agustin", name: "San Agustin", captain: "Hon. Andres Bonifacio", population: 1900, contact_number: "+63 945 678 9012", office_address: "Barangay Hall, San Agustin, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_roque", name: "San Roque", captain: "Hon. Emilio Aguinaldo", population: 2100, contact_number: "+63 956 789 0123", office_address: "Barangay Hall, San Roque, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_isidro", name: "San Isidro", captain: "Hon. Apolinario Mabini", population: 1500, contact_number: "+63 967 890 1234", office_address: "Barangay Hall, San Isidro, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "santo_nino", name: "Santo Niño", captain: "Hon. Melchora Aquino", population: 1100, contact_number: "+63 978 901 2345", office_address: "Barangay Hall, Santo Niño, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_pedro", name: "San Pedro", captain: "Hon. Marcelo H. del Pilar", population: 3800, contact_number: "+63 989 012 3456", office_address: "Barangay Hall, San Pedro, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "tanghaligue", name: "Tanghaligue", captain: "Hon. Gregorio del Pilar", population: 2400, contact_number: "+63 990 123 4567", office_address: "Barangay Hall, Tanghaligue, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "bagacay", name: "Bagacay", captain: "Hon. Gabriela Silang", population: 1700, contact_number: "+63 901 234 5678", office_address: "Barangay Hall, Bagacay, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "balintawak", name: "Balintawak", captain: "Hon. Francisco Balagtas", population: 1200, contact_number: "+63 912 345 6780", office_address: "Barangay Hall, Balintawak, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "burgos", name: "Burgos", captain: "Hon. Diego Silang", population: 850, contact_number: "+63 923 456 7891", office_address: "Barangay Hall, Burgos, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "cantomimbo", name: "Cantomimbo", captain: "Hon. Juan Luna", population: 1300, contact_number: "+63 934 567 8902", office_address: "Barangay Hall, Cantomimbo, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "guindacpan", name: "Guindacpan", captain: "Hon. Macario Sakay", population: 2200, contact_number: "+63 945 678 9013", office_address: "Barangay Hall, Guindacpan, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "magsaysay", name: "Magsaysay", captain: "Hon. Ramon Magsaysay", population: 1450, contact_number: "+63 956 789 0124", office_address: "Barangay Hall, Magsaysay, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "mahanay", name: "Mahanay", captain: "Hon. Carlos P. Garcia", population: 3100, contact_number: "+63 967 890 1235", office_address: "Barangay Hall, Mahanay, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "masacon", name: "Masacon", captain: "Hon. Jose Abad Santos", population: 980, contact_number: "+63 978 901 2346", office_address: "Barangay Hall, Masacon, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "nonoc", name: "Nonoc", captain: "Hon. Manuel L. Quezon", population: 1600, contact_number: "+63 989 012 3457", office_address: "Barangay Hall, Nonoc, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_carlos", name: "San Carlos", captain: "Hon. Sergio Osmeña", population: 1150, contact_number: "+63 990 123 4568", office_address: "Barangay Hall, San Carlos, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_gregorio", name: "San Gregorio", captain: "Hon. Elpidio Quirino", population: 750, contact_number: "+63 901 234 5679", office_address: "Barangay Hall, San Gregorio, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "san_juan", name: "San Juan", captain: "Hon. Diosdado Macapagal", population: 2050, contact_number: "+63 912 345 6781", office_address: "Barangay Hall, San Juan, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "santa_cruz", name: "Santa Cruz", captain: "Hon. Ferdinand Marcos", population: 1800, contact_number: "+63 923 456 7892", office_address: "Barangay Hall, Santa Cruz, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "santo_rosario", name: "Santo Rosario", captain: "Hon. Corazon Aquino", population: 950, contact_number: "+63 934 567 8903", office_address: "Barangay Hall, Santo Rosario, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "sikatuna", name: "Sikatuna", captain: "Hon. Datu Sikatuna", population: 1350, contact_number: "+63 945 678 9014", office_address: "Barangay Hall, Sikatuna, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" },
+  { id: "suba", name: "Suba", captain: "Hon. Rajah Humabon", population: 2900, contact_number: "+63 956 789 0125", office_address: "Barangay Hall, Suba, Talibon, Bohol", office_hours: "Monday to Friday, 8:00 AM - 5:00 PM" }
 ];
 
 const INITIAL_SERVICES: ServiceCmsItem[] = [
@@ -688,6 +729,134 @@ export const cmsService = {
     const filtered = list.filter(n => n.id !== id);
     setStorage("departments", filtered);
     await logCmsAction(userEmail, "DELETE", "departments", id);
+    return true;
+  },
+
+  // Barangays CRUD
+  async getBarangays(): Promise<BarangayItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("barangays").select("*").order("name", { ascending: true });
+        if (error) throw error;
+        if (data && data.length > 0) {
+          const fallbackMap = new Map(INITIAL_BARANGAYS.map(b => [b.id, b]));
+          return data.map((d: any) => {
+            const fallback = fallbackMap.get(d.id);
+            return {
+              id: d.id,
+              name: d.name,
+              captain: d.captain,
+              population: d.population || 0,
+              contact_number: fallback?.contact_number || "",
+              office_address: fallback?.office_address || "",
+              office_hours: fallback?.office_hours || "Monday to Friday, 8:00 AM - 5:00 PM",
+              cover_image: fallback?.cover_image || ""
+            };
+          });
+        }
+      } catch (e: any) {
+        console.error("Supabase Barangays fetch failed, falling back to LocalStorage:", e.message || e);
+      }
+    }
+    return getStorage<BarangayItem>("barangays", INITIAL_BARANGAYS);
+  },
+
+  async createBarangay(item: Omit<BarangayItem, "id">, userEmail: string): Promise<BarangayItem> {
+    const id = item.name.toLowerCase().replace(/\s+/g, "_");
+    if (isSupabaseConfigured) {
+      try {
+        const payload = {
+          id,
+          name: item.name,
+          captain: item.captain,
+          population: item.population
+        };
+        const { data, error } = await supabase.from("barangays").insert([payload]).select().maybeSingle();
+        if (error) throw error;
+        if (data) {
+          await logCmsAction(userEmail, "CREATE", "barangays", id);
+          return {
+            ...item,
+            id: data.id,
+            name: data.name,
+            captain: data.captain,
+            population: data.population
+          };
+        }
+      } catch (e: any) {
+        console.error("Supabase Barangays insert failed:", e.message || e);
+        throw e;
+      }
+    }
+
+    const newItem = { ...item, id } as BarangayItem;
+    const list = getStorage<BarangayItem>("barangays", INITIAL_BARANGAYS);
+    list.push(newItem);
+    setStorage("barangays", list);
+    await logCmsAction(userEmail, "CREATE", "barangays", id);
+    return newItem;
+  },
+
+  async updateBarangay(id: string, item: Partial<BarangayItem>, userEmail: string): Promise<BarangayItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const payload: any = {};
+        if (item.name !== undefined) payload.name = item.name;
+        if (item.captain !== undefined) payload.captain = item.captain;
+        if (item.population !== undefined) payload.population = item.population;
+
+        const { data, error } = await supabase.from("barangays").update(payload).eq("id", id).select().maybeSingle();
+        if (error) throw error;
+        if (data) {
+          await logCmsAction(userEmail, "UPDATE", "barangays", id);
+          const list = getStorage<BarangayItem>("barangays", INITIAL_BARANGAYS);
+          const index = list.findIndex(n => n.id === id);
+          if (index !== -1) {
+            list[index] = { ...list[index], ...item, name: data.name, captain: data.captain, population: data.population };
+            setStorage("barangays", list);
+          }
+          return {
+            ...item,
+            id: data.id,
+            name: data.name,
+            captain: data.captain,
+            population: data.population
+          } as BarangayItem;
+        }
+      } catch (e: any) {
+        console.error("Supabase Barangays update failed:", e.message || e);
+        throw e;
+      }
+    }
+
+    const list = getStorage<BarangayItem>("barangays", INITIAL_BARANGAYS);
+    const index = list.findIndex(n => n.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], ...item };
+      setStorage("barangays", list);
+      await logCmsAction(userEmail, "UPDATE", "barangays", id);
+      return list[index];
+    }
+    throw new Error("Item not found");
+  },
+
+  async deleteBarangay(id: string, userEmail: string): Promise<boolean> {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from("barangays").delete().eq("id", id);
+        if (error) throw error;
+        await logCmsAction(userEmail, "DELETE", "barangays", id);
+        return true;
+      } catch (e: any) {
+        console.error("Supabase Barangays delete failed:", e.message || e);
+        throw e;
+      }
+    }
+
+    const list = getStorage<BarangayItem>("barangays", INITIAL_BARANGAYS);
+    const filtered = list.filter(n => n.id !== id);
+    setStorage("barangays", filtered);
+    await logCmsAction(userEmail, "DELETE", "barangays", id);
     return true;
   },
 
