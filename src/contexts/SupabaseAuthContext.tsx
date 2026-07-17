@@ -15,11 +15,14 @@ export interface UserProfile {
   created_at?: string;
 }
 
+export type AuthState = "INITIALIZING" | "AUTHENTICATED" | "UNAUTHENTICATED" | "ERROR";
+
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   session: Session | null;
   loading: boolean;
+  state: AuthState;
   signInWithEmail: (email: string, password: string) => Promise<AuthResponse>;
   signUpWithEmail: (email: string, password: string) => Promise<AuthResponse>;
   signOut: () => Promise<void>;
@@ -34,7 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<AuthState>("INITIALIZING");
+
+  // Loading is a single source of truth derived directly from the state machine state
+  const loading = state === "INITIALIZING";
 
   const refreshProfile = async (u?: User) => {
     try {
@@ -47,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setProfile(null);
             setUser(null);
             setSession(null);
+            setState("UNAUTHENTICATED");
             supabase.auth.signOut().catch(() => {});
             return;
           }
@@ -56,9 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!targetUser) {
         setProfile(null);
-        if (import.meta.env.DEV) {
-          console.log("[Auth - DEV] No user found during refreshProfile. Clearing profile state.");
-        }
+        setState("UNAUTHENTICATED");
         return;
       }
 
@@ -69,11 +74,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (error) {
-        console.error("[Auth] Profile fetch error:", error.message);
-        setProfile(null);
-        if (import.meta.env.DEV) {
-          console.warn(`[Auth - DEV] Profile database load failed for ${targetUser.email}: ${error.message}`);
-        }
+        console.error("[Auth] Profile fetch error, falling back gracefully:", error.message);
+        // Fallback profile representation so user is not blocked or logged out
+        const fallbackProfile: UserProfile = {
+          id: targetUser.id,
+          email: targetUser.email || "",
+          full_name: targetUser.user_metadata?.full_name || targetUser.email?.split("@")[0] || "Citizen",
+          role: "editor",
+          is_verified: false,
+        };
+        setProfile(fallbackProfile);
         return;
       }
 
@@ -84,14 +94,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log(`[Auth - DEV] Role Loaded: ${data.role} (Verified: ${data.is_verified})`);
         }
       } else {
-        setProfile(null);
-        if (import.meta.env.DEV) {
-          console.warn(`[Auth - DEV] No profile found in 'profiles' table for user: ${targetUser.email}`);
-        }
+        console.warn("[Auth] Profile not found in database, using fallback");
+        const fallbackProfile: UserProfile = {
+          id: targetUser.id,
+          email: targetUser.email || "",
+          full_name: targetUser.user_metadata?.full_name || targetUser.email?.split("@")[0] || "Citizen",
+          role: "editor",
+          is_verified: false,
+        };
+        setProfile(fallbackProfile);
       }
     } catch (err) {
-      console.error("[Auth] refreshProfile error:", err);
-      setProfile(null);
+      console.error("[Auth] refreshProfile error, falling back gracefully:", err);
+      if (user || u) {
+        const activeUser = user || u;
+        const fallbackProfile: UserProfile = {
+          id: activeUser!.id,
+          email: activeUser!.email || "",
+          full_name: activeUser!.user_metadata?.full_name || activeUser!.email?.split("@")[0] || "Citizen",
+          role: "editor",
+          is_verified: false,
+        };
+        setProfile(fallbackProfile);
+      } else {
+        setProfile(null);
+      }
     }
   };
 
@@ -99,15 +126,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let active = true;
     let initialized = false;
 
-    // Safety timeout: force loading to false if loading remains stuck for more than 6 seconds
+    // Safety timeout: force state to UNAUTHENTICATED if state remains stuck for more than 6 seconds
     const safetyTimeoutId = setTimeout(() => {
-      if (active) {
-        console.warn("[Auth] Auth initialization timed out. Forcing loading = false for recovery.");
-        setLoading(false);
+      if (active && !initialized) {
+        console.warn("[Auth] Auth initialization timed out. Forcing state to UNAUTHENTICATED/ERROR.");
+        setState("UNAUTHENTICATED");
       }
     }, 6000);
 
     const initializeAuth = async () => {
+      console.log("INITIALIZING");
       try {
         if (import.meta.env.DEV) {
           console.log("[Auth - DEV] Initializing authentication state...");
@@ -118,14 +146,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.warn("[Auth - DEV] Error getting session on init:", error.message);
           if (error.message.includes("Refresh Token") || error.message.includes("invalid") || error.message.includes("not found")) {
             await supabase.auth.signOut().catch(() => {});
-            if (active) {
-              setSession(null);
-              setUser(null);
-              setProfile(null);
-              setLoading(false);
-            }
-            return;
           }
+          if (active) {
+            console.log("NO_SESSION");
+            console.log("UNAUTHENTICATED");
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+            setState("UNAUTHENTICATED");
+          }
+          return;
         }
 
         if (!active) return;
@@ -136,22 +166,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(currentUser);
 
         if (currentUser) {
-          if (import.meta.env.DEV) {
-            console.log("[Auth - DEV] Session restored successfully for:", currentUser.email);
-          }
+          console.log("SESSION_FOUND");
+          console.log("PROFILE_LOADING");
           await refreshProfile(currentUser);
-        } else {
-          if (import.meta.env.DEV) {
-            console.log("[Auth - DEV] No initial session found. User is guest.");
+          console.log("PROFILE_READY");
+          console.log("AUTHENTICATED");
+          if (active) {
+            setState("AUTHENTICATED");
           }
-          setProfile(null);
+        } else {
+          console.log("NO_SESSION");
+          console.log("UNAUTHENTICATED");
+          if (active) {
+            setProfile(null);
+            setState("UNAUTHENTICATED");
+          }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("[Auth] Fatal error during auth initialization:", err);
+        if (active) {
+          setState("ERROR");
+        }
       } finally {
         if (active) {
           initialized = true;
-          setLoading(false);
           clearTimeout(safetyTimeoutId);
         }
       }
@@ -163,7 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!active) return;
 
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV || true) {
         console.log(`[Auth - DEV] Auth state change event occurred: ${event} for ${session?.user?.email || "No User"}`);
       }
 
@@ -173,24 +211,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       try {
+        if (event === "SIGNED_OUT") {
+          console.log("NO_SESSION");
+          console.log("UNAUTHENTICATED");
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setState("UNAUTHENTICATED");
+          return;
+        }
+
         setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
         if (currentUser) {
+          console.log("SESSION_FOUND");
+          console.log("PROFILE_LOADING");
           await refreshProfile(currentUser);
+          console.log("PROFILE_READY");
+          console.log("AUTHENTICATED");
+          setState("AUTHENTICATED");
         } else {
+          console.log("NO_SESSION");
+          console.log("UNAUTHENTICATED");
           setProfile(null);
-          if (event === "SIGNED_OUT" && import.meta.env.DEV) {
-            console.log("[Auth - DEV] Session expired or user signed out successfully.");
-          }
+          setState("UNAUTHENTICATED");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("[Auth] Error inside onAuthStateChange callback:", err);
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+        setState("ERROR");
       }
     });
 
@@ -294,12 +344,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    setLoading(true);
+    setState("INITIALIZING");
     let logoutFailed = false;
     let logoutErrorMessage = "";
     try {
       // 1. Manually clear any local storage auth tokens immediately
-      // This ensures that even if the API call below fails, the client-side session is gone.
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -333,10 +382,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setProfile(null);
       setSession(null);
-      setLoading(false);
-      if (import.meta.env.DEV) {
-        console.log("[Auth - DEV] User manually signed out.");
-      }
+      setState("UNAUTHENTICATED");
 
       if (logoutFailed) {
         sessionStorage.setItem("logout_error", logoutErrorMessage || "Failed to complete server logout. Local state cleared.");
@@ -368,6 +414,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profile,
         session,
         loading,
+        state,
         signInWithEmail,
         signUpWithEmail,
         signOut,

@@ -74,9 +74,9 @@ import DelicaciesView from "./pages/tourism/DelicaciesView";
 
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, state } = useAuth();
 
-  if (loading) {
+  if (state === "INITIALIZING") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
         <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
@@ -85,12 +85,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
-    sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
-    return <Navigate to="/" replace />;
-  }
-
-  if (!profile) {
+  if (state === "UNAUTHENTICATED" || state === "ERROR" || !user || !profile) {
     sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
     return <Navigate to="/" replace />;
   }
@@ -104,9 +99,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, state } = useAuth();
 
-  if (loading) {
+  if (state === "INITIALIZING") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
         <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
@@ -115,7 +110,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user && profile && profile.is_verified) {
+  if (state === "AUTHENTICATED" && user && profile && profile.is_verified) {
     return <Navigate to="/admin" replace />;
   }
 
@@ -123,9 +118,9 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function StaffRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, state } = useAuth();
 
-  if (loading) {
+  if (state === "INITIALIZING") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
         <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
@@ -134,7 +129,7 @@ function StaffRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || !profile) {
+  if (state === "UNAUTHENTICATED" || state === "ERROR" || !user || !profile) {
     sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
     return <Navigate to="/" replace />;
   }
@@ -149,9 +144,9 @@ function StaffRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, state } = useAuth();
 
-  if (loading) {
+  if (state === "INITIALIZING") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
         <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
@@ -160,7 +155,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || !profile) {
+  if (state === "UNAUTHENTICATED" || state === "ERROR" || !user || !profile) {
     sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
     return <Navigate to="/" replace />;
   }
@@ -175,9 +170,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function SuperAdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, state } = useAuth();
 
-  if (loading) {
+  if (state === "INITIALIZING") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg gap-4">
         <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
@@ -186,7 +181,7 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || !profile) {
+  if (state === "UNAUTHENTICATED" || state === "ERROR" || !user || !profile) {
     sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
     return <Navigate to="/" replace />;
   }
