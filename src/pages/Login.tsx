@@ -346,6 +346,38 @@ const Login: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full minimal-card p-10 md:p-12 text-center"
       >
+        {/* Consistent Auth Header */}
+        <div className="flex items-center justify-between border-b border-brand-border/40 pb-4 mb-6 select-none">
+          <button
+            type="button"
+            onClick={() => {
+              if (view !== 'login') {
+                setView('login');
+                setErrorMsg(null);
+                setSuccessMsg(null);
+              } else {
+                if (window.history.state && window.history.state.idx > 0) {
+                  navigate(-1);
+                } else {
+                  navigate("/", { replace: true });
+                }
+              }
+            }}
+            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-muted hover:text-brand-primary transition-colors cursor-pointer"
+          >
+            ← Back
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => navigate("/", { replace: true })}
+            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-brand-bg text-brand-muted hover:text-red-500 transition-all cursor-pointer text-xs font-black"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
         <img 
           src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
           alt="Talibon Seal" 

@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation, Link, Navigate } from "react-router-dom";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import Navbar from "./components/Navbar";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Home from "./pages/Home";
@@ -75,7 +75,6 @@ import DelicaciesView from "./pages/tourism/DelicaciesView";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return (
@@ -87,15 +86,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
+    return <Navigate to="/" replace />;
   }
 
   if (!profile) {
-    return <Navigate to="/login" replace />;
+    sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
+    return <Navigate to="/" replace />;
   }
 
   if (!profile.is_verified) {
-    return <AccessDenied />;
+    sessionStorage.setItem("auth_notification", "Insufficient permissions to access this page.");
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -122,7 +124,6 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function StaffRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return (
@@ -133,17 +134,15 @@ function StaffRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (!profile) {
-    return <Navigate to="/login" replace />;
+  if (!user || !profile) {
+    sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
+    return <Navigate to="/" replace />;
   }
 
   const staffRoles = ["super_admin", "admin", "municipal_admin", "department_admin", "barangay_admin", "editor"];
   if (!profile.is_verified || !staffRoles.includes(profile.role)) {
-    return <AccessDenied />;
+    sessionStorage.setItem("auth_notification", "Insufficient permissions to access the staff panel.");
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -151,7 +150,6 @@ function StaffRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return (
@@ -162,17 +160,15 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (!profile) {
-    return <Navigate to="/login" replace />;
+  if (!user || !profile) {
+    sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
+    return <Navigate to="/" replace />;
   }
 
   const adminRoles = ["super_admin", "admin", "municipal_admin"];
   if (!profile.is_verified || !adminRoles.includes(profile.role)) {
-    return <AccessDenied />;
+    sessionStorage.setItem("auth_notification", "Insufficient permissions to access the administrator panel.");
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -180,7 +176,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return (
@@ -191,16 +186,14 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (!profile) {
-    return <Navigate to="/login" replace />;
+  if (!user || !profile) {
+    sessionStorage.setItem("auth_notification", "Your session has ended. Please sign in again.");
+    return <Navigate to="/" replace />;
   }
 
   if (!profile.is_verified || profile.role !== "super_admin") {
-    return <AccessDenied />;
+    sessionStorage.setItem("auth_notification", "Insufficient permissions to access the super-administrator panel.");
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -211,6 +204,7 @@ function AppLayout() {
   const isHome = location.pathname === "/";
   const isLogin = location.pathname === "/login";
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [notification, setNotification] = useState<{ message: string; type: "error" | "info" } | null>(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -225,12 +219,72 @@ function AppLayout() {
     };
   }, []);
 
+  // Listen for navigation-related or auth status messages in sessionStorage
+  useEffect(() => {
+    const authNotif = sessionStorage.getItem("auth_notification");
+    const logoutErr = sessionStorage.getItem("logout_error");
+
+    if (authNotif) {
+      setNotification({ message: authNotif, type: "info" });
+      sessionStorage.removeItem("auth_notification");
+    } else if (logoutErr) {
+      setNotification({ message: logoutErr, type: "error" });
+      sessionStorage.removeItem("logout_error");
+    }
+  }, [location.pathname]);
+
+  // Automatically dismiss notifications after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   return (
     <div className="min-h-screen bg-brand-bg font-sans selection:bg-brand-primary selection:text-white relative overflow-hidden">
         {/* Minimal Background */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
           <div className="absolute top-0 left-0 w-full h-full opacity-[0.2]" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
         </div>
+
+        {/* Global Toast Notification */}
+        <AnimatePresence>
+          {notification && (
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[calc(100%-2rem)]">
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                className={`p-4 rounded-2xl shadow-2xl border backdrop-blur-md flex items-start gap-3 text-left ${
+                  notification.type === "error"
+                    ? "bg-red-50/95 border-red-200 text-red-900"
+                    : "bg-blue-50/95 border-blue-200 text-blue-900"
+                }`}
+              >
+                <span className="text-base mt-0.5 select-none">
+                  {notification.type === "error" ? "⚠️" : "ℹ️"}
+                </span>
+                <div className="flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60">
+                    {notification.type === "error" ? "System Notification" : "Security Notice"}
+                  </p>
+                  <p className="text-xs font-bold mt-0.5 leading-relaxed">
+                    {notification.message}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setNotification(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1 text-xs font-black"
+                >
+                  ✕
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Offline Indicator */}
         {isOffline && (

@@ -99,6 +99,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let active = true;
     let initialized = false;
 
+    // Safety timeout: force loading to false if loading remains stuck for more than 6 seconds
+    const safetyTimeoutId = setTimeout(() => {
+      if (active) {
+        console.warn("[Auth] Auth initialization timed out. Forcing loading = false for recovery.");
+        setLoading(false);
+      }
+    }, 6000);
+
     const initializeAuth = async () => {
       try {
         if (import.meta.env.DEV) {
@@ -144,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (active) {
           initialized = true;
           setLoading(false);
+          clearTimeout(safetyTimeoutId);
         }
       }
     };
@@ -187,6 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       active = false;
+      clearTimeout(safetyTimeoutId);
       subscription.unsubscribe();
     };
   }, []);
@@ -285,6 +295,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     setLoading(true);
+    let logoutFailed = false;
+    let logoutErrorMessage = "";
     try {
       // 1. Manually clear any local storage auth tokens immediately
       // This ensures that even if the API call below fails, the client-side session is gone.
@@ -307,9 +319,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionKeysToRemove.forEach(k => sessionStorage.removeItem(k));
 
       // 2. Call supabase signOut
-      await supabase.auth.signOut();
-    } catch (err) {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        logoutFailed = true;
+        logoutErrorMessage = error.message;
+      }
+    } catch (err: any) {
       console.warn("[Auth] Warning during supabase.auth.signOut():", err);
+      logoutFailed = true;
+      logoutErrorMessage = err.message || "Failed to fully clear server session. Local session cleared.";
     } finally {
       // 3. Reset all React states
       setUser(null);
@@ -319,8 +337,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (import.meta.env.DEV) {
         console.log("[Auth - DEV] User manually signed out.");
       }
-      // 4. Forcefully redirect to /login to clear page state and memory
-      window.location.href = "/login";
+
+      if (logoutFailed) {
+        sessionStorage.setItem("logout_error", logoutErrorMessage || "Failed to complete server logout. Local state cleared.");
+      } else {
+        sessionStorage.setItem("auth_notification", "You have been signed out successfully.");
+      }
+
+      // 4. Forcefully redirect to public Home page (/) and replace browser history
+      window.location.replace("/");
     }
   };
 
