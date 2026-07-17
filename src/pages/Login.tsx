@@ -378,300 +378,311 @@ const Login: React.FC = () => {
           </button>
         </div>
 
-        <img 
-          src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
-          alt="Talibon Seal" 
-          className="w-24 h-24 mx-auto mb-6 drop-shadow-2xl"
-          referrerPolicy="no-referrer"
-        />
-        <h2 className="text-3xl font-black text-brand-text mb-1 tracking-tight">Admin Portal</h2>
-        <p className="text-brand-muted font-bold text-xs uppercase tracking-widest mb-10">Talibon Digital Governance Core</p>
-
-        {/* FEEDBACK BANNERS */}
-        {errorMsg && (
-          <div className="mb-6 p-4 bg-red-50 text-red-700 border border-red-100 rounded-2xl text-[11px] font-bold text-left flex items-start gap-2.5 leading-relaxed">
-            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-100 rounded-2xl text-[11px] font-bold text-left flex items-start gap-2.5 leading-relaxed">
-            <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-
-        {/* LOGIN VIEW */}
-        {view === 'login' && (
-          <form onSubmit={handleLoginSubmit} className="space-y-6 text-left">
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@talibon.gov.ph"
-                  required
-                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
+        <div className="flex flex-col text-center">
+          {/* FEEDBACK BANNERS */}
+          <div className="order-1 md:order-2">
+            {errorMsg && (
+              <div className="mb-6 p-4 bg-red-50 text-red-700 border border-red-100 rounded-2xl text-[11px] font-bold text-left flex items-start gap-2.5 leading-relaxed">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
               </div>
-            </div>
+            )}
 
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted">
-                  Password
-                </label>
+            {successMsg && (
+              <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-100 rounded-2xl text-[11px] font-bold text-left flex items-start gap-2.5 leading-relaxed">
+                <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+          </div>
+
+          {/* BRANDING */}
+          <div className="order-3 md:order-1 mb-6 md:mb-10 mt-8 md:mt-0 select-none">
+            <img 
+              src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
+              alt="Talibon Seal" 
+              className="w-16 h-16 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 drop-shadow-2xl"
+              referrerPolicy="no-referrer"
+            />
+            <h2 className="text-2xl md:text-3xl font-black text-brand-text mb-1 tracking-tight">Admin Portal</h2>
+            <p className="text-brand-muted font-bold text-[10px] md:text-xs uppercase tracking-widest">Talibon Digital Governance Core</p>
+          </div>
+
+          {/* ACTIVE AUTH VIEW */}
+          <div className="order-2 md:order-3">
+            {/* LOGIN VIEW */}
+            {view === 'login' && (
+              <form onSubmit={handleLoginSubmit} className="space-y-6 text-left">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@talibon.gov.ph"
+                      required
+                      className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted">
+                      Password
+                    </label>
+                    <button 
+                      type="button"
+                      onClick={() => setView('forgot')}
+                      className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+                    >
+                      Forgot?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="rounded border-gray-300 text-brand-primary focus:ring-brand-primary/20 w-4 h-4"
+                    />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Remember Me</span>
+                  </label>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/10"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Sign In to System</span>
+                      <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+
+                <div className="mt-6 text-center">
+                  <p className="text-xs text-brand-muted font-bold">
+                    Don't have an administrator account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => { setView('register'); setErrorMsg(null); setSuccessMsg(null); }}
+                      className="text-brand-primary hover:underline font-black"
+                    >
+                      Create Account
+                    </button>
+                  </p>
+                </div>
+              </form>
+            )}
+
+            {/* REGISTER VIEW */}
+            {view === 'register' && (
+              <form onSubmit={handleRegisterSubmit} className="space-y-6 text-left">
+                <div className="text-center mb-4">
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Create Admin Account</h3>
+                  <p className="text-xs text-brand-muted font-semibold leading-relaxed">Sign up below, then set up your profile details in the next step.</p>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@talibon.gov.ph"
+                      required
+                      className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                    Choose Password
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/10"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Create Account</span>
+                      <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+
                 <button 
                   type="button"
-                  onClick={() => setView('forgot')}
-                  className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+                  onClick={() => { setView('login'); setErrorMsg(null); setSuccessMsg(null); }}
+                  className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-brand-muted hover:text-brand-primary transition-colors text-center cursor-pointer"
                 >
-                  Forgot?
+                  Back to Login
                 </button>
-              </div>
-              <div className="relative">
-                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
-                <button
+              </form>
+            )}
+
+            {/* FORGOT PASSWORD VIEW */}
+            {view === 'forgot' && (
+              <form onSubmit={handleForgotPasswordSubmit} className="space-y-6 text-left">
+                <div className="text-center mb-4">
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Forgot Password</h3>
+                  <p className="text-xs text-brand-muted font-semibold leading-relaxed">Enter your registered administrator email to receive a secure login link.</p>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@talibon.gov.ph"
+                      required
+                      className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Send Reset Link</span>
+                      <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+
+                <button 
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
+                  onClick={() => { setView('login'); setErrorMsg(null); setSuccessMsg(null); }}
+                  className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-brand-muted hover:text-brand-primary transition-colors text-center cursor-pointer"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  Back to Login
                 </button>
-              </div>
-            </div>
+              </form>
+            )}
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input 
-                  type="checkbox" 
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-gray-300 text-brand-primary focus:ring-brand-primary/20 w-4 h-4"
-                />
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted">Remember Me</span>
-              </label>
-            </div>
+            {/* RESET PASSWORD VIEW */}
+            {view === 'reset' && (
+              <form onSubmit={handleResetPasswordSubmit} className="space-y-6 text-left">
+                <div className="text-center mb-4">
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Reset Password</h3>
+                  <p className="text-xs text-brand-muted font-semibold leading-relaxed">Please set your brand new, secure administrator password.</p>
+                </div>
 
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/10"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <span>Sign In to System</span>
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
+                    New Secure Password
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
 
-            <div className="mt-6 text-center">
-              <p className="text-xs text-brand-muted font-bold">
-                Don't have an administrator account?{" "}
-                <button
-                  type="button"
-                  onClick={() => { setView('register'); setErrorMsg(null); setSuccessMsg(null); }}
-                  className="text-brand-primary hover:underline font-black"
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3"
                 >
-                  Create Account
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Save New Password</span>
+                      <ArrowRight size={16} />
+                    </>
+                  )}
                 </button>
-              </p>
-            </div>
-          </form>
-        )}
+              </form>
+            )}
+          </div>
 
-        {/* REGISTER VIEW */}
-        {view === 'register' && (
-          <form onSubmit={handleRegisterSubmit} className="space-y-6 text-left">
-            <div className="text-center mb-4">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Create Admin Account</h3>
-              <p className="text-xs text-brand-muted font-semibold leading-relaxed">Sign up below, then set up your profile details in the next step.</p>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@talibon.gov.ph"
-                  required
-                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
-                Choose Password
-              </label>
-              <div className="relative">
-                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/10"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-
-            <button 
-              type="button"
-              onClick={() => { setView('login'); setErrorMsg(null); setSuccessMsg(null); }}
-              className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-brand-muted hover:text-brand-primary transition-colors text-center"
-            >
-              Back to Login
-            </button>
-          </form>
-        )}
-
-        {/* FORGOT PASSWORD VIEW */}
-        {view === 'forgot' && (
-          <form onSubmit={handleForgotPasswordSubmit} className="space-y-6 text-left">
-            <div className="text-center mb-4">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Forgot Password</h3>
-              <p className="text-xs text-brand-muted font-semibold leading-relaxed">Enter your registered administrator email to receive a secure login link.</p>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@talibon.gov.ph"
-                  required
-                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-6 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
-              </div>
-            </div>
-
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <span>Send Reset Link</span>
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-
-            <button 
-              type="button"
-              onClick={() => { setView('login'); setErrorMsg(null); setSuccessMsg(null); }}
-              className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-brand-muted hover:text-brand-primary transition-colors text-center"
-            >
-              Back to Login
-            </button>
-          </form>
-        )}
-
-        {/* RESET PASSWORD VIEW */}
-        {view === 'reset' && (
-          <form onSubmit={handleResetPasswordSubmit} className="space-y-6 text-left">
-            <div className="text-center mb-4">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-1">Reset Password</h3>
-              <p className="text-xs text-brand-muted font-semibold leading-relaxed">Please set your brand new, secure administrator password.</p>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted mb-2 block">
-                New Secure Password
-              </label>
-              <div className="relative">
-                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-text"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <span>Save New Password</span>
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-          </form>
-        )}
-
-        <div className="mt-10 flex items-center justify-center gap-2 text-[8px] font-black text-brand-muted uppercase tracking-[0.2em]">
-          <Lock size={12} /> Secure Portal Active
+          {/* SECURE FOOTER */}
+          <div className="order-4 mt-10 flex items-center justify-center gap-2 text-[8px] font-black text-brand-muted uppercase tracking-[0.2em] select-none">
+            <Lock size={12} /> Secure Portal Active
+          </div>
         </div>
       </motion.div>
     </div>

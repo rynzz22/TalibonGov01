@@ -74,7 +74,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (error) {
-        console.error("[Auth] Profile fetch error, falling back gracefully:", error.message);
+        console.error("[Auth] Profile fetch error, attempting cache recovery:", error.message);
+        const cached = localStorage.getItem(`sb_profile_${targetUser.id}`);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            setProfile(parsed);
+            return;
+          } catch (jsonErr) {
+            console.error("[Auth] Error parsing cached profile:", jsonErr);
+          }
+        }
         // Fallback profile representation so user is not blocked or logged out
         const fallbackProfile: UserProfile = {
           id: targetUser.id,
@@ -89,12 +99,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setProfile(data as UserProfile);
+        try {
+          localStorage.setItem(`sb_profile_${targetUser.id}`, JSON.stringify(data));
+        } catch (storageErr) {
+          console.warn("[Auth] Failed to write profile cache to localStorage:", storageErr);
+        }
         if (import.meta.env.DEV) {
           console.log(`[Auth - DEV] User Profile Loaded: ${data.full_name || data.email}`);
           console.log(`[Auth - DEV] Role Loaded: ${data.role} (Verified: ${data.is_verified})`);
         }
       } else {
-        console.warn("[Auth] Profile not found in database, using fallback");
+        console.warn("[Auth] Profile not found in database, attempting cache recovery");
+        const cached = localStorage.getItem(`sb_profile_${targetUser.id}`);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            setProfile(parsed);
+            return;
+          } catch (jsonErr) {
+            console.error("[Auth] Error parsing cached profile:", jsonErr);
+          }
+        }
         const fallbackProfile: UserProfile = {
           id: targetUser.id,
           email: targetUser.email || "",
@@ -108,6 +133,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("[Auth] refreshProfile error, falling back gracefully:", err);
       if (user || u) {
         const activeUser = user || u;
+        const cached = localStorage.getItem(`sb_profile_${activeUser!.id}`);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            setProfile(parsed);
+            return;
+          } catch (jsonErr) {
+            console.error("[Auth] Error parsing cached profile:", jsonErr);
+          }
+        }
         const fallbackProfile: UserProfile = {
           id: activeUser!.id,
           email: activeUser!.email || "",
@@ -343,7 +378,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signOut = async () => {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Listen to Escape key to close dialog
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showLogoutConfirm) {
+        setShowLogoutConfirm(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showLogoutConfirm]);
+
+  // Listen to storage events for multi-tab logout consistency
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key && (e.key.startsWith("sb-") || e.key.includes("supabase.auth.token") || e.key.includes("auth-token"))) {
+        if (!e.newValue) {
+          console.log("[Auth] Session token cleared in another tab, updating local state...");
+          setUser(null);
+          setProfile(null);
+          setSession(null);
+          setState("UNAUTHENTICATED");
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Handle automatic session expiration
+  useEffect(() => {
+    if (!session || !session.expires_at) return;
+
+    const expiresAtMs = session.expires_at * 1000;
+    const timeRemaining = expiresAtMs - Date.now();
+
+    if (timeRemaining <= 0) {
+      console.log("[Auth] Session already expired, executing auto-signout...");
+      executeSignOut();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      console.log("[Auth] Session expired, executing auto-signout...");
+      executeSignOut();
+    }, timeRemaining);
+
+    return () => clearTimeout(timer);
+  }, [session]);
+
+  const executeSignOut = async () => {
     setState("INITIALIZING");
     let logoutFailed = false;
     let logoutErrorMessage = "";
@@ -352,7 +438,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token") || key.includes("auth-token"))) {
+        if (key && (key.startsWith("sb-") || key.includes("supabase.auth.token") || key.includes("auth-token") || key.startsWith("sb_profile_"))) {
           keysToRemove.push(key);
         }
       }
@@ -395,6 +481,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signOut = async () => {
+    // Check if session has already expired
+    const isExpired = !session || (session.expires_at && session.expires_at * 1000 <= Date.now());
+    if (isExpired) {
+      await executeSignOut();
+    } else {
+      setShowLogoutConfirm(true);
+    }
+  };
+
   const resetPasswordForEmail = async (email: string) => {
     return await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/login`,
@@ -424,6 +520,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }}
     >
       {children}
+
+      {/* GLOBAL LOGOUT CONFIRMATION DIALOG */}
+      {showLogoutConfirm && (
+        <div 
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in animate-duration-200"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="logout-confirm-title"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div 
+            className="bg-white rounded-[2rem] p-8 max-w-sm w-full border border-gray-100 shadow-2xl space-y-6 text-center transform transition-all scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h3 id="logout-confirm-title" className="text-sm font-black uppercase tracking-widest text-gray-900">
+                Confirm Log Out
+              </h3>
+              <p className="text-xs text-gray-500 leading-relaxed font-bold">
+                Are you sure you want to log out?
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-3 px-6 bg-gray-50 hover:bg-gray-100 text-gray-950 font-black uppercase tracking-widest text-[10px] rounded-2xl border border-transparent transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowLogoutConfirm(false);
+                  await executeSignOut();
+                }}
+                className="flex-1 py-3 px-6 bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all shadow-lg shadow-red-600/10 cursor-pointer"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 };

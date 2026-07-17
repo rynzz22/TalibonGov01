@@ -319,7 +319,7 @@ function AppLayout() {
           <Route path="/about/history" element={<ContentPage title="Brief History" fetchData={aboutApi.getHistory} renderContent={(data) => <HistoryView data={data} />} />} />
           <Route path="/about/mayors" element={<ContentPage title="List of Mayors" fetchData={aboutApi.getMayors} renderContent={(data) => <MayorsView data={data} />} />} />
           <Route path="/about/departments" element={<ContentPage title="Departments" fetchData={aboutApi.getDepartments} renderContent={(data) => <DepartmentsView data={data} />} />} />
-          <Route path="/about/barangays" element={<ContentPage title="Barangay Profiles" fetchData={async () => cmsService.getBarangays().then(data => ({ data }))} renderContent={(data) => <BarangaysView data={data} />} />} />
+          <Route path="/about/barangays" element={<ContentPage title="Barangay Profiles" fetchData={async () => cmsService.getBarangays()} renderContent={(data) => <BarangaysView data={data} />} />} />
           <Route path="/about/demographics" element={<ContentPage title="Demographics" fetchData={aboutApi.getDemographics} renderContent={(data) => <DemographicsView data={data} />} />} />
           <Route path="/about/location" element={<ContentPage title="Location" fetchData={aboutApi.getLocation} renderContent={(data) => <LocationView data={data} />} />} />
           <Route path="/about/vicinity" element={<ContentPage title="Vicinity Map" fetchData={aboutApi.getVicinityMap} renderContent={(data) => <VicinityView data={data} />} />} />

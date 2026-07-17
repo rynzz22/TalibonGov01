@@ -4,9 +4,11 @@ import { Building2, Search, User, Phone, MapPin, Clock, Users } from "lucide-rea
 
 interface Barangay {
   id: string;
-  name: string;
-  captain: string | null;
-  population: number;
+  name?: string;
+  barangay_name?: string;
+  captain?: string | null;
+  captain_name?: string | null;
+  population?: number;
   contact_number?: string | null;
   office_address?: string | null;
   office_hours?: string | null;
@@ -19,13 +21,41 @@ interface BarangaysViewProps {
 
 export default function BarangaysView({ data }: BarangaysViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
-  const filteredBarangays = (Array.isArray(data) ? data : []).filter((brgy) => {
+  // Normalization helper
+  const normalizeBarangay = (brgy: Barangay) => {
+    return {
+      id: brgy.id,
+      name: brgy.barangay_name || brgy.name || "Unnamed Barangay",
+      captain: brgy.captain_name || brgy.captain || "Not Specified",
+      population: brgy.population || 0,
+      contact_number: brgy.contact_number || "",
+      office_address: brgy.office_address || "",
+      office_hours: brgy.office_hours || "Monday to Friday, 8:00 AM - 5:00 PM",
+      cover_image: brgy.cover_image || ""
+    };
+  };
+
+  const rawData = Array.isArray(data) ? data : [];
+  const normalizedData = rawData.map(normalizeBarangay);
+
+  const filteredBarangays = normalizedData.filter((brgy) => {
     const term = searchTerm.toLowerCase();
-    const nameMatch = brgy.name?.toLowerCase().includes(term);
-    const captainMatch = brgy.captain?.toLowerCase().includes(term);
+    const nameMatch = brgy.name.toLowerCase().includes(term);
+    const captainMatch = brgy.captain.toLowerCase().includes(term);
     return nameMatch || captainMatch;
   });
+
+  // Calculate pagination
+  const totalItems = filteredBarangays.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  // Reset page if searchTerm changes and filtered list shrinks
+  const safeCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
+  const startIndex = (safeCurrentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedBarangays = filteredBarangays.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-12">
@@ -34,7 +64,7 @@ export default function BarangaysView({ data }: BarangaysViewProps) {
         <div className="text-left">
           <h2 className="text-sm font-black uppercase tracking-widest text-brand-text">Barangay Directory Search</h2>
           <p className="text-[10px] font-mono text-brand-muted uppercase tracking-wider mt-1">
-            Filter through Talibon's {data?.length || 25} official communities
+            Filter through Talibon's {normalizedData.length || 25} official communities
           </p>
         </div>
         <div className="relative w-full md:w-80">
@@ -43,7 +73,10 @@ export default function BarangaysView({ data }: BarangaysViewProps) {
             type="text"
             placeholder="Search by Barangay or Captain..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset pagination on search
+            }}
             className="w-full bg-white dark:bg-dark-bg border border-brand-border/60 hover:border-brand-primary/40 focus:border-brand-primary/80 focus:ring-2 focus:ring-brand-primary/10 rounded-2xl py-3 pl-12 pr-6 text-xs font-bold text-brand-text outline-none transition-all placeholder:text-brand-muted/70 placeholder:font-bold"
           />
         </div>
@@ -51,8 +84,8 @@ export default function BarangaysView({ data }: BarangaysViewProps) {
 
       {/* Directory Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredBarangays.length > 0 ? (
-          filteredBarangays.map((brgy: Barangay, idx: number) => (
+        {paginatedBarangays.length > 0 ? (
+          paginatedBarangays.map((brgy, idx) => (
             <motion.div
               key={brgy.id}
               initial={{ opacity: 0, y: 15 }}
@@ -103,7 +136,7 @@ export default function BarangaysView({ data }: BarangaysViewProps) {
                     </div>
                     <div>
                       <p className="text-[8px] font-black uppercase tracking-widest text-brand-muted leading-none">Barangay Captain</p>
-                      <p className="text-xs font-bold text-brand-text mt-0.5">{brgy.captain || "Not Specified"}</p>
+                      <p className="text-xs font-bold text-brand-text mt-0.5">{brgy.captain}</p>
                     </div>
                   </div>
 
@@ -114,7 +147,7 @@ export default function BarangaysView({ data }: BarangaysViewProps) {
                     </div>
                     <div>
                       <p className="text-[8px] font-black uppercase tracking-widest text-brand-muted leading-none">Office Hours</p>
-                      <p className="text-xs font-bold text-brand-text mt-0.5">{brgy.office_hours || "Monday to Friday, 8:00 AM - 5:00 PM"}</p>
+                      <p className="text-xs font-bold text-brand-text mt-0.5">{brgy.office_hours}</p>
                     </div>
                   </div>
 
@@ -154,6 +187,31 @@ export default function BarangaysView({ data }: BarangaysViewProps) {
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-8 border-t border-brand-border/50">
+          <span className="text-[10px] text-brand-muted font-black uppercase tracking-widest">
+            Showing Page {safeCurrentPage} of {totalPages} ({totalItems} total)
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={safeCurrentPage === 1}
+              className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest bg-white border border-brand-border text-brand-muted rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-all shadow-xs flex items-center justify-center min-w-16 cursor-pointer"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={safeCurrentPage === totalPages}
+              className="px-4 py-2.5 text-[9px] font-black uppercase tracking-widest bg-white border border-brand-border text-brand-muted rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-all shadow-xs flex items-center justify-center min-w-16 cursor-pointer"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

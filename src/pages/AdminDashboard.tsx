@@ -1077,20 +1077,6 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* FEEDBACK BANNERS */}
-        {errorMsg && (
-          <div className="mb-6 p-4 bg-red-50 text-red-700 border border-red-100 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-            <AlertCircle size={16} />
-            {errorMsg}
-          </div>
-        )}
-        {successMsg && (
-          <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-100 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-            <CheckCircle size={16} />
-            {successMsg}
-          </div>
-        )}
-
         {/* MAIN CMS LAYOUT GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 items-start">
           {/* NAVIGATION SIDEBAR */}
@@ -1179,6 +1165,20 @@ const AdminDashboard: React.FC = () => {
           <div className="w-full">
             <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden min-h-[60vh] p-8 md:p-12">
               
+              {/* CONTEXTUAL FEEDBACK BANNERS */}
+              {errorMsg && (
+                <div className="mb-6 p-4 bg-red-50 text-red-700 border border-red-100 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 animate-fade-in">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+              {successMsg && (
+                <div className="mb-6 p-4 bg-green-50 text-green-700 border border-green-100 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 animate-fade-in">
+                  <CheckCircle size={16} className="shrink-0" />
+                  <span>{successMsg}</span>
+                </div>
+              )}
+
               {/* PANEL SEARCH BOX FOR FILTERING CODES */}
               {activeTab !== 'overview' && activeTab !== 'media' && activeTab !== 'meeting-assistant' && activeTab !== 'logs' && (
                 <SearchFilterToolbar
