@@ -36,7 +36,7 @@ import {
 } from 'recharts';
 
 const AdminDashboard: React.FC = () => {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut, refreshProfile } = useAuth();
   
   // Tabs & Navigation
   const [activeTab, setActiveTab] = useState<
@@ -402,7 +402,10 @@ const AdminDashboard: React.FC = () => {
 
   // Central fetcher
   const loadAllCmsData = useCallback(async () => {
-    if (!canAccessManagement) return;
+    if (!canAccessManagement) {
+      setIsTableLoading(false);
+      return;
+    }
     setIsTableLoading(true);
     try {
       // 1. Dashboard statistics
@@ -882,6 +885,14 @@ const AdminDashboard: React.FC = () => {
         action_url: "users"
       });
 
+      // Reload profile from Supabase if we changed our own role
+      if (user && userId === user.id) {
+        if (import.meta.env.DEV) {
+          console.log("[AdminDashboard] User updated their own role. Refreshing auth profile...");
+        }
+        await refreshProfile();
+      }
+
       loadAllCmsData();
     } catch (err: any) {
       showError(err.message || "Permissions change error.");
@@ -910,9 +921,18 @@ const AdminDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 text-center p-4">
           <LoaderSpin />
           <p className="text-xs font-black text-gray-400 uppercase tracking-widest animate-pulse">Initializing CMS Security...</p>
+          <div className="mt-4">
+            <button
+              onClick={signOut}
+              className="px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-100 transition-all cursor-pointer border border-red-200/20 shadow-sm flex items-center gap-2"
+            >
+              <LogOut size={12} />
+              Force Sign Out
+            </button>
+          </div>
         </div>
       </div>
     );

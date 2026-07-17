@@ -163,19 +163,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      setSession(session);
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
+      try {
+        setSession(session);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
 
-      if (currentUser) {
-        await refreshProfile(currentUser);
-      } else {
-        setProfile(null);
-        if (event === "SIGNED_OUT" && import.meta.env.DEV) {
-          console.log("[Auth - DEV] Session expired or user signed out successfully.");
+        if (currentUser) {
+          await refreshProfile(currentUser);
+        } else {
+          setProfile(null);
+          if (event === "SIGNED_OUT" && import.meta.env.DEV) {
+            console.log("[Auth - DEV] Session expired or user signed out successfully.");
+          }
+        }
+      } catch (err) {
+        console.error("[Auth] Error inside onAuthStateChange callback:", err);
+      } finally {
+        if (active) {
+          setLoading(false);
         }
       }
-      setLoading(false);
     });
 
     return () => {
