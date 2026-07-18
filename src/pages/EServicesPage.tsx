@@ -13,6 +13,7 @@ import EBuildingPermitForm from "../components/eservices/EBuildingPermitForm";
 import EZoningClearanceForm from "../components/eservices/EZoningClearanceForm";
 import EBarangayClearanceForm from "../components/eservices/EBarangayClearanceForm";
 import ECertificateOfIndigencyForm from "../components/eservices/ECertificateOfIndigencyForm";
+import { RequestSummary } from "../components/eservices/RequestSummary";
 
 // Interface matching the backend JSON schema payload
 export interface CertificateRequest {
@@ -732,6 +733,16 @@ export default function EServicesPage() {
                           <span className="font-semibold text-brand-text block">{trackedRequest.barangay}</span>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Detailed Government Document Summary */}
+                    <div className="border border-brand-border rounded-[2rem] overflow-hidden bg-white shadow-xs">
+                      <RequestSummary
+                        documentType={trackedRequest.documentType}
+                        purposeJson={trackedRequest.purpose}
+                        ticketId={trackedRequest.ticketId}
+                        submittedAt={trackedRequest.submittedAt}
+                      />
                     </div>
 
                     {/* Timeline Tracker Milestones */}

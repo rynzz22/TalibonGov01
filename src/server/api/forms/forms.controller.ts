@@ -1,9 +1,14 @@
-import { Controller, Get, Post, Body, Param, Inject } from "@nestjs/common";
+import { Controller, Get, Post, Put, Body, Param, Inject } from "@nestjs/common";
 import { FormsService } from "./forms.service";
 
 @Controller("api/forms")
 export class FormsController {
   constructor(@Inject(FormsService) private readonly formsService: FormsService) {}
+
+  @Get("certificate")
+  async getAllRequests() {
+    return this.formsService.getAllRequests();
+  }
 
   @Post("certificate")
   async submitRequest(@Body() payload: any) {
@@ -17,6 +22,15 @@ export class FormsController {
       return { success: false, message: "Ticket ID not found." };
     }
     return { success: true, request };
+  }
+
+  @Put("certificate/:id/status")
+  async updateRequestStatus(
+    @Param("id") id: string,
+    @Body() body: { status: string; remarks: string }
+  ) {
+    const success = await this.formsService.updateRequestStatus(id, body.status, body.remarks);
+    return { success };
   }
 
   @Get("downloadable")

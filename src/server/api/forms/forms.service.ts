@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { Injectable, BadRequestException, Inject } from "@nestjs/common";
 import { SupabaseService } from "../../supabase.service";
 
 export interface CertificateRequestPayload {
@@ -19,47 +19,7 @@ export interface CertificateRequestPayload {
 export class FormsService {
   private requests: CertificateRequestPayload[] = [];
 
-  constructor(private readonly supabaseService: SupabaseService) {
-    // Seed some mock/default requests for tracking demonstration
-    this.requests = [
-      {
-        ticketId: "TLB-2026-0041",
-        documentType: "Barangay Clearance",
-        barangay: "Poblacion",
-        fullName: "Juan Dela Cruz",
-        email: "juan@email.com",
-        mobileNumber: "09123456789",
-        purpose: "Local Employment",
-        attachments: ["attached_id.png"],
-        submittedAt: "2026-07-07T08:00:00Z",
-        status: "Submitted"
-      },
-      {
-        ticketId: "TLB-2026-0042",
-        documentType: "Business Permit Clearance",
-        barangay: "San Isidro",
-        fullName: "Maria Santos",
-        email: "maria@email.com",
-        mobileNumber: "09987654321",
-        purpose: "Business Operations",
-        attachments: ["attached_id.png"],
-        submittedAt: "2026-07-07T08:15:00Z",
-        status: "Under Review"
-      },
-      {
-        ticketId: "TLB-2026-0043",
-        documentType: "Certificate of Indigency",
-        barangay: "Poblacion",
-        fullName: "Pedro Penduko",
-        email: "pedro@email.com",
-        mobileNumber: "09112223333",
-        purpose: "Scholarship",
-        attachments: ["attached_id.png"],
-        submittedAt: "2026-07-07T08:30:00Z",
-        status: "Approved"
-      }
-    ];
-
+  constructor(@Inject(SupabaseService) private readonly supabaseService: SupabaseService) {
     // Try fetching from Supabase if connected
     this.loadFromSupabase();
   }
@@ -72,11 +32,11 @@ export class FormsService {
           .from("certificate_requests")
           .select("*");
         if (!error && data && data.length > 0) {
-          // Map to match payload format if needed, then seed
           this.requests = data.map(item => ({
+            id: item.id,
             ticketId: item.ticket_id || item.ticketId,
             documentType: item.document_type || item.documentType,
-            barangay: item.barangay,
+            barangay: item.barangay_id || item.barangay || "Poblacion",
             fullName: item.full_name || item.fullName,
             email: item.email,
             mobileNumber: item.mobile_number || item.mobileNumber,
@@ -91,6 +51,87 @@ export class FormsService {
     } catch (err) {
       console.log("[FormsService] Supabase not connected or table 'certificate_requests' does not exist yet. Using local in-memory storage.");
     }
+  }
+
+  async getAllRequests(): Promise<CertificateRequestPayload[]> {
+    try {
+      const client = this.supabaseService.getClient();
+      if (client) {
+        const { data, error } = await client
+          .from("certificate_requests")
+          .select("*")
+          .order("submitted_at", { ascending: false });
+
+        if (!error && data) {
+          return data.map(item => ({
+            id: item.id,
+            ticketId: item.ticket_id || item.ticketId,
+            documentType: item.document_type || item.documentType,
+            barangay: item.barangay_id || item.barangay || "Poblacion",
+            fullName: item.full_name || item.fullName,
+            email: item.email,
+            mobileNumber: item.mobile_number || item.mobileNumber,
+            purpose: item.purpose,
+            attachments: item.attachments || [],
+            submittedAt: item.submitted_at || item.submittedAt,
+            status: item.status || "Submitted"
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("[FormsService] Failed to fetch all requests from Supabase, returning memory cached:", err);
+    }
+    return this.requests;
+  }
+
+  async updateRequestStatus(requestId: string, status: string, remarks: string): Promise<boolean> {
+    try {
+      const client = this.supabaseService.getClient();
+      if (client) {
+        // First try to call update_request_status RPC
+        const { data, error } = await client.rpc("update_request_status", {
+          p_request_id: requestId,
+          p_status: status,
+          p_remarks: remarks || "Status updated via Admin Dashboard."
+        });
+
+        if (error) {
+          console.warn("[FormsService] RPC update_request_status failed, falling back to direct table update", error);
+          // Fallback to direct update
+          const { error: updateError } = await client
+            .from("certificate_requests")
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq("id", requestId);
+
+          if (updateError) throw updateError;
+
+          // Manually log workflow history if direct update
+          await client.from("workflow_history").insert({
+            request_id: requestId,
+            status: status,
+            remarks: remarks || "Status updated via direct database update."
+          });
+        }
+        
+        // Update local memory list
+        const found = this.requests.find(r => r.id === requestId);
+        if (found) {
+          found.status = status;
+        }
+
+        return true;
+      }
+    } catch (err) {
+      console.error("[FormsService] Failed to update request status in Supabase:", err);
+    }
+
+    // In-memory fallback
+    const found = this.requests.find(r => r.id === requestId);
+    if (found) {
+      found.status = status;
+      return true;
+    }
+    return false;
   }
 
   async submitRequest(payload: CertificateRequestPayload): Promise<CertificateRequestPayload> {
@@ -189,17 +230,25 @@ export class FormsService {
     try {
       const client = this.supabaseService.getClient();
       if (client) {
-        const { data, error } = await client
-          .from("certificate_requests")
-          .select("*")
-          .eq("ticket_id", ticketId)
-          .maybeSingle();
+        // Try looking up by ticket_id first, then fallback to id (UUID)
+        let query = client.from("certificate_requests").select("*");
+        
+        // Simple check: if it looks like a UUID, search by id, otherwise ticket_id
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticketId.trim());
+        if (isUuid) {
+          query = query.eq("id", ticketId.trim());
+        } else {
+          query = query.eq("ticket_id", ticketId.trim());
+        }
+
+        const { data, error } = await query.maybeSingle();
         
         if (!error && data) {
           return {
+            id: data.id,
             ticketId: data.ticket_id || data.ticketId,
             documentType: data.document_type || data.documentType,
-            barangay: data.barangay,
+            barangay: data.barangay_id || data.barangay || "Poblacion",
             fullName: data.full_name || data.fullName,
             email: data.email,
             mobileNumber: data.mobile_number || data.mobileNumber,
@@ -211,10 +260,13 @@ export class FormsService {
         }
       }
     } catch (err) {
-      // Fallback to local
+      console.error("[FormsService] Failed to lookup request status from Supabase:", err);
     }
 
-    const found = this.requests.find(r => r.ticketId?.trim().toUpperCase() === ticketId.trim().toUpperCase());
+    const found = this.requests.find(
+      r => r.ticketId?.trim().toUpperCase() === ticketId.trim().toUpperCase() || 
+           r.id?.trim() === ticketId.trim()
+    );
     return found || null;
   }
 

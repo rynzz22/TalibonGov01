@@ -1,10 +1,10 @@
-import { Controller, Post, Body, Req } from "@nestjs/common";
+import { Controller, Post, Body, Req, Inject } from "@nestjs/common";
 import { PaymentsService } from "./payments.service";
 import type { Request } from "express";
 
 @Controller("api/payments")
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(@Inject(PaymentsService) private readonly paymentsService: PaymentsService) {}
 
   @Post("create-checkout-session")
   async createCheckoutSession(@Body() body: { itemName: string; amount: number; successUrl?: string; cancelUrl?: string }, @Req() req: Request) {

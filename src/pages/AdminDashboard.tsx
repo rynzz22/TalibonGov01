@@ -18,6 +18,7 @@ import FileUpload from '../components/FileUpload';
 import { BARANGAYS } from '../constants/barangayConfig';
 import SearchFilterToolbar from '../components/SearchFilterToolbar';
 import StatusBadge from '../components/StatusBadge';
+import { RequestSummary } from '../components/eservices/RequestSummary';
 import {
   cmsService,
   NewsItem,
@@ -169,63 +170,8 @@ const AdminDashboard: React.FC = () => {
   const [usersList, setUsersList] = useState<UserProfileItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
 
-  // Local storage-backed citizen workflow requests state
-  const [citizenRequests, setCitizenRequests] = useState<any[]>(() => {
-    const saved = localStorage.getItem('talibon_citizen_requests');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return [
-      {
-        id: "req-1",
-        citizenName: "Jose Rizal Macalinao",
-        type: "Business Permit",
-        description: "Application for annual resort operation clearance for Bohol Divers Beach Resort at Sandingan Coast.",
-        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-        assignedDeptId: "dept-1", // BPLO
-        status: 'PROCESSING',
-        priority: 'HIGH',
-        trackingNumber: "TLB-2026-00481"
-      },
-      {
-        id: "req-2",
-        citizenName: "Ma. Elena Sanchez",
-        type: "Tax Assessment Dispute",
-        description: "Discrepancy query on CTC tax assessment for retail stall #12 in Talibon Public Market.",
-        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-        assignedDeptId: "dept-2", // MTO
-        status: 'PENDING',
-        priority: 'MEDIUM',
-        trackingNumber: "TLB-2026-00452"
-      },
-      {
-        id: "req-3",
-        citizenName: "Kapitan Juan de la Cruz",
-        type: "Infrastructure Repair",
-        description: "Report on heavy storm drain blockage causing minor road flooding at Sitio San Juan crossroads.",
-        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-        assignedDeptId: null,
-        status: 'PENDING',
-        priority: 'HIGH',
-        trackingNumber: "TLB-2026-00431"
-      },
-      {
-        id: "req-4",
-        citizenName: "Bernardo Carpio Jr.",
-        type: "Community Health Advisory",
-        description: "Requesting free fogging service in response to increasing localized mosquito counts near Barangay hall.",
-        submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
-        assignedDeptId: null,
-        status: 'PENDING',
-        priority: 'LOW',
-        trackingNumber: "TLB-2026-00422"
-      }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('talibon_citizen_requests', JSON.stringify(citizenRequests));
-  }, [citizenRequests]);
+  // Database-backed citizen workflow requests state
+  const [citizenRequests, setCitizenRequests] = useState<any[]>([]);
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -469,22 +415,37 @@ const AdminDashboard: React.FC = () => {
 
       // Load real certificate requests from Supabase
       try {
+        const getDepartmentForDocumentType = (docType: string): string | null => {
+          if (!docType) return null;
+          const lower = docType.toLowerCase();
+          if (lower.includes("business")) return "bplo";
+          if (lower.includes("cedula") || lower.includes("community tax") || lower.includes("ctc")) return "treasury";
+          if (lower.includes("building") || lower.includes("electrical") || lower.includes("plumbing")) return "eng";
+          if (lower.includes("zoning")) return "mpdo";
+          if (lower.includes("barangay")) return "barangay_admin";
+          if (lower.includes("indigency")) return "social";
+          return null;
+        };
+
         const certRequests = await certificateService.getAllRequests();
-        const mappedRequests = certRequests.map(req => ({
-          id: req.id || `req-${req.ticketId}`,
-          citizenName: req.fullName,
-          type: req.documentType,
-          description: req.purpose || `${req.documentType} application submitted for barangay ${req.barangay}.`,
-          submittedAt: req.submittedAt || new Date().toISOString(),
-          assignedDeptId: req.barangay === "dept-1" || req.barangay === "dept-2" || req.barangay === "dept-3" ? req.barangay : null,
-          status: (req.status || "PENDING").toUpperCase(),
-          priority: req.documentType.toLowerCase().includes("urgent") || req.purpose.toLowerCase().includes("urgent") ? "HIGH" : "MEDIUM",
-          trackingNumber: req.ticketId,
-          attachments: req.attachments || []
-        }));
+        const mappedRequests = certRequests.map(req => {
+          const autoDept = getDepartmentForDocumentType(req.documentType);
+          return {
+            id: req.id || `req-${req.ticketId}`,
+            citizenName: req.fullName,
+            type: req.documentType,
+            description: req.purpose || `${req.documentType} application submitted for barangay ${req.barangay}.`,
+            submittedAt: req.submittedAt || new Date().toISOString(),
+            assignedDeptId: autoDept,
+            status: (req.status || "PENDING").toUpperCase(),
+            priority: req.documentType.toLowerCase().includes("urgent") || req.purpose.toLowerCase().includes("urgent") ? "HIGH" : "MEDIUM",
+            trackingNumber: req.ticketId,
+            attachments: req.attachments || []
+          };
+        });
         setCitizenRequests(mappedRequests);
       } catch (certErr) {
-        console.error("Failed to load certificate requests, falling back to mock:", certErr);
+        console.error("Failed to load certificate requests:", certErr);
       }
 
       if (isSuperAdminOrAdmin) {
@@ -687,6 +648,7 @@ const AdminDashboard: React.FC = () => {
       if (reqItem) {
         await certificateService.updateRequestStatus(reqId, dbStatus, remarks, profile?.email || "admin@talibon.gov.ph");
         showSuccess(`Request ${reqItem.trackingNumber} status updated to ${newStatus} on live database!`);
+        loadAllCmsData();
       } else {
         showSuccess(`Request status updated to ${newStatus}!`);
       }
@@ -2583,11 +2545,11 @@ const AdminDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       {filteredRequests.map((req) => {
                         const assignedDept = departments.find(d => d.id === req.assignedDeptId);
                         return (
-                          <div key={req.id} className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-xs hover:border-blue-200 transition-all space-y-4">
+                          <div key={req.id} className="bg-white rounded-[2.5rem] border border-gray-100 p-6 sm:p-8 shadow-sm hover:border-blue-200 hover:shadow-md transition-all flex flex-col justify-between space-y-6">
                             <div className="flex justify-between items-start">
                               <div>
                                 <span className="text-[10px] font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
@@ -2599,11 +2561,15 @@ const AdminDashboard: React.FC = () => {
                               <StatusBadge status={req.priority} label={`${req.priority} Priority`} />
                             </div>
 
-                            <p className="text-xs text-gray-600 font-bold leading-relaxed">
-                              {req.description}
-                            </p>
+                            {/* Beautiful structured human-readable government document style */}
+                            <RequestSummary
+                              documentType={req.type}
+                              purposeJson={req.description}
+                              ticketId={req.trackingNumber}
+                              submittedAt={req.submittedAt}
+                            />
 
-                            <div className="pt-4 border-t border-gray-50 grid grid-cols-2 gap-4">
+                            <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
                               <div className="space-y-1">
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Responsible Office</label>
                                 {isGeneralAdmin ? (
