@@ -236,6 +236,8 @@ const AdminDashboard: React.FC = () => {
   const [viewingItem, setViewingItem] = useState<any>(null);
   const [viewingTab, setViewingTab] = useState<string | null>(null);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<{ id: string; tab: string; name: string } | null>(null);
+  const [statusUpdateReq, setStatusUpdateReq] = useState<{ id: string; status: string; trackingNumber: string; citizenName: string } | null>(null);
+  const [statusRemarks, setStatusRemarks] = useState('');
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -650,6 +652,78 @@ const AdminDashboard: React.FC = () => {
         time: item.time, venue: item.venue, banner_image: item.banner_image || ''
       });
     }
+  };
+
+  // Workflow update handlers for citizen applications
+  const handleUpdateReqStatus = async (reqId: string, newStatus: string, customRemarks?: string) => {
+    // Optimistic local update
+    setCitizenRequests(prev => prev.map(req => {
+      if (req.id === reqId) {
+        return { ...req, status: newStatus };
+      }
+      return req;
+    }));
+
+    try {
+      let dbStatus = "Submitted";
+      const upper = newStatus.toUpperCase();
+      if (upper === "ROUTED" || upper === "ASSIGNED") {
+        dbStatus = "Assigned";
+      } else if (upper === "PROCESSING") {
+        dbStatus = "Processing";
+      } else if (upper === "COMPLETED") {
+        dbStatus = "Completed";
+      } else if (upper === "REJECTED") {
+        dbStatus = "Rejected";
+      } else if (upper === "RETURNED" || upper === "RETURN") {
+        dbStatus = "Returned";
+      } else if (upper === "APPROVED") {
+        dbStatus = "Approved";
+      }
+
+      const reqItem = citizenRequests.find(r => r.id === reqId);
+      const remarks = customRemarks || `Status updated to ${newStatus} in portal.`;
+      
+      if (reqItem) {
+        await certificateService.updateRequestStatus(reqId, dbStatus, remarks, profile?.email || "admin@talibon.gov.ph");
+        showSuccess(`Request ${reqItem.trackingNumber} status updated to ${newStatus} on live database!`);
+      } else {
+        showSuccess(`Request status updated to ${newStatus}!`);
+      }
+
+      notificationService.createNotification({
+        title: "Workflow Status Update",
+        message: `Citizen request ${reqItem?.trackingNumber || ""} (${reqItem?.type || "Application"}) status was changed to ${newStatus}.`,
+        category: "Workflow Updates",
+        department_id: reqItem?.assignedDeptId,
+        action_url: "workflows"
+      });
+    } catch (e: any) {
+      console.error("Error updating request status in live DB:", e);
+      showError("Could not persist status change to live database.");
+    }
+  };
+
+  const openStatusUpdatePrompt = (req: any, newStatus: string) => {
+    let defaultRemarks = `Status updated to ${newStatus} in portal.`;
+    const upper = newStatus.toUpperCase();
+    if (upper === "COMPLETED") {
+      defaultRemarks = "The requested municipal document has been generated, signed, and collected. Closing ticket.";
+    } else if (upper === "REJECTED") {
+      defaultRemarks = "Application rejected due to incomplete or unverified identification files.";
+    } else if (upper === "PROCESSING") {
+      defaultRemarks = "Our municipal clerks are currently verifying the information on your request.";
+    } else if (upper === "ROUTED" || upper === "ASSIGNED") {
+      defaultRemarks = "Request has been successfully routed to the responsible department.";
+    }
+    
+    setStatusUpdateReq({
+      id: req.id,
+      status: newStatus,
+      trackingNumber: req.trackingNumber,
+      citizenName: req.citizenName
+    });
+    setStatusRemarks(defaultRemarks);
   };
 
   // DELETE ENTITY
@@ -2321,7 +2395,7 @@ const AdminDashboard: React.FC = () => {
                             <>
                               {paginatedCharters.map((item) => (
                                 <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
-                                  <td className="px-6 py-4 font-black text-gray-900">{item.office}</td>
+                                  <td className="px-6 py-4 font-black text-gray-900">{departments.find(d => d.id === item.office)?.name || item.office}</td>
                                   <td className="px-6 py-4 font-bold text-gray-700">{item.service_name}</td>
                                   <td className="px-6 py-4 text-blue-600 font-black">{item.steps?.length || 0} steps</td>
                                   <td className="px-6 py-4 text-right">
@@ -2488,47 +2562,6 @@ const AdminDashboard: React.FC = () => {
                   }));
                 };
 
-                const handleUpdateReqStatus = async (reqId: string, newStatus: string) => {
-                  // Optimistic local update
-                  setCitizenRequests(prev => prev.map(req => {
-                    if (req.id === reqId) {
-                      return { ...req, status: newStatus };
-                    }
-                    return req;
-                  }));
-
-                  try {
-                    let dbStatus = "Submitted";
-                    if (newStatus === "ROUTED" || newStatus === "PROCESSING") {
-                      dbStatus = "Under Review";
-                    } else if (newStatus === "COMPLETED") {
-                      dbStatus = "Completed";
-                    } else if (newStatus === "REJECTED") {
-                      dbStatus = "Rejected";
-                    }
-
-                    const reqItem = citizenRequests.find(r => r.id === reqId);
-                    const remarks = `Status updated to ${newStatus} in portal.`;
-                    
-                    if (reqItem) {
-                      await certificateService.updateRequestStatus(reqId, dbStatus, remarks, profile?.email || "admin@talibon.gov.ph");
-                      showSuccess(`Request ${reqItem.trackingNumber} status updated to ${newStatus} on live database!`);
-                    } else {
-                      showSuccess(`Request status updated to ${newStatus}!`);
-                    }
-
-                    notificationService.createNotification({
-                      title: "Workflow Status Update",
-                      message: `Citizen request ${reqItem?.trackingNumber || ""} (${reqItem?.type || "Application"}) status was changed to ${newStatus}.`,
-                      category: "Workflow Updates",
-                      department_id: reqItem?.assignedDeptId,
-                      action_url: "workflows"
-                    });
-                  } catch (e: any) {
-                    console.error("Error updating request status in live DB:", e);
-                    showError("Could not persist status change to live database.");
-                  }
-                };
 
                 return (
                   <div className="space-y-6">
@@ -2595,7 +2628,7 @@ const AdminDashboard: React.FC = () => {
                                 <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Action Status</label>
                                 <select
                                   value={req.status}
-                                  onChange={(e) => handleUpdateReqStatus(req.id, e.target.value)}
+                                  onChange={(e) => openStatusUpdatePrompt(req, e.target.value)}
                                   className="w-full bg-gray-50 border border-transparent rounded-xl p-2 font-black text-gray-800 text-[10px] focus:outline-none"
                                 >
                                   <option value="PENDING">PENDING</option>
@@ -3030,7 +3063,7 @@ const AdminDashboard: React.FC = () => {
                       <textarea id="off-bio" rows={3} value={officialForm.biography} onChange={(e) => setOfficialForm({ ...officialForm, biography: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
                     </div>
 
-                    <FileUpload label="Profile Portrait Photo" folder="officials" bucket="public-cms" currentValue={officialForm.image_url} onUploadComplete={(url) => setOfficialForm({ ...officialForm, image_url: url })} />
+                    <FileUpload label="Profile Portrait Photo (Optional)" folder="officials" bucket="public-cms" currentValue={officialForm.image_url} onUploadComplete={(url) => setOfficialForm({ ...officialForm, image_url: url })} />
 
                     <SubmitBtn label={editingId ? "Update official profile" : "Create official profile"} isLoading={isActionLoading} />
                   </form>
@@ -3183,7 +3216,20 @@ const AdminDashboard: React.FC = () => {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-office">Office Responsible</label>
-                            <input id="srv-office" type="text" value={serviceForm.office_responsible} onChange={(e) => setServiceForm({ ...serviceForm, office_responsible: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                            <select
+                              id="srv-office"
+                              value={serviceForm.office_responsible}
+                              onChange={(e) => setServiceForm({ ...serviceForm, office_responsible: e.target.value })}
+                              className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer"
+                              required
+                            >
+                              <option value="">-- Select Office --</option>
+                              {departments.map((dept) => (
+                                <option key={dept.id} value={dept.id}>
+                                  {dept.name} ({dept.id})
+                                </option>
+                              ))}
+                            </select>
                           </div>
                           <div className="space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="srv-status">Availability Status</label>
@@ -3358,7 +3404,20 @@ const AdminDashboard: React.FC = () => {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="cc-office">Department / Office Name *</label>
-                            <input id="cc-office" type="text" required value={charterForm.office} onChange={(e) => setCharterForm({ ...charterForm, office: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                            <select
+                              id="cc-office"
+                              value={charterForm.office}
+                              onChange={(e) => setCharterForm({ ...charterForm, office: e.target.value })}
+                              className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer"
+                              required
+                            >
+                              <option value="">-- Select Office --</option>
+                              {departments.map((dept) => (
+                                <option key={dept.id} value={dept.id}>
+                                  {dept.name} ({dept.id})
+                                </option>
+                              ))}
+                            </select>
                             <p className="text-[10px] text-gray-400 font-bold">Office delivering the charter (e.g., "MTO").</p>
                           </div>
                           <div className="space-y-2">
@@ -3587,6 +3646,75 @@ const AdminDashboard: React.FC = () => {
                   className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-red-600/10"
                 >
                   Confirm Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CUSTOM STATUS & REMARKS UPDATE DIALOG */}
+      <AnimatePresence>
+        {statusUpdateReq && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Confirm status update with remarks">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setStatusUpdateReq(null)} className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" />
+            
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 space-y-6 border border-gray-100">
+              <div className="flex items-center gap-4 border-b border-gray-100 pb-4">
+                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                  <Edit3 size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Update Request Status</h3>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Ticket: {statusUpdateReq.trackingNumber}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-2xl p-4 space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
+                    <span className="text-gray-400">Citizen</span>
+                    <span className="text-gray-800">{statusUpdateReq.citizenName}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
+                    <span className="text-gray-400">Target Status</span>
+                    <span className="text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100">{statusUpdateReq.status}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Custom Remarks / Staff Note</label>
+                  <textarea
+                    rows={4}
+                    value={statusRemarks}
+                    onChange={(e) => setStatusRemarks(e.target.value)}
+                    placeholder="Enter details, pick up instructions, additional requirements needed, or rejection reasons..."
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-indigo-500 rounded-2xl p-4 font-bold text-gray-800 text-xs focus:outline-none transition-all resize-none"
+                  />
+                  <p className="text-[10px] text-gray-400 font-bold leading-normal">
+                    This note will be visible to the citizen immediately on the public "Track Request" page.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setStatusUpdateReq(null)}
+                  className="flex-1 py-4 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const { id, status } = statusUpdateReq;
+                    setStatusUpdateReq(null);
+                    await handleUpdateReqStatus(id, status, statusRemarks);
+                  }}
+                  className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/15"
+                >
+                  Confirm & Save
                 </button>
               </div>
             </motion.div>

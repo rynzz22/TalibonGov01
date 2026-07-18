@@ -141,7 +141,17 @@ const OrganizationalChartPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center"
           >
-            <div className="p-10 bg-brand-primary text-white rounded-[2.5rem] shadow-2xl text-center min-w-[320px] relative">
+            <div className="p-10 bg-brand-primary text-white rounded-[2.5rem] shadow-2xl text-center min-w-[320px] relative flex flex-col items-center">
+              {data.mayor.image_url && (
+                <div className="w-24 h-24 rounded-full border-4 border-white/20 overflow-hidden mb-6 bg-white/10 flex items-center justify-center">
+                  <img 
+                    src={data.mayor.image_url} 
+                    alt={`${data.mayor.name} Portrait`} 
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              )}
               <h3 className="text-2xl font-bold mb-1 font-display uppercase tracking-tight">{data.mayor.name}</h3>
               <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">{data.mayor.role}</p>
             </div>
@@ -164,7 +174,17 @@ const OrganizationalChartPage: React.FC = () => {
                 {/* Vertical connector to horizontal line */}
                 <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-px h-12 bg-brand-border -translate-y-12" />
                 
-                <div className="p-8 bg-brand-surface text-brand-text rounded-[2rem] text-center w-full border border-brand-border hover:border-brand-primary/30 transition-all">
+                <div className="p-8 bg-brand-surface text-brand-text rounded-[2rem] text-center w-full border border-brand-border hover:border-brand-primary/30 transition-all flex flex-col items-center justify-center">
+                  {item.image_url && (
+                    <div className="w-20 h-20 rounded-full border-2 border-brand-border overflow-hidden mb-4 bg-brand-surface/50 flex items-center justify-center">
+                      <img 
+                        src={item.image_url} 
+                        alt={`${item.name} Portrait`} 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
                   <h4 className="text-lg font-bold mb-1 font-display uppercase tracking-tight">{item.name}</h4>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-brand-primary">{item.role}</p>
                 </div>
@@ -196,7 +216,7 @@ const OrganizationalChartPage: React.FC = () => {
                           <img 
                             src={dept.image_url || DEPARTMENT_LOGOS[dept.role]} 
                             alt={`${dept.role} Logo`} 
-                            className="w-full h-full object-contain p-2"
+                            className={`w-full h-full ${dept.image_url ? 'object-cover' : 'object-contain p-2'}`}
                             referrerPolicy="no-referrer"
                           />
                         ) : (

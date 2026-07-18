@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Briefcase, Download, ShieldCheck, FileText, CreditCard } from 'lucide-react';
+import { Briefcase, Download, ShieldCheck, FileText, CreditCard, Laptop } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import PaymentButton from '../components/PaymentButton';
 
 const BusinessPermitPage: React.FC = () => {
@@ -65,12 +66,19 @@ const BusinessPermitPage: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-4 w-full md:w-auto">
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <Link 
+                  to="/e-services?service=business_permit"
+                  className="px-8 py-5 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md shadow-teal-600/10"
+                >
+                  <Laptop size={18} />
+                  File Electronically
+                </Link>
                 <a 
                   href={pdfUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="pro-button inline-flex items-center justify-center gap-4 px-10 py-5 w-full md:w-auto"
+                  className="pro-button inline-flex items-center justify-center gap-4 px-8 py-5 w-full md:w-auto"
                 >
                   <Download size={20} />
                   DOWNLOAD PDF

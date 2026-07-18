@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from "@nestjs/common";
 import { SupabaseService } from "../../supabase.service";
 
 export interface CertificateRequestPayload {
+  id?: string;
   ticketId?: string;
   documentType: string;
   barangay: string;
@@ -98,11 +99,74 @@ export class FormsService {
       throw new BadRequestException("All required fields must be provided.");
     }
 
-    // Generate ticketId (e.g., TLB-2026-0001 or using length to simulate unique index sequence)
-    const nextNum = this.requests.length + 1;
-    const ticketId = `TLB-2026-${String(nextNum).padStart(4, "0")}`;
+    let ticketId = `TLB-2026-${String(this.requests.length + 1).padStart(4, "0")}`;
+    let dbStatus = "Submitted";
+    let submittedAt = new Date().toISOString();
+    let requestId = "mock-" + Math.random().toString(36).substring(2, 9);
+
+    const barangayId = payload.barangay.toLowerCase().replace(/\s+/g, "_");
+
+    // Store in Supabase if database is available
+    try {
+      const client = this.supabaseService.getClient();
+      if (client) {
+        const { data, error } = await client.rpc("submit_certificate_request", {
+          p_document_type: payload.documentType,
+          p_barangay_id: barangayId,
+          p_full_name: payload.fullName,
+          p_email: payload.email,
+          p_mobile_number: payload.mobileNumber,
+          p_purpose: payload.purpose,
+          p_attachments: payload.attachments || []
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          const requestData = data as any;
+          ticketId = requestData.ticket_id || ticketId;
+          dbStatus = requestData.status || dbStatus;
+          submittedAt = requestData.submitted_at || requestData.created_at || submittedAt;
+          requestId = requestData.id || requestId;
+        }
+      }
+    } catch (err: any) {
+      console.log("[FormsService] Supabase RPC submit failed, running robust fallback", err.message || err);
+      // Fallback to direct insertion or in-memory
+      try {
+        const client = this.supabaseService.getClient();
+        if (client) {
+          const generatedId = `TAL-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 8999) + 1000)}`;
+          const { data, error } = await client.from("certificate_requests").insert({
+            ticket_id: generatedId,
+            document_type: payload.documentType,
+            barangay_id: barangayId,
+            full_name: payload.fullName,
+            email: payload.email,
+            mobile_number: payload.mobileNumber,
+            purpose: payload.purpose,
+            attachments: payload.attachments || [],
+            status: "Submitted"
+          }).select().maybeSingle();
+
+          if (error) throw error;
+          if (data) {
+            const requestData = data as any;
+            ticketId = requestData.ticket_id || generatedId;
+            dbStatus = requestData.status || dbStatus;
+            submittedAt = requestData.submitted_at || requestData.created_at || submittedAt;
+            requestId = requestData.id || requestId;
+          }
+        }
+      } catch (directErr: any) {
+        console.log("[FormsService] Fallback direct insert also failed:", directErr.message || directErr);
+      }
+    }
 
     const newRequest: CertificateRequestPayload = {
+      id: requestId,
       ticketId,
       documentType: payload.documentType,
       barangay: payload.barangay,
@@ -110,36 +174,13 @@ export class FormsService {
       email: payload.email,
       mobileNumber: payload.mobileNumber,
       purpose: payload.purpose,
-      attachments: payload.attachments || ["attached_id.png"],
-      submittedAt: new Date().toISOString(),
-      status: "Submitted"
+      attachments: payload.attachments || [],
+      submittedAt,
+      status: dbStatus
     };
 
     // Store in memory
     this.requests.unshift(newRequest);
-
-    // Store in Supabase if database is available
-    try {
-      const client = this.supabaseService.getClient();
-      if (client) {
-        await client.from("certificate_requests").insert({
-          ticket_id: newRequest.ticketId,
-          document_type: newRequest.documentType,
-          barangay: newRequest.barangay,
-          full_name: newRequest.fullName,
-          email: newRequest.email,
-          mobile_number: newRequest.mobileNumber,
-          purpose: newRequest.purpose,
-          attachments: newRequest.attachments,
-          submitted_at: newRequest.submittedAt,
-          status: newRequest.status
-        });
-      }
-    } catch (err) {
-      // Graceful fallback
-      console.log("[FormsService] Saved locally to in-memory store. Supabase write bypassed.");
-    }
-
     return newRequest;
   }
 

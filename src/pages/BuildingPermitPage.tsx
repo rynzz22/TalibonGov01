@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { HardHat, Download, ShieldCheck, Zap, Ruler, Droplets, FileCheck, FileText, CreditCard } from 'lucide-react';
+import { HardHat, Download, ShieldCheck, Zap, Ruler, Droplets, FileCheck, FileText, CreditCard, Laptop } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import PaymentButton from '../components/PaymentButton';
 
 const BuildingPermitPage: React.FC = () => {
@@ -93,6 +94,21 @@ const BuildingPermitPage: React.FC = () => {
             <p className="text-xl text-brand-muted font-medium max-w-3xl">
               Download the official forms required for building and engineering projects in the Municipality of Talibon.
             </p>
+          </div>
+
+          {/* Electronic Filing Banner */}
+          <div className="mb-12 p-8 bg-teal-50 border border-teal-100 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <span className="px-2.5 py-1 text-[9px] font-black bg-teal-100 text-teal-800 border border-teal-200 rounded-md uppercase tracking-wider">e-Services Integration</span>
+              <h3 className="text-xl font-black text-brand-text uppercase tracking-tight font-display mt-2">File Electronically</h3>
+              <p className="text-sm text-brand-muted font-medium mt-1">Submit your Unified Building Permit application directly online with live tracking.</p>
+            </div>
+            <Link 
+              to="/e-services?service=building_permit"
+              className="px-8 py-4 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-black text-xs uppercase tracking-widest rounded-2xl flex items-center gap-2 transition-all shadow-md shadow-teal-600/10 shrink-0"
+            >
+              <Laptop size={16} /> Apply Online Now
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
