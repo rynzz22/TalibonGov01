@@ -351,7 +351,7 @@ export default function NotificationDrawer({
                       </span>
                       {notif.department_id && (
                         <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-blue-50 border border-blue-100/30 text-blue-600">
-                          {notif.department_id === "dept-1" ? "BPLO" : notif.department_id === "dept-2" ? "MTO" : "STAFF"}
+                          {notif.department_id === "dept-1" || notif.department_id === "bplo" ? "BPLO" : notif.department_id === "dept-2" || notif.department_id === "treasury" ? "MTO" : "STAFF"}
                         </span>
                       )}
                     </div>

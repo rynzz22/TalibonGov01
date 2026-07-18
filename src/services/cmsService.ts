@@ -220,7 +220,7 @@ const INITIAL_OFFICIALS: OfficialItem[] = [
     image_url: "",
     biography: "Serving as Municipal Mayor of Talibon, focusing on sustainable agro-industrial and marine resource growth.",
     contact_info: "mayor@talibon.gov.ph",
-    department: "Mayor's Office"
+    department: "mayor"
   },
   {
     id: "off-2",
@@ -231,13 +231,13 @@ const INITIAL_OFFICIALS: OfficialItem[] = [
     image_url: "",
     biography: "Presiding Officer of the Sangguniang Bayan, championing progressive local legislation.",
     contact_info: "vicemayor@talibon.gov.ph",
-    department: "Legislative Department"
+    department: "sb"
   }
 ];
 
 const INITIAL_DEPARTMENTS: DepartmentItem[] = [
   {
-    id: "dept-1",
+    id: "bplo",
     name: "Business Permits and Licensing Office (BPLO)",
     description: "Processes applications for commercial licenses, municipal clearances, and business regulatory forms.",
     head_of_office: "Atty. Ryan Valeroso",
@@ -247,7 +247,7 @@ const INITIAL_DEPARTMENTS: DepartmentItem[] = [
     location: "Ground Floor, Executive Building",
   },
   {
-    id: "dept-2",
+    id: "treasury",
     name: "Municipal Treasurer's Office (MTO)",
     description: "Schedules, processes, and manages collection of real property taxes, community tax certificates, and permit dues.",
     head_of_office: "Mrs. Maria Clara Santos, CPA",
@@ -579,9 +579,13 @@ export const cmsService = {
   },
 
   async createOfficial(item: Omit<OfficialItem, "id">, userEmail: string): Promise<OfficialItem> {
+    const sanitizedItem = {
+      ...item,
+      department: item.department && item.department.trim() !== "" ? item.department.trim() : null
+    };
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("officials").insert([item]).select().maybeSingle();
+        const { data, error } = await supabase.from("officials").insert([sanitizedItem]).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "officials", data.id);
@@ -594,7 +598,7 @@ export const cmsService = {
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, id } as OfficialItem;
+    const newItem = { ...sanitizedItem, id } as OfficialItem;
     const list = getStorage<OfficialItem>("officials", INITIAL_OFFICIALS);
     list.push(newItem);
     setStorage("officials", list);
@@ -603,9 +607,17 @@ export const cmsService = {
   },
 
   async updateOfficial(id: string, item: Partial<OfficialItem>, userEmail: string): Promise<OfficialItem> {
+    const sanitizedItem = {
+      ...item,
+      department: item.department !== undefined ? (item.department && item.department.trim() !== "" ? item.department.trim() : null) : undefined
+    };
+    // remove undefined values so they are not sent to database
+    const cleanPayload = Object.fromEntries(
+      Object.entries(sanitizedItem).filter(([_, v]) => v !== undefined)
+    );
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.from("officials").update(item).eq("id", id).select().maybeSingle();
+        const { data, error } = await supabase.from("officials").update(cleanPayload).eq("id", id).select().maybeSingle();
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "officials", id);
@@ -620,7 +632,7 @@ export const cmsService = {
     const list = getStorage<OfficialItem>("officials", INITIAL_OFFICIALS);
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
-      list[index] = { ...list[index], ...item };
+      list[index] = { ...list[index], ...sanitizedItem };
       setStorage("officials", list);
       await logCmsAction(userEmail, "UPDATE", "officials", id);
       return list[index];

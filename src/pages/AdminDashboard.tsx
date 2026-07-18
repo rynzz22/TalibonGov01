@@ -2018,7 +2018,8 @@ const AdminDashboard: React.FC = () => {
               {/* OFFICIALS PANEL */}
               {activeTab === 'officials' && (() => {
                 const filteredOfficials = officials.filter(o => {
-                  const matchesSearch = o.name.toLowerCase().includes(searchTerm.toLowerCase()) || o.role.toLowerCase().includes(searchTerm.toLowerCase()) || (o.department || "").toLowerCase().includes(searchTerm.toLowerCase());
+                  const deptName = departments.find(d => d.id === o.department)?.name || o.department || "";
+                  const matchesSearch = o.name.toLowerCase().includes(searchTerm.toLowerCase()) || o.role.toLowerCase().includes(searchTerm.toLowerCase()) || deptName.toLowerCase().includes(searchTerm.toLowerCase());
                   const matchesFilter = categoryFilter === 'ALL' || o.level.toString() === categoryFilter;
                   return matchesSearch && matchesFilter;
                 });
@@ -2050,7 +2051,9 @@ const AdminDashboard: React.FC = () => {
                                 <tr key={item.id} className="hover:bg-blue-50/15 even:bg-gray-50/25 transition-colors text-xs">
                                   <td className="px-6 py-4 font-black text-gray-900">{item.name}</td>
                                   <td className="px-6 py-4 text-blue-600 font-black">{item.role}</td>
-                                  <td className="px-6 py-4 text-gray-400 font-bold">{item.department || "LGU"}</td>
+                                  <td className="px-6 py-4 text-gray-400 font-bold">
+                                    {departments.find(d => d.id === item.department)?.name || item.department || "LGU"}
+                                  </td>
                                   <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end gap-1">
                                       <button onClick={() => { setViewingItem(item); setViewingTab('officials'); }} className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer" title="View details"><Eye size={16} /></button>
@@ -2990,7 +2993,19 @@ const AdminDashboard: React.FC = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="off-dept">Department</label>
-                        <input id="off-dept" type="text" value={officialForm.department} onChange={(e) => setOfficialForm({ ...officialForm, department: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                        <select
+                          id="off-dept"
+                          value={officialForm.department || ""}
+                          onChange={(e) => setOfficialForm({ ...officialForm, department: e.target.value })}
+                          className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer"
+                        >
+                          <option value="">-- No Department --</option>
+                          {departments.map((dept) => (
+                            <option key={dept.id} value={dept.id}>
+                              {dept.name} ({dept.id})
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
@@ -3715,7 +3730,7 @@ const AdminDashboard: React.FC = () => {
                       <div className="space-y-1">
                         <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">{viewingItem.name}</h3>
                         <p className="text-xs text-blue-600 font-black uppercase tracking-widest">{viewingItem.role}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Department: {viewingItem.department || 'LGU'}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Department: {departments.find(d => d.id === viewingItem.department)?.name || viewingItem.department || 'LGU'}</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
