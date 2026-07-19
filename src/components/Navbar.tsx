@@ -14,7 +14,7 @@ import { useIsScrolled } from "../hooks/useIsScrolled";
 
 export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, state } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([]);
@@ -22,6 +22,8 @@ export default function Navbar() {
   
   const isScrolled = useIsScrolled(80);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const isUserAuthenticated = state === "AUTHENTICATED" && profile !== null && profile.is_verified;
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -227,7 +229,7 @@ export default function Navbar() {
             </nav>
 
             <div className="hidden sm:flex items-center gap-6 pl-10 border-l border-brand-border">
-              {user ? (
+              {isUserAuthenticated && user ? (
                 <div className="flex items-center gap-5">
                   {/* Administrator Identity Badge */}
                   <div className="flex items-center gap-2.5">
