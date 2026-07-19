@@ -4,6 +4,7 @@ import { Sparkles, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-rea
 import axios from "axios";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
+import { isMockAllowed } from "../../lib/mode";
 
 interface ECertificateOfIndigencyFormProps {
   onSuccess: (result: any) => void;
@@ -90,6 +91,9 @@ export default function ECertificateOfIndigencyForm({ onSuccess }: ECertificateO
         onSuccess(response.data);
       }
     } catch (error) {
+      if (!isMockAllowed()) {
+        throw error;
+      }
       console.error("[IndigencyForm] Submit failed, using fallback", error);
       
       // Client-side fallback

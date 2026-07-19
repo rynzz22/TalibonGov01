@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { ContentData } from "../types";
 import { API_ENDPOINTS, ERROR_MESSAGES } from "../constants";
+import { isMockAllowed } from "../lib/mode";
 
 // Simple cache implementation
 const cache = new Map<string, { data: any; timestamp: number }>();
@@ -72,6 +73,9 @@ const api = {
 
     // Final emergency fallbacks if both Supabase and Local API are unavailable
     if (!fetchedSuccessfully) {
+      if (!isMockAllowed()) {
+        throw new Error(`[API] Resource unconfigured or database offline: ${table}/${slug}`);
+      }
       if (slug === "forms-business-permits") {
         result = {
           data: [

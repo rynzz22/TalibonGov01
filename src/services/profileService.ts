@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, UserProfileItem } from "./cmsService";
+import { isMockAllowed } from "../lib/mode";
 
 const INITIAL_USERS: UserProfileItem[] = [
   {
@@ -76,8 +77,15 @@ export const profileService = {
         if (error) throw error;
         if (data) return data as UserProfileItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[ProfileService] Failed to load profiles: ${e.message}`);
+        }
         console.error("[ProfileService] Supabase profiles query failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[ProfileService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorageUsers();
   },
@@ -96,8 +104,15 @@ export const profileService = {
         if (error) throw error;
         return data as UserProfileItem;
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[ProfileService] Failed to load profile: ${e.message}`);
+        }
         console.error(`[ProfileService] Fetch profile ${id} failed:`, e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[ProfileService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     const list = getStorageUsers();
     return list.find(u => u.id === id) || null;
@@ -124,6 +139,10 @@ export const profileService = {
         console.error("[ProfileService] Supabase profile update failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[ProfileService] Supabase is unconfigured. Production Mode requires a live database connection to update profile.");
     }
 
     const list = getStorageUsers();

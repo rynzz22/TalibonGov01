@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/SupabaseAuthContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { isMockAllowed } from '../lib/mode';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LogIn, LogOut, Trash2, FileText, CheckCircle,
@@ -184,6 +185,9 @@ const AdminDashboard: React.FC = () => {
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<{ id: string; tab: string; name: string } | null>(null);
   const [statusUpdateReq, setStatusUpdateReq] = useState<{ id: string; status: string; trackingNumber: string; citizenName: string } | null>(null);
   const [statusRemarks, setStatusRemarks] = useState('');
+  const [notifyCitizen, setNotifyCitizen] = useState(true);
+  const [saveTimeline, setSaveTimeline] = useState(true);
+  const [sendEmail, setSendEmail] = useState(false);
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -463,6 +467,11 @@ const AdminDashboard: React.FC = () => {
   // Media Library Fetcher
   const fetchMediaFiles = async () => {
     if (!isSupabaseConfigured) {
+      if (!isMockAllowed()) {
+        showError("Media Library bucket unavailable. Supabase is not configured.");
+        setMediaFiles([]);
+        return;
+      }
       setMediaFiles([
         { name: "sample_permit_form.pdf", id: "pdf-1", updated_at: new Date().toISOString(), size: 1400000, metadata: { mimetype: "application/pdf" } },
         { name: "tourism_spot_danajon.jpg", id: "img-1", updated_at: new Date().toISOString(), size: 850000, metadata: { mimetype: "image/jpeg" } }
@@ -481,7 +490,20 @@ const AdminDashboard: React.FC = () => {
       }
     } catch (err: any) {
       console.error("[Media Library] Fetch error:", err.message);
-      showError("Could not retrieve media files: " + err.message);
+      if (err?.message?.toLowerCase().includes("bucket") || err?.message?.toLowerCase().includes("not found")) {
+        if (!isMockAllowed()) {
+          showError("Storage bucket unavailable. Reference: public-cms bucket missing.");
+          setMediaFiles([]);
+          return;
+        }
+        console.warn("[Media Library] Falling back to mock media files due to missing storage bucket.");
+        setMediaFiles([
+          { name: "sample_permit_form.pdf", id: "pdf-1", updated_at: new Date().toISOString(), size: 1400000, metadata: { mimetype: "application/pdf" } },
+          { name: "tourism_spot_danajon.jpg", id: "img-1", updated_at: new Date().toISOString(), size: 850000, metadata: { mimetype: "image/jpeg" } }
+        ]);
+      } else {
+        showError("Could not retrieve media files: " + err.message);
+      }
     } finally {
       setMediaLoading(false);
     }
@@ -616,7 +638,13 @@ const AdminDashboard: React.FC = () => {
   };
 
   // Workflow update handlers for citizen applications
-  const handleUpdateReqStatus = async (reqId: string, newStatus: string, customRemarks?: string) => {
+  const handleUpdateReqStatus = async (
+    reqId: string,
+    newStatus: string,
+    customRemarks?: string,
+    notifyCitizen: boolean = true,
+    saveTimeline: boolean = true
+  ) => {
     // Optimistic local update
     setCitizenRequests(prev => prev.map(req => {
       if (req.id === reqId) {
@@ -626,40 +654,33 @@ const AdminDashboard: React.FC = () => {
     }));
 
     try {
-      let dbStatus = "Submitted";
-      const upper = newStatus.toUpperCase();
-      if (upper === "ROUTED" || upper === "ASSIGNED") {
-        dbStatus = "Assigned";
-      } else if (upper === "PROCESSING") {
-        dbStatus = "Processing";
-      } else if (upper === "COMPLETED") {
-        dbStatus = "Completed";
-      } else if (upper === "REJECTED") {
-        dbStatus = "Rejected";
-      } else if (upper === "RETURNED" || upper === "RETURN") {
-        dbStatus = "Returned";
-      } else if (upper === "APPROVED") {
-        dbStatus = "Approved";
-      }
-
       const reqItem = citizenRequests.find(r => r.id === reqId);
       const remarks = customRemarks || `Status updated to ${newStatus} in portal.`;
       
       if (reqItem) {
-        await certificateService.updateRequestStatus(reqId, dbStatus, remarks, profile?.email || "admin@talibon.gov.ph");
+        await certificateService.updateRequestStatus(
+          reqId,
+          newStatus,
+          remarks,
+          profile?.email || "admin@talibon.gov.ph",
+          notifyCitizen,
+          saveTimeline
+        );
         showSuccess(`Request ${reqItem.trackingNumber} status updated to ${newStatus} on live database!`);
         loadAllCmsData();
       } else {
         showSuccess(`Request status updated to ${newStatus}!`);
       }
 
-      notificationService.createNotification({
-        title: "Workflow Status Update",
-        message: `Citizen request ${reqItem?.trackingNumber || ""} (${reqItem?.type || "Application"}) status was changed to ${newStatus}.`,
-        category: "Workflow Updates",
-        department_id: reqItem?.assignedDeptId,
-        action_url: "workflows"
-      });
+      if (notifyCitizen) {
+        notificationService.createNotification({
+          title: "Workflow Status Update",
+          message: `Citizen request ${reqItem?.trackingNumber || ""} (${reqItem?.type || "Application"}) status was changed to ${newStatus}.`,
+          category: "Workflow Updates",
+          department_id: reqItem?.assignedDeptId,
+          action_url: "workflows"
+        });
+      }
     } catch (e: any) {
       console.error("Error updating request status in live DB:", e);
       showError("Could not persist status change to live database.");
@@ -669,14 +690,24 @@ const AdminDashboard: React.FC = () => {
   const openStatusUpdatePrompt = (req: any, newStatus: string) => {
     let defaultRemarks = `Status updated to ${newStatus} in portal.`;
     const upper = newStatus.toUpperCase();
-    if (upper === "COMPLETED") {
-      defaultRemarks = "The requested municipal document has been generated, signed, and collected. Closing ticket.";
-    } else if (upper === "REJECTED") {
-      defaultRemarks = "Application rejected due to incomplete or unverified identification files.";
-    } else if (upper === "PROCESSING") {
-      defaultRemarks = "Our municipal clerks are currently verifying the information on your request.";
+    if (upper === "SUBMITTED") {
+      defaultRemarks = "Application received successfully. Awaiting review.";
     } else if (upper === "ROUTED" || upper === "ASSIGNED") {
       defaultRemarks = "Request has been successfully routed to the responsible department.";
+    } else if (upper === "PROCESSING" || upper === "UNDER REVIEW") {
+      defaultRemarks = "Our municipal clerks are currently verifying the information on your request.";
+    } else if (upper === "RETURNED" || upper === "ADDITIONAL REQUIREMENTS NEEDED") {
+      defaultRemarks = "The uploaded ID is unreadable. Please submit a clearer copy of your Valid ID.";
+    } else if (upper === "APPROVED") {
+      defaultRemarks = "Your application has been approved. The municipality is now preparing your official document.";
+    } else if (upper === "PREPARING" || upper === "PREPARING DOCUMENT") {
+      defaultRemarks = "Your official municipal document is currently being prepared, generated, and signed.";
+    } else if (upper === "READY" || upper === "READY FOR CLAIM") {
+      defaultRemarks = "Your municipal certificate is complete and ready for physical collection at our Treasury Office. Please bring your tracking ID and a valid ID.";
+    } else if (upper === "COMPLETED" || upper === "CLAIMED" || upper === "CLAIMED / COMPLETED") {
+      defaultRemarks = "The requested municipal document has been successfully generated, signed, and collected. Closing ticket.";
+    } else if (upper === "REJECTED") {
+      defaultRemarks = "Application rejected due to incomplete or unverified identification files.";
     }
     
     setStatusUpdateReq({
@@ -686,6 +717,9 @@ const AdminDashboard: React.FC = () => {
       citizenName: req.citizenName
     });
     setStatusRemarks(defaultRemarks);
+    setNotifyCitizen(true);
+    setSaveTimeline(true);
+    setSendEmail(false);
   };
 
   // DELETE ENTITY
@@ -2597,11 +2631,15 @@ const AdminDashboard: React.FC = () => {
                                   onChange={(e) => openStatusUpdatePrompt(req, e.target.value)}
                                   className="w-full bg-gray-50 border border-transparent rounded-xl p-2 font-black text-gray-800 text-[10px] focus:outline-none"
                                 >
-                                  <option value="PENDING">PENDING</option>
-                                  <option value="ROUTED">ROUTED</option>
-                                  <option value="PROCESSING">PROCESSING</option>
-                                  <option value="COMPLETED">COMPLETED</option>
-                                  <option value="REJECTED">REJECTED</option>
+                                  <option value="SUBMITTED">Submitted</option>
+                                  <option value="ASSIGNED">Assigned to Department</option>
+                                  <option value="PROCESSING">Under Review</option>
+                                  <option value="RETURNED">Additional Requirements Needed</option>
+                                  <option value="APPROVED">Approved</option>
+                                  <option value="PREPARING">Preparing Document</option>
+                                  <option value="READY">Ready for Claim</option>
+                                  <option value="CLAIMED">Claimed / Completed</option>
+                                  <option value="REJECTED">Rejected</option>
                                 </select>
                               </div>
                             </div>
@@ -3625,13 +3663,13 @@ const AdminDashboard: React.FC = () => {
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Confirm status update with remarks">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setStatusUpdateReq(null)} className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" />
             
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 space-y-6 border border-gray-100">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 space-y-6 border border-gray-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="flex items-center gap-4 border-b border-gray-100 pb-4">
                 <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
                   <Edit3 size={24} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Update Request Status</h3>
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Guided Workflow update</h3>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Ticket: {statusUpdateReq.trackingNumber}</p>
                 </div>
               </div>
@@ -3639,27 +3677,155 @@ const AdminDashboard: React.FC = () => {
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-2xl p-4 space-y-2">
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
-                    <span className="text-gray-400">Citizen</span>
+                    <span className="text-gray-400">Citizen / Requester</span>
                     <span className="text-gray-800">{statusUpdateReq.citizenName}</span>
-                  </div>
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
-                    <span className="text-gray-400">Target Status</span>
-                    <span className="text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded-md border border-indigo-100">{statusUpdateReq.status}</span>
                   </div>
                 </div>
 
+                {/* Workflow Status Selector */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Custom Remarks / Staff Note</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-display">Target Workflow Stage</label>
+                  <select
+                    value={statusUpdateReq.status}
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      let defaultRemarks = `Status updated to ${selected} in portal.`;
+                      const upper = selected.toUpperCase();
+                      if (upper === "SUBMITTED") {
+                        defaultRemarks = "Application received successfully. Awaiting review.";
+                      } else if (upper === "ROUTED" || upper === "ASSIGNED") {
+                        defaultRemarks = "Request has been successfully routed to the responsible department.";
+                      } else if (upper === "PROCESSING" || upper === "UNDER REVIEW") {
+                        defaultRemarks = "Our municipal clerks are currently verifying the information on your request.";
+                      } else if (upper === "RETURNED" || upper === "ADDITIONAL REQUIREMENTS NEEDED") {
+                        defaultRemarks = "The uploaded ID is unreadable. Please submit a clearer copy of your Valid ID.";
+                      } else if (upper === "APPROVED") {
+                        defaultRemarks = "Your application has been approved. The municipality is now preparing your official document.";
+                      } else if (upper === "PREPARING" || upper === "PREPARING DOCUMENT") {
+                        defaultRemarks = "Your official municipal document is currently being prepared, generated, and signed.";
+                      } else if (upper === "READY" || upper === "READY FOR CLAIM") {
+                        defaultRemarks = "Your municipal certificate is complete and ready for physical collection at our Treasury Office. Please bring your tracking ID and a valid ID.";
+                      } else if (upper === "COMPLETED" || upper === "CLAIMED" || upper === "CLAIMED / COMPLETED") {
+                        defaultRemarks = "The requested municipal document has been successfully generated, signed, and collected. Closing ticket.";
+                      } else if (upper === "REJECTED") {
+                        defaultRemarks = "Application rejected due to incomplete or unverified identification files.";
+                      }
+                      setStatusUpdateReq(prev => prev ? { ...prev, status: selected } : null);
+                      setStatusRemarks(defaultRemarks);
+                    }}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 font-black text-gray-800 text-xs focus:outline-none focus:border-indigo-500 transition-all"
+                  >
+                    <option value="SUBMITTED">Submitted</option>
+                    <option value="ASSIGNED">Assigned to Department</option>
+                    <option value="PROCESSING">Under Review</option>
+                    <option value="RETURNED">Additional Requirements Needed</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="PREPARING">Preparing Document</option>
+                    <option value="READY">Ready for Claim</option>
+                    <option value="CLAIMED">Claimed / Completed</option>
+                    <option value="REJECTED">Rejected</option>
+                  </select>
+                </div>
+
+                {/* Remarks TextArea */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Workflow Remarks / Staff Note</label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     value={statusRemarks}
                     onChange={(e) => setStatusRemarks(e.target.value)}
                     placeholder="Enter details, pick up instructions, additional requirements needed, or rejection reasons..."
                     className="w-full bg-gray-50 border border-gray-200 focus:border-indigo-500 rounded-2xl p-4 font-bold text-gray-800 text-xs focus:outline-none transition-all resize-none"
                   />
-                  <p className="text-[10px] text-gray-400 font-bold leading-normal">
-                    This note will be visible to the citizen immediately on the public "Track Request" page.
-                  </p>
+                </div>
+
+                {/* Citizen Notification Live Preview */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Citizen Notification Preview</label>
+                  <div className="bg-indigo-50/20 border border-indigo-100 rounded-2xl p-4 flex gap-3.5 items-start">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 font-bold text-xs border border-indigo-100/50">
+                      {statusUpdateReq.status === "SUBMITTED" && "✅"}
+                      {(statusUpdateReq.status === "ASSIGNED" || statusUpdateReq.status === "ROUTED") && "📂"}
+                      {statusUpdateReq.status === "PROCESSING" && "🔍"}
+                      {statusUpdateReq.status === "RETURNED" && "⚠"}
+                      {statusUpdateReq.status === "APPROVED" && "✅"}
+                      {statusUpdateReq.status === "PREPARING" && "🖨"}
+                      {statusUpdateReq.status === "READY" && "🏛"}
+                      {statusUpdateReq.status === "CLAIMED" && "🎉"}
+                      {statusUpdateReq.status === "REJECTED" && "❌"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-indigo-600">Workflow Updates</span>
+                        <span className="text-[8px] font-bold text-gray-400">Just now</span>
+                      </div>
+                      <h4 className="text-xs font-black text-gray-900 mt-0.5">
+                        {statusUpdateReq.status === "SUBMITTED" && "✅ Application Submitted"}
+                        {(statusUpdateReq.status === "ASSIGNED" || statusUpdateReq.status === "ROUTED") && "📂 Assigned to Department"}
+                        {statusUpdateReq.status === "PROCESSING" && "🔍 Under Review"}
+                        {statusUpdateReq.status === "RETURNED" && "⚠ Additional Requirements Required"}
+                        {statusUpdateReq.status === "APPROVED" && "✅ Approved"}
+                        {statusUpdateReq.status === "PREPARING" && "🖨 Preparing Document"}
+                        {statusUpdateReq.status === "READY" && "🏛 Ready for Claim"}
+                        {statusUpdateReq.status === "CLAIMED" && "🎉 Transaction Completed"}
+                        {statusUpdateReq.status === "REJECTED" && "❌ Request Rejected"}
+                      </h4>
+                      <p className="text-[10px] text-gray-500 font-medium leading-relaxed mt-1">
+                        {statusUpdateReq.status === "SUBMITTED" && `Your Barangay Clearance application has been received successfully. We will notify you whenever your application progresses. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                        {(statusUpdateReq.status === "ASSIGNED" || statusUpdateReq.status === "ROUTED") && `Your application has been assigned to: Municipal Engineering Office. Our staff has begun reviewing your request. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                        {statusUpdateReq.status === "PROCESSING" && `Your application is currently being reviewed. No action is required at this time. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                        {statusUpdateReq.status === "RETURNED" && `Please submit a clearer copy of your Valid ID. Remarks from Staff: "${statusRemarks || "No remarks provided"}". Please return to your request and upload the required document. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                        {statusUpdateReq.status === "APPROVED" && `Your application has been approved. The municipality is now preparing your official document. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                        {statusUpdateReq.status === "PREPARING" && `Your document is currently being prepared and signed. You will receive another notification once it is ready for pickup. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                        {statusUpdateReq.status === "READY" && `Your request has been processed successfully. Please visit: Municipality of Talibon. Bring: • Tracking Number (${statusUpdateReq.trackingNumber}) • Valid Government ID • Required payment (if applicable). Office Hours: Monday-Friday 8:00 AM - 5:00 PM. Location: Treasury Office. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                        {statusUpdateReq.status === "CLAIMED" && `Your document has been successfully claimed. Thank you for using Talibon Digital Core. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                        {statusUpdateReq.status === "REJECTED" && `Verification declined. Remarks: "${statusRemarks || "Incomplete details"}". Please submit a new claim with valid files. [Ticket: ${statusUpdateReq.trackingNumber}]`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Workflow Configuration Checkboxes */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1.5 border-t border-gray-100">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={notifyCitizen}
+                      onChange={(e) => setNotifyCitizen(e.target.checked)}
+                      className="rounded-lg border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                    />
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-gray-800 tracking-wide">Notify Citizen</p>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">In-App Alert</p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={saveTimeline}
+                      onChange={(e) => setSaveTimeline(e.target.checked)}
+                      className="rounded-lg border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                    />
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-gray-800 tracking-wide">Save to Timeline</p>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Citizen Tracker</p>
+                    </div>
+                  </label>
+
+                  <div className="flex items-center gap-3 opacity-60 cursor-not-allowed">
+                    <input
+                      type="checkbox"
+                      disabled
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="rounded-lg border-gray-200 text-indigo-300 w-4 h-4 cursor-not-allowed"
+                    />
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-gray-400 tracking-wide">Send Email</p>
+                      <p className="text-[8px] font-bold text-red-400 uppercase tracking-widest">Service Offline</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -3676,7 +3842,7 @@ const AdminDashboard: React.FC = () => {
                   onClick={async () => {
                     const { id, status } = statusUpdateReq;
                     setStatusUpdateReq(null);
-                    await handleUpdateReqStatus(id, status, statusRemarks);
+                    await handleUpdateReqStatus(id, status, statusRemarks, notifyCitizen, saveTimeline);
                   }}
                   className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/15"
                 >

@@ -4,6 +4,7 @@ import { FileCheck, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-re
 import axios from "axios";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
+import { isMockAllowed } from "../../lib/mode";
 
 interface EBarangayClearanceFormProps {
   onSuccess: (result: any) => void;
@@ -86,6 +87,9 @@ export default function EBarangayClearanceForm({ onSuccess }: EBarangayClearance
         onSuccess(response.data);
       }
     } catch (error) {
+      if (!isMockAllowed()) {
+        throw error;
+      }
       console.error("[BarangayClearanceForm] Submit failed, using fallback", error);
       
       // Client-side fallback

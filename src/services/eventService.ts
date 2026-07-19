@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, EventItem } from "./cmsService";
+import { isMockAllowed } from "../lib/mode";
 
 const INITIAL_EVENTS: EventItem[] = [
   {
@@ -37,8 +38,15 @@ export const eventService = {
         if (error) throw error;
         if (data) return data as EventItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[EventService] Failed to load events: ${e.message}`);
+        }
         console.error("[EventService] Supabase Events fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[EventService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorageEvents();
   },
@@ -60,6 +68,10 @@ export const eventService = {
         console.error("[EventService] Supabase Events insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[EventService] Supabase is unconfigured. Production Mode requires a live database connection to save events.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -91,6 +103,10 @@ export const eventService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[EventService] Supabase is unconfigured. Production Mode requires a live database connection to update data.");
+    }
+
     const list = getStorageEvents();
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -116,6 +132,10 @@ export const eventService = {
         console.error("[EventService] Supabase Events delete failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[EventService] Supabase is unconfigured. Production Mode requires a live database connection to delete data.");
     }
 
     const list = getStorageEvents();

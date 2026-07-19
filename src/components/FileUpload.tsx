@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { isMockAllowed } from '../lib/mode';
 import { Upload, X, FileText, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -115,6 +116,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
     // Fallback if Supabase is not configured or unavailable
     if (!isSupabaseConfigured) {
+      if (!isMockAllowed()) {
+        setError(`Storage bucket unavailable. Please contact the system administrator. Reference: ${bucket} bucket missing.`);
+        setUploadProgress(null);
+        return;
+      }
       try {
         setUploadProgress(30);
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -169,8 +175,39 @@ const FileUpload: React.FC<FileUploadProps> = ({
         onUploadComplete(publicUrl);
         setUploadProgress(null);
       }, 500);
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('[FileUpload] Error:', err);
+      
+      const errorMsg = err?.message || '';
+      const isBucketError = errorMsg.toLowerCase().includes('bucket') || errorMsg.toLowerCase().includes('not found');
+      
+      if (isBucketError) {
+        if (!isMockAllowed()) {
+          setError(`Storage bucket unavailable. Please contact the system administrator. Reference: ${bucket} bucket missing.`);
+          setUploadProgress(null);
+          return;
+        }
+        console.warn('[FileUpload] Falling back to local/blob url due to storage bucket missing or unconfigured:', errorMsg);
+        setError(null);
+        setUploadProgress(60);
+        
+        let fallbackUrl = '';
+        if (file.type.startsWith('image/')) {
+          fallbackUrl = URL.createObjectURL(file);
+        } else {
+          fallbackUrl = `https://talibon.gov.ph/mock-documents/${safeName}`;
+        }
+        
+        setTimeout(() => {
+          setUploadProgress(100);
+          setTimeout(() => {
+            onUploadComplete(fallbackUrl);
+            setUploadProgress(null);
+          }, 300);
+        }, 300);
+        return;
+      }
+
       const message =
         err instanceof Error ? err.message : 'Upload failed. Please try again.';
       setError(message);

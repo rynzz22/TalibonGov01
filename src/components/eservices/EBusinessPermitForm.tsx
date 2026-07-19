@@ -4,6 +4,7 @@ import { Briefcase, AlertCircle, ShieldAlert, File, ArrowRight, ShieldCheck } fr
 import axios from "axios";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
+import { isMockAllowed } from "../../lib/mode";
 
 interface EBusinessPermitFormProps {
   onSuccess: (result: any) => void;
@@ -104,6 +105,9 @@ export default function EBusinessPermitForm({ onSuccess }: EBusinessPermitFormPr
         onSuccess(response.data);
       }
     } catch (error) {
+      if (!isMockAllowed()) {
+        throw error;
+      }
       console.error("[BusinessPermitForm] Submit failed, using robust fallback", error);
       
       // Client-side fallback

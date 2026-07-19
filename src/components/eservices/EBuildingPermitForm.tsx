@@ -4,6 +4,7 @@ import { HardHat, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-reac
 import axios from "axios";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
+import { isMockAllowed } from "../../lib/mode";
 
 interface EBuildingPermitFormProps {
   onSuccess: (result: any) => void;
@@ -105,6 +106,9 @@ export default function EBuildingPermitForm({ onSuccess }: EBuildingPermitFormPr
         onSuccess(response.data);
       }
     } catch (error) {
+      if (!isMockAllowed()) {
+        throw error;
+      }
       console.error("[BuildingPermitForm] Submit failed, using robust fallback", error);
       
       // Client-side fallback

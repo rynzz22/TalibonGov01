@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, ServiceCmsItem } from "./cmsService";
+import { isMockAllowed } from "../lib/mode";
 
 const INITIAL_SERVICES: ServiceCmsItem[] = [
   {
@@ -76,8 +77,15 @@ export const servicesCmsService = {
         if (error) throw error;
         if (data) return data as ServiceCmsItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[ServicesCmsService] Failed to load services: ${e.message}`);
+        }
         console.error("[ServicesCmsService] Supabase Services fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[ServicesCmsService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorageServices();
   },
@@ -99,6 +107,10 @@ export const servicesCmsService = {
         console.error("[ServicesCmsService] Supabase Services insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[ServicesCmsService] Supabase is unconfigured. Production Mode requires a live database connection to save services.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -130,6 +142,10 @@ export const servicesCmsService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[ServicesCmsService] Supabase is unconfigured. Production Mode requires a live database connection to update data.");
+    }
+
     const list = getStorageServices();
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -155,6 +171,10 @@ export const servicesCmsService = {
         console.error("[ServicesCmsService] Supabase Services delete failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[ServicesCmsService] Supabase is unconfigured. Production Mode requires a live database connection to delete data.");
     }
 
     const list = getStorageServices();

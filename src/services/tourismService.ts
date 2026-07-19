@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, TourismSpotItem } from "./cmsService";
+import { isMockAllowed } from "../lib/mode";
 
 const INITIAL_TOURISM: TourismSpotItem[] = [
   {
@@ -48,8 +49,15 @@ export const tourismService = {
         if (error) throw error;
         if (data) return data as TourismSpotItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[TourismService] Failed to load tourism spots: ${e.message}`);
+        }
         console.error("[TourismService] Supabase Tourism spots fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[TourismService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorageTourism();
   },
@@ -71,6 +79,10 @@ export const tourismService = {
         console.error("[TourismService] Supabase Tourism insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[TourismService] Supabase is unconfigured. Production Mode requires a live database connection to save data.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -102,6 +114,10 @@ export const tourismService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[TourismService] Supabase is unconfigured. Production Mode requires a live database connection to update data.");
+    }
+
     const list = getStorageTourism();
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -127,6 +143,10 @@ export const tourismService = {
         console.error("[TourismService] Supabase Tourism delete failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[TourismService] Supabase is unconfigured. Production Mode requires a live database connection to delete data.");
     }
 
     const list = getStorageTourism();

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { logCmsAction } from "./cmsService";
+import { isMockAllowed } from "../lib/mode";
 
 export interface CertificateRequest {
   id?: string;
@@ -15,6 +16,12 @@ export interface CertificateRequest {
   status: string;
   created_at?: string;
   updated_at?: string;
+  history?: {
+    id?: string;
+    status: string;
+    remarks: string | null;
+    createdAt: string;
+  }[];
 }
 
 export const certificateService = {
@@ -66,10 +73,14 @@ export const certificateService = {
           purpose: requestData.purpose,
           attachments: requestData.attachments || [],
           submittedAt: requestData.submittedAt,
-          status: requestData.status
+          status: requestData.status,
+          history: requestData.history || []
         };
       }
     } catch (e: any) {
+      if (!isMockAllowed()) {
+        throw e;
+      }
       console.error(`[CertificateService] Failed to track ticket ${ticketId}:`, e.message || e);
     }
     return null;
@@ -93,10 +104,14 @@ export const certificateService = {
           purpose: requestData.purpose,
           attachments: requestData.attachments || [],
           submittedAt: requestData.submittedAt,
-          status: requestData.status
+          status: requestData.status,
+          history: requestData.history || []
         }));
       }
     } catch (e: any) {
+      if (!isMockAllowed()) {
+        throw e;
+      }
       console.error("[CertificateService] Failed to fetch all requests:", e.message || e);
     }
     return [];
@@ -105,17 +120,29 @@ export const certificateService = {
   /**
    * Transition request status using secure backend endpoint
    */
-  async updateRequestStatus(requestId: string, status: string, remarks: string, userEmail: string): Promise<boolean> {
+  async updateRequestStatus(
+    requestId: string,
+    status: string,
+    remarks: string,
+    userEmail: string,
+    notifyCitizen: boolean = true,
+    saveTimeline: boolean = true
+  ): Promise<boolean> {
     try {
       const response = await axios.put(`/api/forms/certificate/${requestId}/status`, {
         status,
-        remarks
+        remarks,
+        notifyCitizen,
+        saveTimeline
       });
       if (response.data && response.data.success) {
         await logCmsAction(userEmail, `UPDATE_STATUS_${status}`, "certificate_requests", requestId);
         return true;
       }
     } catch (e: any) {
+      if (!isMockAllowed()) {
+        throw e;
+      }
       console.error("[CertificateService] backend updateRequestStatus failed:", e.message || e);
     }
     return false;

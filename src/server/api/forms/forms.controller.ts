@@ -27,9 +27,15 @@ export class FormsController {
   @Put("certificate/:id/status")
   async updateRequestStatus(
     @Param("id") id: string,
-    @Body() body: { status: string; remarks: string }
+    @Body() body: { status: string; remarks: string; notifyCitizen?: boolean; saveTimeline?: boolean }
   ) {
-    const success = await this.formsService.updateRequestStatus(id, body.status, body.remarks);
+    const success = await this.formsService.updateRequestStatus(
+      id,
+      body.status,
+      body.remarks,
+      body.notifyCitizen !== false,
+      body.saveTimeline !== false
+    );
     return { success };
   }
 

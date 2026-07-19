@@ -4,6 +4,7 @@ import { MapPin, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-react
 import axios from "axios";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
+import { isMockAllowed } from "../../lib/mode";
 
 interface EZoningClearanceFormProps {
   onSuccess: (result: any) => void;
@@ -94,6 +95,9 @@ export default function EZoningClearanceForm({ onSuccess }: EZoningClearanceForm
         onSuccess(response.data);
       }
     } catch (error) {
+      if (!isMockAllowed()) {
+        throw error;
+      }
       console.error("[ZoningClearanceForm] Submit failed, using fallback", error);
       
       // Client-side fallback

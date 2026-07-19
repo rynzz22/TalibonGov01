@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, DownloadableItem } from "./cmsService";
+import { isMockAllowed } from "../lib/mode";
 
 const INITIAL_DOWNLOADS: DownloadableItem[] = [
   {
@@ -46,8 +47,15 @@ export const downloadablesService = {
         if (error) throw error;
         if (data) return data as DownloadableItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[DownloadablesService] Failed to load downloadables: ${e.message}`);
+        }
         console.error("[DownloadablesService] Supabase Downloadables fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[DownloadablesService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorageDownloads();
   },
@@ -69,6 +77,10 @@ export const downloadablesService = {
         console.error("[DownloadablesService] Supabase Downloadables insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[DownloadablesService] Supabase is unconfigured. Production Mode requires a live database connection to save downloadable items.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -100,6 +112,10 @@ export const downloadablesService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[DownloadablesService] Supabase is unconfigured. Production Mode requires a live database connection to update data.");
+    }
+
     const list = getStorageDownloads();
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -125,6 +141,10 @@ export const downloadablesService = {
         console.error("[DownloadablesService] Supabase Downloadables delete failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[DownloadablesService] Supabase is unconfigured. Production Mode requires a live database connection to delete data.");
     }
 
     const list = getStorageDownloads();

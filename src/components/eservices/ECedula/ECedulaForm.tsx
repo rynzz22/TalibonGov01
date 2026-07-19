@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { notificationService } from "../../../services/notificationService";
+import { isMockAllowed } from "../../../lib/mode";
 import { ECedulaApplication, ECedulaSubmissionReceipt } from "./types";
 import { 
   CIVIL_STATUS_OPTIONS, GENDER_OPTIONS, CITIZENSHIP_OPTIONS, PURPOSE_OPTIONS,
@@ -177,6 +178,9 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
         onSuccess(newReceipt);
       }
     } catch (error) {
+      if (!isMockAllowed()) {
+        throw error;
+      }
       console.warn("[CedulaForm] Live submit failed, using fallback.", error);
       
       // Standalone/offline fallback

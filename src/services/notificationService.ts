@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { UserProfile } from "../contexts/SupabaseAuthContext";
+import { isMockAllowed } from "../lib/mode";
 
 export type NotificationCategory =
   | "Citizen Applications"
@@ -44,6 +45,50 @@ const saveLocalNotifications = (notifs: AppNotification[]) => {
   localStorage.setItem("talibon_notifications", JSON.stringify(notifs));
 };
 
+const mapCategoryToDb = (frontendCategory: NotificationCategory): string => {
+  switch (frontendCategory) {
+    case "Citizen Applications":
+    case "Workflow Updates":
+    case "Document Updates":
+      return "WORKFLOW";
+    case "Staff Verification":
+    case "System Messages":
+      return "SYSTEM";
+    case "News Approval":
+    case "Department Announcements":
+      return "NEWS";
+    default:
+      return "SYSTEM";
+  }
+};
+
+const mapDbToCategory = (dbCategory: string): NotificationCategory => {
+  const validCategories: string[] = [
+    "Citizen Applications",
+    "Workflow Updates",
+    "Staff Verification",
+    "News Approval",
+    "Document Updates",
+    "System Messages",
+    "Department Announcements"
+  ];
+  if (validCategories.includes(dbCategory)) {
+    return dbCategory as NotificationCategory;
+  }
+  switch (dbCategory) {
+    case "WORKFLOW":
+      return "Workflow Updates";
+    case "SYSTEM":
+      return "System Messages";
+    case "NEWS":
+      return "Department Announcements";
+    case "PAYMENT":
+      return "Document Updates";
+    default:
+      return "System Messages";
+  }
+};
+
 export const notificationService = {
   /**
    * Fetches notifications matching the profile's department and role authorization level
@@ -71,13 +116,27 @@ export const notificationService = {
 
         const { data, error } = await query;
         if (!error && data) {
-          return data as AppNotification[];
+          const mappedData = data.map((notif) => ({
+            ...notif,
+            category: mapDbToCategory(notif.category)
+          }));
+          return mappedData as AppNotification[];
         } else if (error) {
+          if (!isMockAllowed()) {
+            throw new Error(`[NotificationService] Failed to load notifications: ${error.message}`);
+          }
           console.warn("[NotificationService] Supabase load failed, falling back:", error.message);
         }
       } catch (err) {
+        if (!isMockAllowed()) {
+          throw err;
+        }
         console.warn("[NotificationService] Supabase exception:", err);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NotificationService] Supabase is not configured. Production Mode requires a live database connection.");
     }
 
     // Dynamic filtering for localStorage local state
@@ -106,10 +165,21 @@ export const notificationService = {
           .update({ is_read: true })
           .eq("id", id);
         if (!error) return true;
+        
+        if (!isMockAllowed()) {
+          throw new Error(`[NotificationService] Error marking notification as read in Supabase: ${error.message}`);
+        }
         console.error("[NotificationService] Error marking as read in Supabase:", error.message);
       } catch (err) {
+        if (!isMockAllowed()) {
+          throw err;
+        }
         console.error("[NotificationService] Exception marking as read:", err);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NotificationService] Supabase is not configured. Production Mode requires a live database connection.");
     }
 
     // Local fallback
@@ -143,10 +213,21 @@ export const notificationService = {
 
         const { error } = await query;
         if (!error) return true;
+        
+        if (!isMockAllowed()) {
+          throw new Error(`[NotificationService] Error marking all notifications as read in Supabase: ${error.message}`);
+        }
         console.error("[NotificationService] Error marking all as read in Supabase:", error.message);
       } catch (err) {
+        if (!isMockAllowed()) {
+          throw err;
+        }
         console.error("[NotificationService] Exception marking all as read:", err);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NotificationService] Supabase is not configured. Production Mode requires a live database connection.");
     }
 
     // Local fallback
@@ -181,10 +262,21 @@ export const notificationService = {
           .update({ is_archived: true })
           .eq("id", id);
         if (!error) return true;
+        
+        if (!isMockAllowed()) {
+          throw new Error(`[NotificationService] Error archiving notification in Supabase: ${error.message}`);
+        }
         console.error("[NotificationService] Error archiving in Supabase:", error.message);
       } catch (err) {
+        if (!isMockAllowed()) {
+          throw err;
+        }
         console.error("[NotificationService] Exception archiving:", err);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NotificationService] Supabase is not configured. Production Mode requires a live database connection.");
     }
 
     // Local fallback
@@ -214,7 +306,7 @@ export const notificationService = {
             {
               title: newNotif.title,
               message: newNotif.message,
-              category: newNotif.category,
+              category: mapCategoryToDb(newNotif.category),
               department_id: newNotif.department_id,
               user_id: newNotif.user_id,
               is_read: false,
@@ -225,13 +317,27 @@ export const notificationService = {
           .select();
 
         if (!error && data && data.length > 0) {
-          return data[0] as AppNotification;
+          const createdNotif = {
+            ...data[0],
+            category: mapDbToCategory(data[0].category)
+          };
+          return createdNotif as AppNotification;
         } else if (error) {
+          if (!isMockAllowed()) {
+            throw new Error(`[NotificationService] Failed to insert notification in Supabase: ${error.message}`);
+          }
           console.error("[NotificationService] Error inserting notification into Supabase:", error.message);
         }
       } catch (err) {
+        if (!isMockAllowed()) {
+          throw err;
+        }
         console.error("[NotificationService] Exception inserting notification:", err);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NotificationService] Supabase is not configured. Production Mode requires a live database connection to save notifications.");
     }
 
     // Local fallback

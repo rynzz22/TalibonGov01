@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction } from "./cmsService";
+import { isMockAllowed } from "../lib/mode";
 
 export interface NavigationItem {
   id: string;
@@ -45,8 +46,15 @@ export const navigationService = {
         if (error) throw error;
         if (data) return data as NavigationItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[NavigationService] Failed to load navigation items: ${e.message}`);
+        }
         console.error("[NavigationService] Supabase Navigation fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NavigationService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorageNavigation();
   },
@@ -68,6 +76,10 @@ export const navigationService = {
         console.error("[NavigationService] Supabase Navigation insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NavigationService] Supabase is unconfigured. Production Mode requires a live database connection to save navigation.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -99,6 +111,10 @@ export const navigationService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[NavigationService] Supabase is unconfigured. Production Mode requires a live database connection to update data.");
+    }
+
     const list = getStorageNavigation();
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -124,6 +140,10 @@ export const navigationService = {
         console.error("[NavigationService] Supabase Navigation delete failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NavigationService] Supabase is unconfigured. Production Mode requires a live database connection to delete data.");
     }
 
     const list = getStorageNavigation();

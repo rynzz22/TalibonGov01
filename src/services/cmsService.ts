@@ -4,6 +4,7 @@ import { eventService } from "./eventService";
 import { tourismService } from "./tourismService";
 import { downloadablesService } from "./downloadablesService";
 import { servicesCmsService } from "./servicesCmsService";
+import { isMockAllowed } from "../lib/mode";
 
 // Interfaces matching database columns
 export interface NewsItem {
@@ -572,8 +573,14 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as OfficialItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[CMSService] Failed to load officials: ${e.message}`);
+        }
         console.error("Supabase Officials fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorage<OfficialItem>("officials", INITIAL_OFFICIALS);
   },
@@ -595,6 +602,10 @@ export const cmsService = {
         console.error("Supabase Officials insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to save officials.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -629,6 +640,10 @@ export const cmsService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to update officials.");
+    }
+
     const list = getStorage<OfficialItem>("officials", INITIAL_OFFICIALS);
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -653,6 +668,10 @@ export const cmsService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to delete officials.");
+    }
+
     const list = getStorage<OfficialItem>("officials", INITIAL_OFFICIALS);
     const filtered = list.filter(n => n.id !== id);
     setStorage("officials", filtered);
@@ -668,8 +687,14 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as DepartmentItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[CMSService] Failed to load departments: ${e.message}`);
+        }
         console.error("Supabase Departments fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorage<DepartmentItem>("departments", INITIAL_DEPARTMENTS);
   },
@@ -687,6 +712,10 @@ export const cmsService = {
         console.error("Supabase Departments insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to save departments.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -713,6 +742,10 @@ export const cmsService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to update departments.");
+    }
+
     const list = getStorage<DepartmentItem>("departments", INITIAL_DEPARTMENTS);
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -735,6 +768,10 @@ export const cmsService = {
         console.error("Supabase Departments delete failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to delete departments.");
     }
 
     const list = getStorage<DepartmentItem>("departments", INITIAL_DEPARTMENTS);
@@ -767,8 +804,14 @@ export const cmsService = {
           });
         }
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[CMSService] Failed to load barangays: ${e.message}`);
+        }
         console.error("Supabase Barangays fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorage<BarangayItem>("barangays", INITIAL_BARANGAYS);
   },
@@ -799,6 +842,10 @@ export const cmsService = {
         console.error("Supabase Barangays insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to save barangays.");
     }
 
     const newItem = { ...item, id } as BarangayItem;
@@ -841,6 +888,10 @@ export const cmsService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to update barangays.");
+    }
+
     const list = getStorage<BarangayItem>("barangays", INITIAL_BARANGAYS);
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -863,6 +914,10 @@ export const cmsService = {
         console.error("Supabase Barangays delete failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to delete barangays.");
     }
 
     const list = getStorage<BarangayItem>("barangays", INITIAL_BARANGAYS);
@@ -897,8 +952,14 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as CitizensCharterCmsItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[CMSService] Failed to load citizens charter: ${e.message}`);
+        }
         console.error("Supabase Citizen Charter fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorage<CitizensCharterCmsItem>("citizens_charter_cms", INITIAL_CHARTERS);
   },
@@ -916,6 +977,10 @@ export const cmsService = {
         console.error("Supabase Citizen Charter insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to save citizens charter.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -942,6 +1007,10 @@ export const cmsService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to update citizens charter.");
+    }
+
     const list = getStorage<CitizensCharterCmsItem>("citizens_charter_cms", INITIAL_CHARTERS);
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -964,6 +1033,10 @@ export const cmsService = {
         console.error("Supabase Citizen Charter delete failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to delete citizens charter.");
     }
 
     const list = getStorage<CitizensCharterCmsItem>("citizens_charter_cms", INITIAL_CHARTERS);
@@ -998,8 +1071,14 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as AuditLogItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[CMSService] Failed to load audit logs: ${e.message}`);
+        }
         console.error("Supabase Audit Logs fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorage<AuditLogItem>("audit_logs", INITIAL_LOGS);
   },
@@ -1012,8 +1091,14 @@ export const cmsService = {
         if (error) throw error;
         if (data) return data as UserProfileItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[CMSService] Failed to load users: ${e.message}`);
+        }
         console.error("Supabase profiles query failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorage<UserProfileItem>("users", INITIAL_USERS);
   },
@@ -1070,6 +1155,10 @@ export const cmsService = {
         console.error("Supabase profiles update failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[CMSService] Supabase is unconfigured. Production Mode requires a live database connection to update user roles.");
     }
 
     const list = getStorage<UserProfileItem>("users", INITIAL_USERS);

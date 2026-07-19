@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { isMockAllowed } from "../lib/mode";
 
 export interface DashboardAggregates {
   total_news: number;
@@ -40,8 +41,15 @@ export const dashboardService = {
         if (error) throw error;
         if (data) return data as DashboardAggregates;
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[DashboardService] Failed to load dashboard aggregates: ${e.message}`);
+        }
         console.warn("[DashboardService] Failed to fetch view_dashboard_aggregates:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[DashboardService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
 
     // Default Fallback
@@ -71,8 +79,15 @@ export const dashboardService = {
         if (error) throw error;
         if (data) return data as MonthlyRequestStat[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[DashboardService] Failed to load monthly request stats: ${e.message}`);
+        }
         console.warn("[DashboardService] Failed to fetch view_monthly_request_stats:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[DashboardService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
 
     // Default Fallback
@@ -97,8 +112,15 @@ export const dashboardService = {
         if (error) throw error;
         if (data) return data as GADSectoralStat[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[DashboardService] Failed to load GAD sectoral stats: ${e.message}`);
+        }
         console.warn("[DashboardService] Failed to fetch view_gad_sectoral_stats:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[DashboardService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
 
     // Default Fallback

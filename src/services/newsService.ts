@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, NewsItem } from "./cmsService";
+import { isMockAllowed } from "../lib/mode";
 
 const INITIAL_NEWS: NewsItem[] = [
   {
@@ -39,8 +40,15 @@ export const newsService = {
         if (error) throw error;
         if (data) return data as NewsItem[];
       } catch (e: any) {
+        if (!isMockAllowed()) {
+          throw new Error(`[NewsService] Failed to load news items: ${e.message}`);
+        }
         console.error("[NewsService] Supabase News fetch failed, falling back to LocalStorage:", e.message || e);
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NewsService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
     return getStorageNews();
   },
@@ -74,6 +82,10 @@ export const newsService = {
         console.error("[NewsService] Supabase News insert failed:", e.message || e);
         throw e;
       }
+    }
+
+    if (!isMockAllowed()) {
+      throw new Error("[NewsService] Supabase is unconfigured. Production Mode requires a live database connection to save news.");
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
@@ -126,6 +138,10 @@ export const newsService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[NewsService] Supabase is unconfigured. Production Mode requires a live database connection to update news.");
+    }
+
     const list = getStorageNews();
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
@@ -153,6 +169,10 @@ export const newsService = {
       }
     }
 
+    if (!isMockAllowed()) {
+      throw new Error("[NewsService] Supabase is unconfigured. Production Mode requires a live database connection to delete news.");
+    }
+
     const list = getStorageNews();
     const filtered = list.filter(n => n.id !== id);
     setStorageNews(filtered);
@@ -177,6 +197,9 @@ export const newsService = {
         // Fallback to standard update in case RPC is not loaded/fails
         return this.updateNews(newsId, { status: "published" }, userEmail);
       }
+    }
+    if (!isMockAllowed()) {
+      throw new Error("[NewsService] Supabase is unconfigured. Production Mode requires a live database connection to call RPC.");
     }
     return this.updateNews(newsId, { status: "published" }, userEmail);
   }
