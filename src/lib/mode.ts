@@ -15,7 +15,8 @@ export function isMockAllowed(): boolean {
   const isDev = import.meta.env.MODE === "development" || import.meta.env.DEV === true;
   const isMockEnabled = import.meta.env.VITE_ENABLE_MOCK_DATA === "true";
   
-  return isDev || isMockEnabled;
+  // Mock mode should ONLY activate when explicitly enabled by a development flag
+  return isDev && isMockEnabled;
 }
 
 /**

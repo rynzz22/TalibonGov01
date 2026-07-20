@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HardHat, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-react";
-import axios from "axios";
+import { certificateService } from "../../services/certificateService";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
 import { isMockAllowed } from "../../lib/mode";
@@ -87,9 +87,9 @@ export default function EBuildingPermitForm({ onSuccess }: EBuildingPermitFormPr
         attachments: [planFile, sketchFile].filter(Boolean) as string[]
       };
 
-      const response = await axios.post("/api/forms/certificate", payload);
+      const response = await certificateService.submitRequest(payload);
       
-      if (response.data) {
+      if (response) {
         // Trigger Engineering staff notification
         try {
           await notificationService.createNotification({
@@ -103,7 +103,7 @@ export default function EBuildingPermitForm({ onSuccess }: EBuildingPermitFormPr
           console.warn("Failed to create engineering notification", notifErr);
         }
 
-        onSuccess(response.data);
+        onSuccess(response);
       }
     } catch (error) {
       if (!isMockAllowed()) {

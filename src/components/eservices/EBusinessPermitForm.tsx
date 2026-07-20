@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Briefcase, AlertCircle, ShieldAlert, File, ArrowRight, ShieldCheck } from "lucide-react";
-import axios from "axios";
+import { certificateService } from "../../services/certificateService";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
 import { isMockAllowed } from "../../lib/mode";
@@ -86,9 +86,9 @@ export default function EBusinessPermitForm({ onSuccess }: EBusinessPermitFormPr
         attachments: [dtiFile, idFile].filter(Boolean) as string[]
       };
 
-      const response = await axios.post("/api/forms/certificate", payload);
+      const response = await certificateService.submitRequest(payload);
       
-      if (response.data) {
+      if (response) {
         // Trigger BPLO staff notification
         try {
           await notificationService.createNotification({
@@ -102,7 +102,7 @@ export default function EBusinessPermitForm({ onSuccess }: EBusinessPermitFormPr
           console.warn("Failed to create BPLO notification", notifErr);
         }
 
-        onSuccess(response.data);
+        onSuccess(response);
       }
     } catch (error) {
       if (!isMockAllowed()) {

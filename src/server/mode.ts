@@ -10,7 +10,8 @@ export function isMockAllowedServer(): boolean {
   const isDev = process.env.NODE_ENV === "development";
   const isMockEnabled = process.env.VITE_ENABLE_MOCK_DATA === "true" || process.env.ENABLE_MOCK_DATA === "true";
   
-  return isDev || isMockEnabled;
+  // Mock mode should ONLY activate when explicitly enabled by a development flag
+  return isDev && isMockEnabled;
 }
 
 /**

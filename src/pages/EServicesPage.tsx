@@ -6,7 +6,7 @@ import {
   Sparkles, ShieldAlert, X, Copy, RefreshCw, File, HelpCircle, FileCheck,
   ArrowLeft, Briefcase, Building2, MapPin, ChevronRight
 } from "lucide-react";
-import axios from "axios";
+import { certificateService } from "../services/certificateService";
 import ECedulaForm from "../components/eservices/ECedula/ECedulaForm";
 import EBusinessPermitForm from "../components/eservices/EBusinessPermitForm";
 import EBuildingPermitForm from "../components/eservices/EBuildingPermitForm";
@@ -192,11 +192,10 @@ export default function EServicesPage() {
         attachments: uploadedFileName ? [uploadedFileName] : []
       };
 
-      // POST request to the backend NestJS endpoint
-      const response = await axios.post("/api/forms/certificate", payload);
+      // Direct submission using certificateService
+      const result = await certificateService.submitRequest(payload);
       
-      if (response.data) {
-        const result: CertificateRequest = response.data;
+      if (result) {
         setSubmittedTicket(result);
         
         // Auto-fill status tracker with newly generated ticket
@@ -242,16 +241,16 @@ export default function EServicesPage() {
     setIsTrackingLoading(true);
 
     try {
-      // GET request from our backend NestJS api endpoint
-      const response = await axios.get(`/api/forms/certificate/${searchTrackId.trim()}`);
+      // Direct tracking query using certificateService
+      const result = await certificateService.getRequestStatus(searchTrackId.trim());
       
-      if (response.data && response.data.success) {
-        setTrackedRequest(response.data.request);
+      if (result) {
+        setTrackedRequest(result);
         setTrackSearched(true);
       } else {
         setTrackedRequest(null);
         setTrackSearched(true);
-        setTrackError(response.data.message || "Ticket ID not found.");
+        setTrackError("Ticket ID not found.");
       }
     } catch (error) {
       console.warn("[Citizen Portal] Backend tracking fetch failed, checking local state fallback", error);

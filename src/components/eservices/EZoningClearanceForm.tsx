@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { MapPin, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-react";
-import axios from "axios";
+import { certificateService } from "../../services/certificateService";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
 import { isMockAllowed } from "../../lib/mode";
@@ -76,9 +76,9 @@ export default function EZoningClearanceForm({ onSuccess }: EZoningClearanceForm
         attachments: [sketchFile, taxDecFile].filter(Boolean) as string[]
       };
 
-      const response = await axios.post("/api/forms/certificate", payload);
+      const response = await certificateService.submitRequest(payload);
       
-      if (response.data) {
+      if (response) {
         // Trigger MPDO staff notification
         try {
           await notificationService.createNotification({
@@ -92,7 +92,7 @@ export default function EZoningClearanceForm({ onSuccess }: EZoningClearanceForm
           console.warn("Failed to create MPDO notification", notifErr);
         }
 
-        onSuccess(response.data);
+        onSuccess(response);
       }
     } catch (error) {
       if (!isMockAllowed()) {

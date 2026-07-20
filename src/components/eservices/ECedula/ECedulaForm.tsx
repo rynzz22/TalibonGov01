@@ -4,7 +4,7 @@ import {
   FileText, User, MapPin, Briefcase, Calculator, Mail, Phone, 
   CheckCircle2, ArrowRight, ShieldCheck, Printer, RefreshCw, Copy, AlertCircle 
 } from "lucide-react";
-import axios from "axios";
+import { certificateService } from "../../../services/certificateService";
 import { notificationService } from "../../../services/notificationService";
 import { isMockAllowed } from "../../../lib/mode";
 import { ECedulaApplication, ECedulaSubmissionReceipt } from "./types";
@@ -145,9 +145,9 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
         attachments: []
       };
 
-      const response = await axios.post("/api/forms/certificate", payload);
+      const response = await certificateService.submitRequest(payload);
       
-      const ticketId = response.data?.ticketId || `CTC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 899999) + 100000)}`;
+      const ticketId = response.ticketId;
 
       const newReceipt: ECedulaSubmissionReceipt = {
         ...formData,
