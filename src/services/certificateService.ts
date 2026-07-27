@@ -80,51 +80,64 @@ function mapStatusToDb(status: string): string {
   return "Submitted";
 }
 
+// Helper to log email notification attempts inside audit_logs table
+async function logEmailAttempt(
+  userEmail: string,
+  action: "EMAIL_SENT" | "EMAIL_FAILED",
+  requestId: string,
+  ticketId: string,
+  recipient: string,
+  status: string,
+  errorMessage?: string
+): Promise<void> {
+  const email = userEmail || "system@talibon.gov.ph";
+  const dataPayload = {
+    request_id: requestId,
+    ticket_id: ticketId,
+    recipient: recipient,
+    status: status,
+    ...(errorMessage ? { error_message: errorMessage } : {})
+  };
+
+  try {
+    const { error } = await supabase.from("audit_logs").insert([{
+      user_email: email,
+      action: action as any,
+      target_table: "certificate_requests",
+      target_id: requestId,
+      new_data: dataPayload
+    }]);
+    if (error) throw error;
+  } catch (err: any) {
+    console.warn("[CertificateService] Failed to insert email audit log:", err.message || err);
+  }
+}
+
 export const certificateService = {
   /**
-   * Submit a certificate request directly to Supabase certificate_requests table
+   * Submit a certificate request directly to Supabase via secure RPC
    */
   async submitRequest(payload: Omit<CertificateRequest, "ticketId" | "submittedAt" | "status">): Promise<CertificateRequest> {
     try {
-      const ticketId = generateTicketId(payload.documentType);
-      const insertData = {
-        ticket_id: ticketId,
-        document_type: payload.documentType,
-        barangay_id: payload.barangay || null,
-        full_name: payload.fullName,
-        email: payload.email,
-        mobile_number: payload.mobileNumber || null,
-        purpose: payload.purpose || null,
-        attachments: payload.attachments || [],
-        status: "Submitted" as any
-      };
-
-      const { data, error } = await supabase
-        .from("certificate_requests")
-        .insert(insertData)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc("submit_certificate_request", {
+        p_document_type: payload.documentType,
+        p_barangay_id: payload.barangay || "Poblacion",
+        p_full_name: payload.fullName,
+        p_email: payload.email || null,
+        p_mobile_number: payload.mobileNumber || null,
+        p_purpose: payload.purpose || null,
+        p_attachments: payload.attachments || []
+      });
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        // Log initial workflow timeline history
-        try {
-          await supabase.from("workflow_history").insert({
-            request_id: data.id,
-            status: "Submitted" as any,
-            remarks: "Application submitted successfully online."
-          });
-        } catch (histErr) {
-          console.warn("[CertificateService] Failed to insert initial timeline history:", histErr);
-        }
-
         return mapDbToRequest(data);
       }
     } catch (e: any) {
-      console.error("[CertificateService] direct submitRequest failed:", e.message || e);
+      console.error("[CertificateService] submit_certificate_request RPC failed:", e.message || e);
       throw e;
     }
 
@@ -137,30 +150,17 @@ export const certificateService = {
   async getRequestStatus(ticketId: string): Promise<CertificateRequest | null> {
     try {
       const trimmedId = ticketId.trim();
-      let query = supabase.from("certificate_requests").select("*");
       
-      // If it's a UUID, look up by both ticket_id and id. Otherwise, search by ticket_id only.
-      if (trimmedId.length === 36) {
-        query = query.or(`ticket_id.eq.${trimmedId},id.eq.${trimmedId}`);
-      } else {
-        query = query.eq("ticket_id", trimmedId);
-      }
-
-      const { data, error } = await query.maybeSingle();
+      const { data, error } = await supabase.rpc("get_request_status_by_ticket", {
+        p_ticket_id: trimmedId
+      });
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        // Fetch historical updates
-        const { data: historyData } = await supabase
-          .from("workflow_history")
-          .select("*")
-          .eq("request_id", data.id)
-          .order("created_at", { ascending: false });
-
-        return mapDbToRequest(data, historyData || []);
+        return mapDbToRequest(data, data.history || []);
       }
     } catch (e: any) {
       if (!isMockAllowed()) {
@@ -216,44 +216,104 @@ export const certificateService = {
     status: string,
     remarks: string,
     userEmail: string,
-    notifyCitizen: boolean = true,
+    notifyEmail: boolean = true,
+    notifySms: boolean = false,
     saveTimeline: boolean = true
   ): Promise<boolean> {
     try {
       const dbStatus = mapStatusToDb(status);
-      const { error } = await supabase
-        .from("certificate_requests")
-        .update({
-          status: dbStatus as any,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", requestId);
-
-      if (error) {
-        throw error;
-      }
+      let updateError: any = null;
 
       if (saveTimeline) {
-        try {
-          // Look up user profile to assign as actor
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("email", userEmail)
-            .maybeSingle();
-
-          await supabase.from("workflow_history").insert({
-            request_id: requestId,
+        // Use the postgres transition RPC which atomically updates status and applies custom remarks
+        // on the exact single timeline row generated by the trigger, preventing any duplicates!
+        const { error } = await supabase.rpc("update_request_status", {
+          p_request_id: requestId,
+          p_status: dbStatus,
+          p_remarks: remarks || `Status updated to ${status}`
+        });
+        updateError = error;
+      } else {
+        // If not saving timeline, perform a direct status update
+        const { error } = await supabase
+          .from("certificate_requests")
+          .update({
             status: dbStatus as any,
-            remarks: remarks || `Status updated to ${status}`,
-            actor_id: profileData?.id || null
-          });
-        } catch (timelineErr) {
-          console.warn("[CertificateService] Failed to insert workflow_history entry:", timelineErr);
-        }
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", requestId);
+        updateError = error;
+      }
+
+      if (updateError) {
+        throw updateError;
       }
 
       await logCmsAction(userEmail, `UPDATE_STATUS_${status}`, "certificate_requests", requestId);
+
+      // Handle alerts in background asynchronously, without blocking status transitions
+      if (notifyEmail || notifySms) {
+        (async () => {
+          let ticketId = "";
+          let recipientEmail = "";
+          let recipientName = "";
+          let documentType = "";
+          let recipientMobile = "";
+
+          try {
+            // Retrieve latest details of the request
+            const { data: requestDetails, error: fetchErr } = await supabase
+              .from("certificate_requests")
+              .select("ticket_id, document_type, full_name, email, mobile_number")
+              .eq("id", requestId)
+              .maybeSingle();
+
+            if (fetchErr) throw fetchErr;
+            if (!requestDetails) throw new Error("Request details not found in database");
+
+            ticketId = requestDetails.ticket_id || "";
+            recipientEmail = requestDetails.email || "";
+            recipientName = requestDetails.full_name || "";
+            documentType = requestDetails.document_type || "";
+            recipientMobile = requestDetails.mobile_number || "";
+
+            // Call send-status-email Edge Function to handle both dispatching and trusted logging
+            const { data: edgeData, error: edgeError } = await supabase.functions.invoke("send-status-email", {
+              body: {
+                requestId,
+                ticketId,
+                status: dbStatus,
+                remarks: remarks || "",
+                recipientEmail,
+                recipientName,
+                documentType,
+                recipientMobile,
+                notifyEmail,
+                notifySms
+              }
+            });
+
+            if (edgeError) throw edgeError;
+
+            // Log administrative audit action
+            if (notifyEmail && edgeData?.success) {
+              await logEmailAttempt(userEmail, "EMAIL_SENT", requestId, ticketId, recipientEmail, dbStatus);
+            } else if (notifyEmail) {
+              await logEmailAttempt(userEmail, "EMAIL_FAILED", requestId, ticketId, recipientEmail, dbStatus, edgeData?.error || "Unknown edge error");
+            }
+          } catch (err: any) {
+            console.error("[CertificateService] Async notification dispatcher failed:", err.message || err);
+            try {
+              if (notifyEmail) {
+                await logEmailAttempt(userEmail, "EMAIL_FAILED", requestId, ticketId, recipientEmail, dbStatus, err.message || String(err));
+              }
+            } catch (logErr) {
+              // Silence audit log failures
+            }
+          }
+        })();
+      }
+
       return true;
     } catch (e: any) {
       if (!isMockAllowed()) {

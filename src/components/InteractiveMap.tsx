@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion } from 'motion/react';
 import { MapPin, Navigation, Info, ExternalLink } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 // Fix for default marker icons in Leaflet
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -85,6 +86,49 @@ const TALIBON_LOCATIONS: Location[] = [
 
 const InteractiveMap: React.FC = () => {
   const center: [number, number] = [10.1506, 124.3323];
+  const [locations, setLocations] = React.useState<Location[]>(TALIBON_LOCATIONS);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadLiveTourismSpots() {
+      if (!isSupabaseConfigured) return;
+      try {
+        const { data, error } = await supabase
+          .from("tourism_spots")
+          .select("*");
+        if (!error && data && data.length > 0 && isMounted) {
+          const liveLocs: Location[] = data.map((spot: any, index: number) => {
+            // Attempt to extract lat/lng from google_maps_link or location string or fallback near Talibon center
+            let lat = 10.1506 + (index * 0.008 - 0.012);
+            let lng = 124.3323 + (index * 0.008 - 0.012);
+            if (spot.google_maps_link) {
+              const match = spot.google_maps_link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+              if (match) {
+                lat = parseFloat(match[1]);
+                lng = parseFloat(match[2]);
+              }
+            }
+            return {
+              id: 100 + index,
+              name: spot.name,
+              lat,
+              lng,
+              description: spot.description || "Talibon Tourist Spot",
+              category: 'Tourism' as const,
+              image: spot.featured_image || (spot.gallery_images && spot.gallery_images[0])
+            };
+          });
+          // Merge with default gov/health locations
+          const nonTourismDefaults = TALIBON_LOCATIONS.filter(l => l.category !== 'Tourism');
+          setLocations([...nonTourismDefaults, ...liveLocs]);
+        }
+      } catch (e) {
+        console.warn("[InteractiveMap] Live tourism spots load skipped:", e);
+      }
+    }
+    loadLiveTourismSpots();
+    return () => { isMounted = false; };
+  }, []);
 
   return (
     <div className="w-full h-[600px] rounded-[3rem] overflow-hidden border-8 border-white shadow-2xl relative z-10 group">
@@ -99,7 +143,7 @@ const InteractiveMap: React.FC = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {TALIBON_LOCATIONS.map((loc) => (
+        {locations.map((loc) => (
           <Marker 
             key={loc.id} 
             position={[loc.lat, loc.lng]}

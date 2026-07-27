@@ -4,6 +4,9 @@ interface Festivity {
   name: string;
   date: string;
   description: string;
+  banner_image?: string;
+  venue?: string;
+  time?: string;
 }
 
 interface FestivitiesViewProps {
@@ -17,7 +20,7 @@ export default function FestivitiesView({ data }: FestivitiesViewProps) {
         <div key={`${fest.name}-${idx}`} className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center group">
           <div className="aspect-square bg-brand-surface rounded-[3rem] overflow-hidden border-4 border-white shadow-2xl relative">
             <img 
-              src={`https://picsum.photos/seed/${fest.name}/800/800`} 
+              src={fest.banner_image || `https://picsum.photos/seed/${encodeURIComponent(fest.name)}/800/800`} 
               alt={fest.name} 
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
               referrerPolicy="no-referrer" 
@@ -25,12 +28,24 @@ export default function FestivitiesView({ data }: FestivitiesViewProps) {
             <div className="absolute inset-0 bg-gradient-to-t from-brand-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>
           <div className="space-y-6">
-            <p className="text-[10px] font-black text-brand-primary uppercase tracking-[0.3em] bg-brand-primary/10 px-4 py-2 rounded-full inline-block">
-              {fest.date}
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-[10px] font-black text-brand-primary uppercase tracking-[0.3em] bg-brand-primary/10 px-4 py-2 rounded-full inline-block">
+                {fest.date}
+              </p>
+              {fest.time && (
+                <p className="text-[10px] font-bold text-brand-muted uppercase tracking-wider bg-brand-bg px-3 py-1.5 rounded-full inline-block">
+                  {fest.time}
+                </p>
+              )}
+            </div>
             <h3 className="text-4xl font-black text-brand-text group-hover:text-brand-primary transition-colors font-display uppercase tracking-tight leading-none">
               {fest.name}
             </h3>
+            {fest.venue && (
+              <p className="text-xs font-bold text-brand-secondary uppercase tracking-widest">
+                📍 Venue: {fest.venue}
+              </p>
+            )}
             <p className="text-lg text-brand-muted leading-relaxed font-medium">
               {fest?.description}
             </p>

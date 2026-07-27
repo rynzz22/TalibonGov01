@@ -16,7 +16,9 @@ export default function EBarangayClearanceForm({ onSuccess }: EBarangayClearance
     barangay: "poblacion",
     sitioPurok: "",
     yearsOfResidency: "",
-    purpose: "Local Employment"
+    purpose: "Local Employment",
+    email: "",
+    mobileNumber: ""
   });
 
   const [idFile, setIdFile] = useState<string | null>(null);
@@ -42,6 +44,29 @@ export default function EBarangayClearanceForm({ onSuccess }: EBarangayClearance
     if (!formData.sitioPurok.trim()) return setValidationError("Sitio / Purok is required.");
     if (!formData.yearsOfResidency.trim()) return setValidationError("Years of residency is required.");
     if (!formData.purpose.trim()) return setValidationError("Purpose of clearance is required.");
+    
+    // Contact details validation (must provide at least one)
+    const emailVal = formData.email.trim();
+    const mobileVal = formData.mobileNumber.trim();
+    if (!emailVal && !mobileVal) {
+      return setValidationError("At least one contact method (Email or Mobile Number) must be provided to receive request status notifications.");
+    }
+
+    if (emailVal) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailVal)) {
+        return setValidationError("Please provide a valid email address.");
+      }
+    }
+
+    if (mobileVal) {
+      // Allow spaces/dashes, then count digits
+      const digits = mobileVal.replace(/\D/g, "");
+      if (digits.length < 10 || digits.length > 12) {
+        return setValidationError("Please enter a valid PH mobile number (e.g. 09123456789).");
+      }
+    }
+
     if (!idFile) return setValidationError("Please upload a valid Government-issued ID.");
 
     setIsSubmitting(true);
@@ -62,8 +87,8 @@ export default function EBarangayClearanceForm({ onSuccess }: EBarangayClearance
         documentType: "Barangay Clearance",
         barangay: formData.barangay,
         fullName: formData.fullName,
-        email: "barangay-clerks@talibon.gov.ph",
-        mobileNumber: "09123456789",
+        email: emailVal || "",
+        mobileNumber: mobileVal || "",
         purpose: serializedPurpose,
         attachments: [idFile].filter(Boolean) as string[]
       };
@@ -99,8 +124,8 @@ export default function EBarangayClearanceForm({ onSuccess }: EBarangayClearance
         documentType: "Barangay Clearance",
         barangay: formData.barangay,
         fullName: formData.fullName,
-        email: "barangay-clerks@talibon.gov.ph",
-        mobileNumber: "09123456789",
+        email: emailVal || "citizen-fallback@talibon.gov.ph",
+        mobileNumber: mobileVal || "09123456789",
         purpose: JSON.stringify({
           purposeText: formData.purpose,
           form_data: {
@@ -129,7 +154,9 @@ export default function EBarangayClearanceForm({ onSuccess }: EBarangayClearance
           status: "PENDING",
           priority: "HIGH",
           trackingNumber: generatedId,
-          attachments: fallbackRequest.attachments
+          attachments: fallbackRequest.attachments,
+          email: fallbackRequest.email,
+          mobileNumber: fallbackRequest.mobileNumber
         });
         localStorage.setItem('talibon_citizen_requests', JSON.stringify(list));
       } catch (e) {
@@ -230,6 +257,41 @@ export default function EBarangayClearanceForm({ onSuccess }: EBarangayClearance
             className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
             required
           />
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-brand-border">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🔔</span>
+            <span className="text-[10px] font-black text-brand-muted uppercase tracking-widest block">Status Notification Channels (At least one required)</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-brand-muted uppercase tracking-widest block">Email Address</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="e.g. joshua@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+              />
+              <p className="text-[9px] text-brand-muted font-bold">Primary channel. Get official status updates, certificates, and claim notifications.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-brand-muted uppercase tracking-widest block">PH Mobile Number</label>
+              <input
+                type="tel"
+                name="mobileNumber"
+                placeholder="e.g. 09123456789"
+                value={formData.mobileNumber}
+                onChange={handleChange}
+                className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+              />
+              <p className="text-[9px] text-brand-muted font-bold">Optional mobile backup. For emergency text reminders.</p>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-4 pt-4 border-t border-brand-border">

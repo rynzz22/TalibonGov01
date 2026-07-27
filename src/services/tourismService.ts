@@ -62,6 +62,16 @@ export const tourismService = {
     return getStorageTourism();
   },
 
+  async getDelicacies(): Promise<TourismSpotItem[]> {
+    const spots = await this.getTourismSpots();
+    // Filter items that represent food/delicacies or return all spots if none explicitly flagged
+    const delicacies = spots.filter(s =>
+      (s.description && (s.description.toLowerCase().includes("delicacy") || s.description.toLowerCase().includes("food") || s.description.toLowerCase().includes("calamay") || s.description.toLowerCase().includes("seafood"))) ||
+      (s.name && (s.name.toLowerCase().includes("delicacy") || s.name.toLowerCase().includes("calamay") || s.name.toLowerCase().includes("seafood") || s.name.toLowerCase().includes("crab")))
+    );
+    return delicacies.length > 0 ? delicacies : spots;
+  },
+
   async createTourismSpot(item: Omit<TourismSpotItem, "id">, userEmail: string): Promise<TourismSpotItem> {
     if (isSupabaseConfigured) {
       try {

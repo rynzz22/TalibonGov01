@@ -77,15 +77,23 @@ const NewsDetailPage: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('news')
-          .select('*')
+          .select('*, profiles:author_id(full_name, role)')
           .eq('id', id)
           .maybeSingle();
 
         if (error) {
           console.warn("Error fetching news detail:", error);
           setItem(MOCK_NEWS_DETAILS[id] || null);
+        } else if (data) {
+          const authorDisplay = (data as any).profiles?.full_name 
+            ? `${(data as any).profiles.full_name}${(data as any).profiles.role ? ` (${(data as any).profiles.role})` : ''}` 
+            : data.author || 'Talibon LGU';
+          setItem({
+            ...data,
+            author: authorDisplay
+          } as NewsItem);
         } else {
-          setItem(data as NewsItem);
+          setItem(MOCK_NEWS_DETAILS[id] || null);
         }
       } catch (err) {
         console.warn("Exception while fetching news detail from Supabase, falling back to Mock:", err);

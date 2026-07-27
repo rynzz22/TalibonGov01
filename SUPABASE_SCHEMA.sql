@@ -1,5 +1,18 @@
 -- ====================================================================
--- MUNICIPALITY OF TALIBON DIGITAL CORE V2 - ENTERPRISE PRODUCTION SQL
+-- !!! DEPRECATED / ARCHIVED SCHEMA FILE !!!
+-- ====================================================================
+-- WARNING: This file (SUPABASE_SCHEMA.sql) is now OBSOLETE.
+-- It no longer represents the active or deployed database schema.
+-- 
+-- CANONICAL PRODUCTION DATABASE DEFINITION:
+-- Please refer exclusively to `/PRODUCTION_SETUP.sql` for the
+-- current, production-ready, self-contained database schema and migrations.
+--
+-- Do NOT run or modify this file for any future deployments or updates.
+-- ====================================================================
+
+-- ====================================================================
+-- MUNICIPALITY OF TALIBON DIGITAL CORE V2 - ENTERPRISE PRODUCTION SQL (DEPRECATED)
 -- ====================================================================
 -- This file provides the COMPLETE, production-ready PostgreSQL implementation
 -- engineered for the Local Government Unit (LGU) of Talibon, Bohol, Philippines.
@@ -36,13 +49,17 @@ begin
     create type public.request_status_type as enum ('Submitted', 'Assigned', 'Processing', 'Returned', 'Approved', 'Rejected', 'Completed', 'Archived');
   end if;
   if not exists (select 1 from pg_type where typname = 'audit_action_type' and typnamespace = 'public'::regnamespace) then
-    create type public.audit_action_type as enum ('INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT');
+    create type public.audit_action_type as enum ('INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'EMAIL_SENT', 'EMAIL_FAILED');
   end if;
   if not exists (select 1 from pg_type where typname = 'notification_category_type' and typnamespace = 'public'::regnamespace) then
     create type public.notification_category_type as enum ('SYSTEM', 'NEWS', 'WORKFLOW', 'PAYMENT');
   end if;
 end;
 $$;
+
+-- Ensure new enum values exist for existing databases
+alter type public.audit_action_type add value if not exists 'EMAIL_SENT';
+alter type public.audit_action_type add value if not exists 'EMAIL_FAILED';
 
 -- ====================================================================
 -- 02_lookup_tables.sql
@@ -818,7 +835,14 @@ create policy "Insert own profile" on public.profiles for insert
 
 drop policy if exists "Update own profile" on public.profiles;
 create policy "Update own profile" on public.profiles for update
-  using (auth.uid() = id or public.is_verified_admin(auth.uid()));
+  using (auth.uid() = id or public.is_verified_admin(auth.uid()))
+  with check (
+    -- If a standard user is updating their own profile, prevent modifying role or is_verified
+    (auth.uid() = id 
+     and role = (select role from public.profiles where id = auth.uid()) 
+     and is_verified = (select is_verified from public.profiles where id = auth.uid()))
+    or public.is_verified_admin(auth.uid())
+  );
 
 drop policy if exists "Delete profile" on public.profiles;
 create policy "Delete profile" on public.profiles for delete
@@ -856,7 +880,7 @@ drop policy if exists "Public Read on Resolutions" on public.resolutions;
 create policy "Public Read on Resolutions" on public.resolutions for select using (true);
 
 drop policy if exists "Public Read on Meetings" on public.meetings;
-create policy "Public Read on Meetings" on public.meetings for select using (true);
+create policy "Public Read on Meetings" on public.meetings for select using (public.is_verified_staff(auth.uid()));
 
 drop policy if exists "Public Read on Navigation" on public.navigation;
 create policy "Public Read on Navigation" on public.navigation for select using (true);
@@ -903,19 +927,48 @@ drop policy if exists "Allow public to submit applications" on public.certificat
 create policy "Allow public to submit applications" on public.certificate_requests for insert with check (true);
 
 drop policy if exists "Allow public to search own application" on public.certificate_requests;
-create policy "Allow public to search own application" on public.certificate_requests for select using (true);
+create policy "Allow public to search own application" on public.certificate_requests for select 
+  using (
+    (auth.uid() is not null and (
+      email = (select email from public.profiles where id = auth.uid() limit 1)
+      or email = auth.jwt()->>'email'
+    ))
+    or public.is_verified_staff(auth.uid())
+  );
 
 drop policy if exists "Staff control on certificate requests" on public.certificate_requests;
 create policy "Staff control on certificate requests" on public.certificate_requests for all using (public.is_verified_staff(auth.uid()));
 
 drop policy if exists "View workflow history" on public.workflow_history;
-create policy "View workflow history" on public.workflow_history for select using (true);
+create policy "View workflow history" on public.workflow_history for select 
+  using (
+    (auth.uid() is not null and exists (
+      select 1 from public.certificate_requests cr 
+      where cr.id = workflow_history.request_id 
+      and (
+        cr.email = auth.jwt()->>'email' 
+        or cr.email = (select email from public.profiles where id = auth.uid() limit 1)
+      )
+    ))
+    or public.is_verified_staff(auth.uid())
+  );
 
 drop policy if exists "Staff modify workflow history" on public.workflow_history;
 create policy "Staff modify workflow history" on public.workflow_history for all using (public.is_verified_staff(auth.uid()));
 
 drop policy if exists "Allow view payments" on public.payments;
-create policy "Allow view payments" on public.payments for select using (true);
+create policy "Allow view payments" on public.payments for select 
+  using (
+    (auth.uid() is not null and exists (
+      select 1 from public.certificate_requests cr 
+      where cr.ticket_id = payments.ticket_id 
+      and (
+        cr.email = auth.jwt()->>'email' 
+        or cr.email = (select email from public.profiles where id = auth.uid() limit 1)
+      )
+    ))
+    or public.is_verified_staff(auth.uid())
+  );
 
 drop policy if exists "Allow verified staff to process payments" on public.payments;
 create policy "Allow verified staff to process payments" on public.payments for all using (public.is_verified_staff(auth.uid()));
@@ -941,11 +994,21 @@ drop policy if exists "Read audit logs" on public.audit_logs;
 create policy "Read audit logs" on public.audit_logs for select using (public.is_verified_admin(auth.uid()));
 
 drop policy if exists "Write audit logs" on public.audit_logs;
-create policy "Write audit logs" on public.audit_logs for insert with check (true);
+create policy "Write audit logs" on public.audit_logs for insert with check (
+  auth.uid() is not null and (
+    user_email = auth.jwt()->>'email'
+    or user_email = (select email from public.profiles where id = auth.uid() limit 1)
+    or public.is_verified_staff(auth.uid())
+  )
+);
 
 -- 7. GAD Beneficiaries Table RLS
 drop policy if exists "Read GAD beneficiaries" on public.gad_beneficiaries;
-create policy "Read GAD beneficiaries" on public.gad_beneficiaries for select using (true);
+create policy "Read GAD beneficiaries" on public.gad_beneficiaries for select 
+  using (
+    public.is_verified_staff(auth.uid())
+    or (auth.uid() is not null and full_name = (select full_name from public.profiles where id = auth.uid() limit 1))
+  );
 
 drop policy if exists "Modify GAD beneficiaries" on public.gad_beneficiaries;
 create policy "Modify GAD beneficiaries" on public.gad_beneficiaries for all using (public.is_verified_staff(auth.uid()));
@@ -1145,6 +1208,49 @@ begin
   else
     raise exception 'Unauthorized to modify this notification.';
   end if;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+-- 6. Secure Public Request Status Tracker (Security Definer to bypass Select RLS)
+create or replace function public.get_request_status_by_ticket(p_ticket_id text)
+returns jsonb as $$
+declare
+  v_request record;
+  v_history jsonb;
+begin
+  select * into v_request
+  from public.certificate_requests
+  where ticket_id = p_ticket_id or id::text = p_ticket_id
+  limit 1;
+  
+  if v_request.id is null then
+    return null;
+  end if;
+
+  select json_agg(h) into v_history
+  from (
+    select id, status, remarks, created_at, request_id, actor_id
+    from public.workflow_history
+    where request_id = v_request.id
+    order by created_at desc
+  ) h;
+
+  return jsonb_build_object(
+    'id', v_request.id,
+    'ticket_id', v_request.ticket_id,
+    'document_type', v_request.document_type,
+    'barangay_id', v_request.barangay_id,
+    'full_name', v_request.full_name,
+    'email', v_request.email,
+    'mobile_number', v_request.mobile_number,
+    'purpose', v_request.purpose,
+    'attachments', v_request.attachments,
+    'submitted_at', v_request.submitted_at,
+    'status', v_request.status,
+    'created_at', v_request.created_at,
+    'updated_at', v_request.updated_at,
+    'history', coalesce(v_history, '[]'::jsonb)
+  );
 end;
 $$ language plpgsql security definer set search_path = public;
 

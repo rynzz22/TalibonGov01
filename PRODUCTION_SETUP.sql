@@ -32,13 +32,18 @@ begin
     create type public.request_status_type as enum ('Submitted', 'Assigned', 'Processing', 'Returned', 'Approved', 'Rejected', 'Completed', 'Archived');
   end if;
   if not exists (select 1 from pg_type where typname = 'audit_action_type' and typnamespace = 'public'::regnamespace) then
-    create type public.audit_action_type as enum ('INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT');
+    create type public.audit_action_type as enum ('INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'EMAIL_SENT', 'EMAIL_FAILED');
   end if;
   if not exists (select 1 from pg_type where typname = 'notification_category_type' and typnamespace = 'public'::regnamespace) then
     create type public.notification_category_type as enum ('SYSTEM', 'NEWS', 'WORKFLOW', 'PAYMENT');
   end if;
 end;
 $$;
+
+
+-- Ensure new enum values exist for existing databases
+alter type public.audit_action_type add value if not exists 'EMAIL_SENT';
+alter type public.audit_action_type add value if not exists 'EMAIL_FAILED';
 
 
 -- ====================================================================
@@ -397,6 +402,9 @@ alter table public.audit_logs
 
 -- B-Tree Performance Indexes
 create index if not exists idx_profiles_verification on public.profiles(is_verified);
+create index if not exists idx_profiles_role on public.profiles(role);
+create index if not exists idx_profiles_barangay on public.profiles(barangay_id);
+create index if not exists idx_profiles_department on public.profiles(department_id);
 create index if not exists idx_news_category on public.news(category);
 create index if not exists idx_news_status on public.news(status);
 create index if not exists idx_news_date on public.news(date desc);
@@ -668,6 +676,50 @@ end;
 $$ language plpgsql security definer set search_path = public;
 
 
+-- Secure Public Request Status Tracker (Security Definer to bypass Select RLS)
+create or replace function public.get_request_status_by_ticket(p_ticket_id text)
+returns jsonb as $$
+declare
+  v_request record;
+  v_history jsonb;
+begin
+  select * into v_request
+  from public.certificate_requests
+  where ticket_id = p_ticket_id or id::text = p_ticket_id
+  limit 1;
+  
+  if v_request.id is null then
+    return null;
+  end if;
+
+  select json_agg(h) into v_history
+  from (
+    select id, status, remarks, created_at, request_id, actor_id
+    from public.workflow_history
+    where request_id = v_request.id
+    order by created_at desc
+  ) h;
+
+  return jsonb_build_object(
+    'id', v_request.id,
+    'ticket_id', v_request.ticket_id,
+    'document_type', v_request.document_type,
+    'barangay_id', v_request.barangay_id,
+    'full_name', v_request.full_name,
+    'email', v_request.email,
+    'mobile_number', v_request.mobile_number,
+    'purpose', v_request.purpose,
+    'attachments', v_request.attachments,
+    'submitted_at', v_request.submitted_at,
+    'status', v_request.status,
+    'created_at', v_request.created_at,
+    'updated_at', v_request.updated_at,
+    'history', coalesce(v_history, '[]'::jsonb)
+  );
+end;
+$$ language plpgsql security definer set search_path = public;
+
+
 -- ====================================================================
 -- MIGRATION 06: AUTOMATED TRIGGERS & PROCEDURES
 -- ====================================================================
@@ -889,6 +941,10 @@ create trigger audit_services_changes after insert or update or delete on public
 create trigger audit_charter_changes after insert or update or delete on public.citizens_charter_cms for each row execute procedure public.process_audit_log();
 create trigger audit_gad_changes after insert or update or delete on public.gad_beneficiaries for each row execute procedure public.process_audit_log();
 create trigger audit_requests_changes after insert or update or delete on public.certificate_requests for each row execute procedure public.process_audit_log();
+create trigger audit_officials_changes after insert or update or delete on public.officials for each row execute procedure public.process_audit_log();
+create trigger audit_events_changes after insert or update or delete on public.events for each row execute procedure public.process_audit_log();
+create trigger audit_ordinances_changes after insert or update or delete on public.ordinances for each row execute procedure public.process_audit_log();
+create trigger audit_resolutions_changes after insert or update or delete on public.resolutions for each row execute procedure public.process_audit_log();
 
 
 -- ====================================================================
@@ -969,6 +1025,27 @@ create policy "Staff broadcast notifications" on public.notifications for all us
 
 -- Immutable ledger restrictions
 create policy "Only system reads logs" on public.audit_logs for select using (public.is_verified_admin(auth.uid()));
+create policy "Allow user logging" on public.audit_logs for insert with check (
+  auth.uid() is not null and (
+    user_email = auth.jwt()->>'email'
+    or user_email = (select email from public.profiles where id = auth.uid() limit 1)
+    or public.is_verified_staff(auth.uid())
+  )
+);
+
+-- Payments delivery rules
+create policy "Allow select own payments" on public.payments for select using (
+  (auth.uid() is not null and exists (
+    select 1 from public.certificate_requests cr 
+    where cr.ticket_id = payments.ticket_id 
+    and (
+      cr.email = auth.jwt()->>'email' 
+      or cr.email = (select email from public.profiles where id = auth.uid() limit 1)
+    )
+  ))
+  or public.is_verified_staff(auth.uid())
+);
+create policy "Staff manage payments" on public.payments for all using (public.is_verified_staff(auth.uid()));
 
 
 -- ====================================================================

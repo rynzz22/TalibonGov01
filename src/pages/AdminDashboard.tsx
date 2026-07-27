@@ -183,11 +183,12 @@ const AdminDashboard: React.FC = () => {
   const [viewingItem, setViewingItem] = useState<any>(null);
   const [viewingTab, setViewingTab] = useState<string | null>(null);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<{ id: string; tab: string; name: string } | null>(null);
-  const [statusUpdateReq, setStatusUpdateReq] = useState<{ id: string; status: string; trackingNumber: string; citizenName: string } | null>(null);
+  const [statusUpdateReq, setStatusUpdateReq] = useState<{ id: string; status: string; trackingNumber: string; citizenName: string; email?: string; mobileNumber?: string } | null>(null);
   const [statusRemarks, setStatusRemarks] = useState('');
   const [notifyCitizen, setNotifyCitizen] = useState(true);
   const [saveTimeline, setSaveTimeline] = useState(true);
   const [sendEmail, setSendEmail] = useState(false);
+  const [sendSms, setSendSms] = useState(false);
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -444,7 +445,9 @@ const AdminDashboard: React.FC = () => {
             status: (req.status || "PENDING").toUpperCase(),
             priority: req.documentType.toLowerCase().includes("urgent") || req.purpose.toLowerCase().includes("urgent") ? "HIGH" : "MEDIUM",
             trackingNumber: req.ticketId,
-            attachments: req.attachments || []
+            attachments: req.attachments || [],
+            email: req.email || "",
+            mobileNumber: req.mobileNumber || ""
           };
         });
         setCitizenRequests(mappedRequests);
@@ -642,7 +645,8 @@ const AdminDashboard: React.FC = () => {
     reqId: string,
     newStatus: string,
     customRemarks?: string,
-    notifyCitizen: boolean = true,
+    notifyEmail: boolean = true,
+    notifySms: boolean = false,
     saveTimeline: boolean = true
   ) => {
     // Optimistic local update
@@ -663,7 +667,8 @@ const AdminDashboard: React.FC = () => {
           newStatus,
           remarks,
           profile?.email || "admin@talibon.gov.ph",
-          notifyCitizen,
+          notifyEmail,
+          notifySms,
           saveTimeline
         );
         showSuccess(`Request ${reqItem.trackingNumber} status updated to ${newStatus} on live database!`);
@@ -672,7 +677,7 @@ const AdminDashboard: React.FC = () => {
         showSuccess(`Request status updated to ${newStatus}!`);
       }
 
-      if (notifyCitizen) {
+      if (notifyEmail || notifySms) {
         notificationService.createNotification({
           title: "Workflow Status Update",
           message: `Citizen request ${reqItem?.trackingNumber || ""} (${reqItem?.type || "Application"}) status was changed to ${newStatus}.`,
@@ -714,12 +719,15 @@ const AdminDashboard: React.FC = () => {
       id: req.id,
       status: newStatus,
       trackingNumber: req.trackingNumber,
-      citizenName: req.citizenName
+      citizenName: req.citizenName,
+      email: req.email || "",
+      mobileNumber: req.mobileNumber || ""
     });
     setStatusRemarks(defaultRemarks);
     setNotifyCitizen(true);
     setSaveTimeline(true);
-    setSendEmail(false);
+    setSendEmail(!!req.email);
+    setSendSms(false);
   };
 
   // DELETE ENTITY
@@ -3785,8 +3793,76 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Citizen Contact & Notification Preferences Controls */}
+                <div className="bg-slate-50 rounded-2xl p-4.5 border border-slate-100 space-y-3">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Citizen Contact & Notification Channels</span>
+                  
+                  {/* Contact Availability Indicators */}
+                  <div className="flex flex-col gap-2 border-b border-slate-150/60 pb-3">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-sm">📧</span>
+                      <span className="font-bold text-slate-500 uppercase tracking-wide text-[10px]">Email:</span>
+                      {statusUpdateReq.email ? (
+                        <span className="font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100/60 text-[10px]">{statusUpdateReq.email}</span>
+                      ) : (
+                        <span className="text-red-500 bg-red-50 font-bold px-2 py-0.5 rounded-lg border border-red-100/60 text-[10px]">Unavailable</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-sm">📱</span>
+                      <span className="font-bold text-slate-500 uppercase tracking-wide text-[10px]">Mobile:</span>
+                      {statusUpdateReq.mobileNumber ? (
+                        <span className="font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100/60 text-[10px]">{statusUpdateReq.mobileNumber}</span>
+                      ) : (
+                        <span className="text-red-500 bg-red-50 font-bold px-2 py-0.5 rounded-lg border border-red-100/60 text-[10px]">Unavailable</span>
+                      )}
+                    </div>
+                    {!statusUpdateReq.email && !statusUpdateReq.mobileNumber && (
+                      <div className="p-2 bg-amber-50 border border-amber-200/50 rounded-xl text-[10px] text-amber-700 font-bold flex items-center gap-2">
+                        <span>⚠️</span> No citizen contact information available for notifications.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Checkbox selectors */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4.5 pt-1">
+                    <label className={`flex items-center gap-3 cursor-pointer group ${!statusUpdateReq.email ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                      <input
+                        type="checkbox"
+                        disabled={!statusUpdateReq.email}
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                        className="rounded-lg border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4.5 h-4.5 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-gray-850 tracking-wide flex items-center gap-1.5">
+                          Notify via Email
+                          {statusUpdateReq.email && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                        </p>
+                        <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Primary Channel</p>
+                      </div>
+                    </label>
+
+                    <label className={`flex items-center gap-3 cursor-pointer group opacity-50 cursor-not-allowed`}>
+                      <input
+                        type="checkbox"
+                        disabled
+                        checked={false}
+                        onChange={(e) => {}}
+                        className="rounded-lg border-gray-300 text-slate-300 w-4.5 h-4.5 cursor-not-allowed"
+                      />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-wide">
+                          Notify via SMS
+                        </p>
+                        <p className="text-[8px] font-bold text-amber-600/80 uppercase tracking-widest font-black">Offline (Not Configured)</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
                 {/* Workflow Configuration Checkboxes */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1.5 border-t border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1.5 border-t border-gray-100">
                   <label className="flex items-center gap-3 cursor-pointer group">
                     <input
                       type="checkbox"
@@ -3795,8 +3871,8 @@ const AdminDashboard: React.FC = () => {
                       className="rounded-lg border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
                     />
                     <div>
-                      <p className="text-[10px] font-black uppercase text-gray-800 tracking-wide">Notify Citizen</p>
-                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">In-App Alert</p>
+                      <p className="text-[10px] font-black uppercase text-gray-800 tracking-wide">In-App Alerts</p>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Portal Notification</p>
                     </div>
                   </label>
 
@@ -3812,20 +3888,6 @@ const AdminDashboard: React.FC = () => {
                       <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Citizen Tracker</p>
                     </div>
                   </label>
-
-                  <div className="flex items-center gap-3 opacity-60 cursor-not-allowed">
-                    <input
-                      type="checkbox"
-                      disabled
-                      checked={sendEmail}
-                      onChange={(e) => setSendEmail(e.target.checked)}
-                      className="rounded-lg border-gray-200 text-indigo-300 w-4 h-4 cursor-not-allowed"
-                    />
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-gray-400 tracking-wide">Send Email</p>
-                      <p className="text-[8px] font-bold text-red-400 uppercase tracking-widest">Service Offline</p>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -3842,7 +3904,7 @@ const AdminDashboard: React.FC = () => {
                   onClick={async () => {
                     const { id, status } = statusUpdateReq;
                     setStatusUpdateReq(null);
-                    await handleUpdateReqStatus(id, status, statusRemarks, notifyCitizen, saveTimeline);
+                    await handleUpdateReqStatus(id, status, statusRemarks, sendEmail, false, saveTimeline);
                   }}
                   className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/15"
                 >

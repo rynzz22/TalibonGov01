@@ -328,8 +328,55 @@ export const tourismApi = {
     }
     return api.get("content", API_ENDPOINTS.TOURISM.SPOTS);
   },
-  getFestivities: () => api.get("content", API_ENDPOINTS.TOURISM.FESTIVITIES),
-  getDelicacies: () => api.get("content", API_ENDPOINTS.TOURISM.DELICACIES),
+  getFestivities: async () => {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from("events")
+          .select("*")
+          .order("date", { ascending: true });
+        if (!error && data && data.length > 0) {
+          return data.map((evt: any) => ({
+            name: evt.title,
+            date: evt.date,
+            description: evt.description,
+            banner_image: evt.banner_image,
+            venue: evt.venue,
+            time: evt.time
+          }));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live events for festivities, falling back:", err);
+      }
+    }
+    return api.get("content", API_ENDPOINTS.TOURISM.FESTIVITIES);
+  },
+  getDelicacies: async () => {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from("tourism_spots")
+          .select("*")
+          .order("name", { ascending: true });
+        if (!error && data && data.length > 0) {
+          const delicacies = data.filter((s: any) => 
+            (s.description && (s.description.toLowerCase().includes("delicacy") || s.description.toLowerCase().includes("food") || s.description.toLowerCase().includes("calamay") || s.description.toLowerCase().includes("crab") || s.description.toLowerCase().includes("seafood"))) ||
+            (s.name && (s.name.toLowerCase().includes("delicacy") || s.name.toLowerCase().includes("calamay") || s.name.toLowerCase().includes("crab") || s.name.toLowerCase().includes("food")))
+          );
+          if (delicacies.length > 0) {
+            return delicacies.map((d: any) => ({
+              name: d.name,
+              description: d.description,
+              featured_image: d.featured_image
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live delicacies, falling back:", err);
+      }
+    }
+    return api.get("content", API_ENDPOINTS.TOURISM.DELICACIES);
+  },
 };
 
 export const formsApi = {
