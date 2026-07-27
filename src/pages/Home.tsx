@@ -3,7 +3,6 @@ import About from "../components/About";
 import Services from "../components/Services";
 import Tourism from "../components/Tourism";
 import Location from "../components/Location";
-import Events from "../components/Events";
 import QuickAccess from "../components/QuickAccess";
 import PopularServices from "../components/PopularServices";
 import EBOSS from "../components/EBOSS";
@@ -15,17 +14,25 @@ import SocialMediaUpdates from "../components/SocialMediaUpdates";
 import EmergencyHotlines from "../components/EmergencyHotlines";
 import WeatherWidget from "../components/WeatherWidget";
 import ServiceNavigator from "../components/ServiceNavigator";
+import AdvisoriesBanner from "../components/AdvisoriesBanner";
+import NewsTodaySection from "../components/NewsTodaySection";
+import LguEventsSection from "../components/LguEventsSection";
+import OrtsUpdatesSection from "../components/OrtsUpdatesSection";
 
 export default function Home() {
   return (
     <main>
       <Hero />
+      <AdvisoriesBanner />
       <section className="py-12 bg-brand-bg relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <WeatherWidget />
         </div>
       </section>
       <QuickAccess />
+      <NewsTodaySection />
+      <LguEventsSection />
+      <OrtsUpdatesSection />
       <About />
       <ServiceNavigator />
       <PopularServices />
@@ -38,7 +45,6 @@ export default function Home() {
       <Tourism />
       <SocialMediaUpdates />
       <Location />
-      <Events />
       <EmergencyHotlines />
     </main>
   );

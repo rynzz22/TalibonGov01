@@ -29,6 +29,12 @@ export default function WeatherWidget() {
             <Sun size={48} />
           </div>
           <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 uppercase tracking-widest">
+                LIVE WEATHER DATA
+              </span>
+              <span className="text-[9px] text-brand-muted font-bold">PAGASA Meteorological Stream</span>
+            </div>
             <span className="text-[10px] font-bold text-brand-primary uppercase tracking-[0.3em] mb-2 block">Current Weather</span>
             <div className="flex items-baseline gap-2">
               <h3 className="text-6xl font-black text-brand-text dark:text-dark-text font-display">29°</h3>

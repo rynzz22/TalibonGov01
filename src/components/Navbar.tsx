@@ -161,8 +161,18 @@ export default function Navbar() {
       {/* Tier 1: Utility Navigation */}
       <div className="bg-brand-bg/50 border-b border-brand-border backdrop-blur-md relative z-20">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-10 h-10 flex justify-between items-center text-[10px] sm:text-xs">
-          <div className="flex items-center gap-10 divide-x divide-brand-border">
-            <Link to="/" className="font-extrabold text-brand-text hover:text-brand-primary transition-colors tracking-tight">GOVPH</Link>
+          <div className="flex items-center gap-6 sm:gap-10 divide-x divide-brand-border">
+            <div className="flex items-center gap-4">
+              <Link to="/" className="font-extrabold text-brand-text hover:text-brand-primary transition-colors tracking-tight">GOVPH</Link>
+              <a 
+                href="mailto:official@talibon.gov.ph" 
+                className="hidden sm:flex items-center gap-1.5 text-brand-text hover:text-brand-primary font-semibold transition-colors text-[10px] sm:text-xs"
+                title="Official Municipal Contact Email"
+              >
+                <Mail size={12} className="text-brand-primary" />
+                <span>official@talibon.gov.ph</span>
+              </a>
+            </div>
             
             <nav className="hidden lg:flex items-center gap-8 pl-10">
               {topNavLinks.map((link) => (
