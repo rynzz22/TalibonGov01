@@ -5,7 +5,7 @@ import {
   BarChart3, Activity, FileCheck, Landmark, 
   GraduationCap, Settings, ChevronRight, Info,
   ShieldCheck, Cpu, Wifi, Globe, Terminal, Clock as ClockIcon,
-  UserPlus
+  UserPlus, ExternalLink
 } from 'lucide-react';
 import GadEntryModule from './GadEntryModule';
 import { 
@@ -91,37 +91,75 @@ const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
   const activeSection = sections.find(s => s.id === activeTab);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 bg-brand-surface border border-brand-border rounded-[2.5rem] p-4 lg:p-10 shadow-2xl relative overflow-hidden">
-      {/* System Decoration */}
-      <div className="absolute top-0 right-0 p-8 flex items-center gap-6 opacity-30 select-none pointer-events-none">
-        <div className="text-right">
-          <div className="text-[10px] font-mono font-black text-brand-primary uppercase tracking-widest">SYSTEM_VERSION: 2.1.0-STABLE</div>
-          <div className="text-[10px] font-mono text-brand-muted uppercase tracking-widest">ENCRYPTION: AES-256-GCM</div>
+    <div className="space-y-6">
+      {/* Top Call-to-Action Banner for External GAD-IMS System */}
+      <div className="bg-gradient-to-r from-brand-text via-slate-900 to-brand-text text-white p-6 sm:p-8 rounded-[2rem] shadow-xl border border-brand-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden group">
+        <div className="relative z-10 space-y-2 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-primary/20 border border-brand-primary/30 rounded-full text-brand-accent text-[10px] font-black uppercase tracking-widest">
+            <span className="w-2 h-2 rounded-full bg-brand-accent animate-pulse" />
+            Live System Available
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white font-display">
+            Access GAD-IMS Portal
+          </h2>
+          <p className="text-xs sm:text-sm text-white/70 font-medium leading-relaxed">
+            Open the GAD-IMS Management System for real-time gender profiling, budget tracking, and governance reports.
+          </p>
         </div>
-        <div className="p-3 bg-brand-primary/5 rounded-2xl">
-          <ShieldCheck size={24} className="text-brand-primary" />
+        <a
+          href="https://tagad-sys.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative z-10 inline-flex items-center justify-center gap-2.5 px-6 py-4 bg-brand-primary hover:bg-brand-primary/90 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all duration-300 shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 active:translate-y-0 shrink-0 group/btn w-full sm:w-auto"
+        >
+          <span>Access GAD-IMS</span>
+          <ExternalLink size={18} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform shrink-0" />
+        </a>
+        <div className="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-105 transition-transform duration-700 pointer-events-none">
+          <Globe size={180} />
         </div>
       </div>
 
-      {/* Sidebar Navigation */}
-      <aside className="w-full lg:w-80 shrink-0 flex flex-col gap-6">
-        <div className="bg-brand-text text-white p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-white/10 rounded-lg backdrop-blur-md">
-                <Cpu size={20} className="text-brand-accent animate-pulse" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-accent">CORE_SYSTEM</span>
-            </div>
-            <h2 className="text-2xl font-black leading-tight uppercase tracking-tighter mb-2">Talibon GAD-IMS</h2>
-            <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-relaxed">
-              Mainstreaming Gender-Responsive Governance through Data
-            </p>
+      <div className="flex flex-col lg:flex-row gap-8 bg-brand-surface border border-brand-border rounded-[2.5rem] p-4 lg:p-10 shadow-2xl relative overflow-hidden">
+        {/* System Decoration */}
+        <div className="absolute top-0 right-0 p-8 flex items-center gap-6 opacity-30 select-none pointer-events-none">
+          <div className="text-right">
+            <div className="text-[10px] font-mono font-black text-brand-primary uppercase tracking-widest">SYSTEM_VERSION: 2.1.0-STABLE</div>
+            <div className="text-[10px] font-mono text-brand-muted uppercase tracking-widest">ENCRYPTION: AES-256-GCM</div>
           </div>
-          <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
-            <Globe size={120} />
+          <div className="p-3 bg-brand-primary/5 rounded-2xl">
+            <ShieldCheck size={24} className="text-brand-primary" />
           </div>
         </div>
+
+        {/* Sidebar Navigation */}
+        <aside className="w-full lg:w-80 shrink-0 flex flex-col gap-6">
+          <div className="bg-brand-text text-white p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-white/10 rounded-lg backdrop-blur-md">
+                  <Cpu size={20} className="text-brand-accent animate-pulse" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-accent">CORE_SYSTEM</span>
+              </div>
+              <h2 className="text-2xl font-black leading-tight uppercase tracking-tighter mb-2">Talibon GAD-IMS</h2>
+              <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-relaxed mb-6">
+                Mainstreaming Gender-Responsive Governance through Data
+              </p>
+              <a
+                href="https://tagad-sys.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-lg hover:shadow-brand-primary/20 active:scale-95 group/btn"
+              >
+                <span>Access GAD-IMS</span>
+                <ExternalLink size={15} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform shrink-0" />
+              </a>
+            </div>
+            <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
+              <Globe size={120} />
+            </div>
+          </div>
         
         <nav className="flex flex-col gap-1 p-2 bg-brand-bg rounded-[2rem] border border-brand-border/50">
           {sections.map((section) => (
@@ -181,12 +219,24 @@ const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="flex-1 flex flex-col gap-10"
           >
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-brand-border relative">
-              <div className="space-y-4 max-w-2xl">
-                <h1 className="text-4xl font-black text-brand-text uppercase tracking-tighter leading-tight">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-brand-border relative">
+              <div className="space-y-2 max-w-2xl">
+                <h1 className="text-3xl md:text-4xl font-black text-brand-text uppercase tracking-tighter leading-tight">
                   {activeSection?.title}
                 </h1>
+                <p className="text-xs text-brand-muted font-semibold">
+                  Open the GAD-IMS Management System
+                </p>
               </div>
+              <a
+                href="https://tagad-sys.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2.5 px-5 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 shrink-0 border border-brand-primary/20"
+              >
+                <span>Access GAD-IMS</span>
+                <ExternalLink size={15} className="shrink-0" />
+              </a>
             </div>
 
             {/* Dashboard Visualization Overlay (Optional based on section) */}
@@ -295,7 +345,8 @@ const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
         </AnimatePresence>
       </main>
     </div>
-  );
+  </div>
+);
 };
 
 export default GadImsSystem;
