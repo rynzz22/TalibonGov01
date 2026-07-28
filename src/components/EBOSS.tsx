@@ -32,14 +32,14 @@ export default function EBOSS() {
   ];
 
   return (
-    <section id="eboss" className="py-32 bg-brand-bg relative overflow-hidden">
+    <section id="eboss" className="py-10 sm:py-14 bg-brand-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-          <div className="space-y-12">
-            <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="space-y-6">
+            <div className="space-y-3">
               <span className="section-label">Electronic Business One-Stop Shop</span>
               <h2 className="section-title">E-BOSS Portal</h2>
-              <p className="text-base text-slate-700 dark:text-slate-200 font-normal leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-normal leading-relaxed">
                 Apply for and receive your Business Permit in simple steps. Our digital platform streamlines the entire process from application to issuance.
               </p>
             </div>

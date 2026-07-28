@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -96,77 +96,76 @@
 
   /* ─── Card variants ─── */
   .minimal-card {
-    @apply bg-brand-surface rounded-[2.5rem] transition-all duration-500;
-    @apply hover:bg-white hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)];
+    @apply bg-brand-surface rounded-xl sm:rounded-2xl transition-all duration-500;
+    @apply hover:bg-white hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.06)];
     @apply dark:bg-dark-surface dark:hover:bg-dark-surface/80;
     @apply dark:border dark:border-dark-border;
   }
 
   .pro-card {
-    @apply bg-white border border-brand-border rounded-[2.5rem] transition-all duration-300;
-    @apply hover:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)];
+    @apply bg-white border border-brand-border rounded-xl sm:rounded-2xl transition-all duration-300;
+    @apply hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.06)];
     @apply dark:bg-dark-surface dark:border-dark-border;
   }
 
   .civic-card {
-    @apply bg-white border border-brand-border rounded-3xl transition-all duration-300;
-    @apply hover:shadow-lg hover:-translate-y-0.5;
+    @apply bg-white border border-brand-border rounded-xl sm:rounded-2xl transition-all duration-300;
+    @apply hover:shadow-md hover:-translate-y-0.5;
     @apply dark:bg-dark-surface dark:border-dark-border;
   }
 
   /* ─── Buttons ─── */
   .minimal-button-primary {
-    @apply px-8 py-4 bg-brand-primary text-white font-bold text-xs tracking-widest;
-    @apply rounded-2xl hover:bg-brand-primary/90 active:scale-95 transition-all duration-300;
-    @apply flex items-center justify-center gap-3 uppercase;
+    @apply px-5 sm:px-6 py-2.5 sm:py-3 bg-brand-primary text-white font-bold text-xs tracking-widest;
+    @apply rounded-xl hover:bg-brand-primary/90 active:scale-95 transition-all duration-300;
+    @apply flex items-center justify-center gap-2.5 uppercase;
     @apply focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2;
   }
 
   .minimal-button-outline {
-    @apply px-8 py-4 border border-brand-primary/50 text-brand-primary font-extrabold text-xs tracking-widest;
-    @apply rounded-2xl hover:bg-brand-primary hover:text-white active:scale-95 transition-all duration-300;
-    @apply flex items-center justify-center gap-3 uppercase;
+    @apply px-5 sm:px-6 py-2.5 sm:py-3 border border-brand-primary/50 text-brand-primary font-extrabold text-xs tracking-widest;
+    @apply rounded-xl hover:bg-brand-primary hover:text-white active:scale-95 transition-all duration-300;
+    @apply flex items-center justify-center gap-2.5 uppercase;
     @apply dark:border-dark-border dark:text-dark-text dark:hover:bg-brand-primary;
     @apply focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2;
   }
 
   .pro-button {
-    @apply px-8 py-4 bg-brand-text text-white font-black text-[10px] tracking-widest uppercase;
-    @apply rounded-2xl hover:bg-brand-primary active:scale-95 transition-all duration-300;
+    @apply px-5 sm:px-6 py-2.5 sm:py-3 bg-brand-text text-white font-black text-[10px] tracking-widest uppercase;
+    @apply rounded-xl hover:bg-brand-primary active:scale-95 transition-all duration-300;
     @apply flex items-center justify-center gap-2;
     @apply focus-visible:ring-2 focus-visible:ring-brand-text focus-visible:ring-offset-2;
   }
 
   .civic-button-primary {
-    @apply px-8 py-4 bg-brand-primary text-white font-black text-[10px] tracking-widest uppercase;
-    @apply rounded-2xl hover:bg-brand-primary/90 active:scale-95 transition-all;
+    @apply px-5 sm:px-6 py-2.5 sm:py-3 bg-brand-primary text-white font-black text-[10px] tracking-widest uppercase;
+    @apply rounded-xl hover:bg-brand-primary/90 active:scale-95 transition-all;
     @apply flex items-center justify-center gap-2;
     @apply disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   /* ─── Typography helpers ─── */
   .glass-panel {
-    @apply bg-white/85 backdrop-blur-3xl border border-white/30 shadow-2xl shadow-black/5;
+    @apply bg-white/85 backdrop-blur-3xl border border-white/30 shadow-xl shadow-black/5;
     @apply dark:bg-dark-bg/80 dark:border-dark-border;
   }
 
   .section-label {
-    @apply text-[10px] font-bold uppercase tracking-[0.3em] text-brand-primary mb-4 block;
-    @apply dark:text-brand-secondary;
+    display: none !important;
   }
 
   .section-title {
-    @apply text-2xl md:text-3xl lg:text-4xl font-bold text-brand-text tracking-tight mb-6 font-display;
+    @apply text-xl md:text-2xl lg:text-[28px] font-bold text-brand-text tracking-tight mb-3 sm:mb-3.5 font-display leading-tight;
     @apply dark:text-dark-text;
   }
 
   .card-title {
-    @apply text-base lg:text-lg font-semibold text-brand-text font-display leading-snug;
+    @apply text-base lg:text-[17px] font-semibold text-brand-text font-display leading-snug;
     @apply dark:text-dark-text;
   }
 
   .body-text {
-    @apply text-sm font-normal text-brand-muted leading-relaxed;
+    @apply text-xs sm:text-sm font-normal text-brand-muted leading-relaxed;
     @apply dark:text-dark-muted;
   }
 
@@ -185,14 +184,14 @@
 
   /* ─── Form utilities ─── */
   .form-input {
-    @apply w-full bg-brand-bg border border-brand-border rounded-2xl py-4 px-6;
+    @apply w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 sm:py-3 px-4 sm:px-5;
     @apply font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20;
     @apply focus:border-brand-primary/30 transition-all;
     @apply dark:bg-dark-surface dark:border-dark-border dark:text-dark-text;
   }
 
   .form-label {
-    @apply text-[10px] font-black text-brand-muted uppercase tracking-widest block mb-2;
+    @apply text-[10px] font-black text-brand-muted uppercase tracking-widest block mb-1.5;
   }
 
   /* ─── Screen reader only ─── */
@@ -218,5 +217,100 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--color-brand-border);
     border-radius: 10px;
+  }
+}
+
+@layer utilities {
+  /* 1. Tone down oversized border radii for a crisper, more professional dashboard aesthetic */
+  .rounded-\[3rem\], .rounded-\[2\.5rem\], .rounded-\[2rem\] {
+    border-radius: 1.25rem !important;
+  }
+  @media (min-width: 768px) {
+    .rounded-3xl {
+      border-radius: 1rem !important;
+    }
+  }
+
+  /* 2. Proportionally reduce oversized container widths so content feels less stretched and lighter on large screens */
+  @media (min-width: 1024px) {
+    .max-w-screen-2xl {
+      max-width: 82rem !important;
+    }
+    .max-w-7xl {
+      max-width: 68rem !important;
+    }
+    .max-w-6xl {
+      max-width: 58rem !important;
+    }
+    .max-w-5xl {
+      max-width: 50rem !important;
+    }
+    .max-w-4xl {
+      max-width: 42rem !important;
+    }
+    .max-w-3xl {
+      max-width: 35rem !important;
+    }
+  }
+
+  /* 3. Proportionally decrease vertical section padding, margins, gaps, and card padding by ~20-25% */
+  @media (min-width: 768px) {
+    /* Section padding */
+    .py-32 { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+    .py-24 { padding-top: 3.25rem !important; padding-bottom: 3.25rem !important; }
+    .py-20 { padding-top: 2.75rem !important; padding-bottom: 2.75rem !important; }
+    .py-16 { padding-top: 2.25rem !important; padding-bottom: 2.25rem !important; }
+    .py-14 { padding-top: 1.875rem !important; padding-bottom: 1.875rem !important; }
+    .py-12 { padding-top: 1.625rem !important; padding-bottom: 1.625rem !important; }
+
+    .pt-32 { padding-top: 4rem !important; }
+    .pb-32 { padding-bottom: 4rem !important; }
+    .pt-24 { padding-top: 3.25rem !important; }
+    .pb-24 { padding-bottom: 3.25rem !important; }
+    .pt-20 { padding-top: 2.75rem !important; }
+    .pb-20 { padding-bottom: 2.75rem !important; }
+    .pt-16 { padding-top: 2.25rem !important; }
+    .pb-16 { padding-bottom: 2.25rem !important; }
+    .pt-12 { padding-top: 1.625rem !important; }
+    .pb-12 { padding-bottom: 1.625rem !important; }
+
+    /* Vertical margins */
+    .mb-24 { margin-bottom: 3.25rem !important; }
+    .mb-20 { margin-bottom: 2.75rem !important; }
+    .mb-16 { margin-bottom: 2.25rem !important; }
+    .mb-12 { margin-bottom: 1.75rem !important; }
+    .mb-10 { margin-bottom: 1.5rem !important; }
+    .mt-20 { margin-top: 2.75rem !important; }
+    .mt-16 { margin-top: 2.25rem !important; }
+    .mt-12 { margin-top: 1.75rem !important; }
+
+    /* Grid and flex spacing */
+    .gap-24 { gap: 3.25rem !important; }
+    .gap-20 { gap: 2.75rem !important; }
+    .gap-16 { gap: 2.25rem !important; }
+    .gap-12 { gap: 1.75rem !important; }
+    .gap-10 { gap: 1.5rem !important; }
+    .gap-8  { gap: 1.25rem !important; }
+
+    /* Card internal padding */
+    .p-16 { padding: 2.5rem !important; }
+    .p-12 { padding: 2rem !important; }
+    .p-10 { padding: 1.625rem !important; }
+    .p-8  { padding: 1.375rem !important; }
+    .px-12 { padding-left: 2rem !important; padding-right: 2rem !important; }
+    .py-12 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+    .px-10 { padding-left: 1.625rem !important; padding-right: 1.625rem !important; }
+    .py-10 { padding-top: 1.625rem !important; padding-bottom: 1.625rem !important; }
+    .px-8  { padding-left: 1.375rem !important; padding-right: 1.375rem !important; }
+    .py-8  { padding-top: 1.375rem !important; padding-bottom: 1.375rem !important; }
+  }
+
+  /* 4. Refine typography scale on medium and large screens to avoid oversized headings */
+  @media (min-width: 768px) {
+    .text-7xl, .md\:text-7xl, .lg\:text-7xl { font-size: 3.25rem !important; line-height: 1.08 !important; }
+    .text-6xl, .md\:text-6xl, .lg\:text-6xl { font-size: 2.75rem !important; line-height: 1.1 !important; }
+    .text-5xl, .md\:text-5xl, .lg\:text-5xl { font-size: 2.25rem !important; line-height: 1.15 !important; }
+    .text-4xl, .md\:text-4xl, .lg\:text-4xl { font-size: 1.875rem !important; line-height: 1.2 !important; }
+    .text-3xl, .md\:text-3xl, .lg\:text-3xl { font-size: 1.5rem !important; line-height: 1.25 !important; }
   }
 }

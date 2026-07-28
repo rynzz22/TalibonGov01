@@ -22,28 +22,22 @@ export default function PopularServices() {
   ];
 
   return (
-    <section className="py-24 bg-brand-bg" id="popular-services">
-      <div className="max-w-7xl mx-auto px-4 text-center">
-        <div className="mb-12">
-          <span className="text-[10px] font-black tracking-[0.3em] uppercase text-brand-primary bg-brand-primary/10 px-4 py-1.5 rounded-full inline-block mb-3">
-            E-GOVERNMENT PORTAL
-          </span>
-          <h2 className="text-2xl md:text-4xl font-black text-brand-text uppercase tracking-tight font-display">
+    <section className="py-8 sm:py-10 bg-brand-bg" id="popular-services">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-black text-brand-text uppercase tracking-tight font-display">
             ONLINE SERVICES & E-BOSS
           </h2>
-          <p className="text-sm text-brand-muted font-medium max-w-2xl mx-auto mt-2">
+          <p className="text-xs text-brand-muted font-medium max-w-lg mx-auto mt-1">
             Access official municipal e-services, apply for business permits, track applications, and utilize Philippine government digital portals.
           </p>
         </div>
 
         {/* FiliPizen Featured Banner Card */}
-        <div className="mb-12 max-w-4xl mx-auto bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-indigo-400/30 text-left flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2">
+        <div className="mb-8 max-w-4xl mx-auto bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl border border-indigo-400/30 text-left flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-amber-400 text-slate-950 font-black text-[9px] uppercase tracking-widest rounded-full">
-                NATIONAL CITIZEN PORTAL
-              </span>
-              <span className="text-xs font-bold text-indigo-200">FiliPizen Official Partner</span>
+              <span className="text-[10px] font-bold text-indigo-200">FiliPizen Official Partner</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-black font-display tracking-tight text-white">
               Access Citizen Services via FiliPizen

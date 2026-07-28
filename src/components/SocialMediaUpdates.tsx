@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "motion/react";
 import { Facebook, Twitter, Instagram, ArrowUpRight, MessageSquare, ShieldCheck, Flame, Camera } from "lucide-react";
 
@@ -23,17 +24,17 @@ export default function SocialMediaUpdates() {
   };
 
   return (
-    <section className="py-32 bg-brand-surface overflow-hidden">
+    <section className="py-10 sm:py-14 bg-brand-surface overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
             <span className="section-label">Stay Connected</span>
             <h2 className="section-title">Social Media Updates</h2>
-            <p className="text-xl text-brand-muted font-medium leading-relaxed mb-12">
+            <p className="text-xs sm:text-sm text-brand-muted font-medium leading-relaxed mb-6 max-w-lg">
               Stay informed with the latest announcements, events, and updates from Talibon through our official social media channels.
             </p>
             
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2.5">
               {channels.map((channel, idx) => (
                 <motion.a
                   key={channel.name}
@@ -42,12 +43,12 @@ export default function SocialMediaUpdates() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.05 }}
-                  className="flex items-center gap-3 px-6 py-3 bg-white border border-brand-border rounded-2xl hover:border-brand-primary/20 hover:shadow-lg transition-all group"
+                  className="flex items-center gap-2 px-3.5 py-2 bg-white border border-brand-border rounded-xl hover:border-brand-primary/30 hover:shadow-md transition-all group"
                 >
-                  <div className={`w-8 h-8 rounded-xl ${channel.color} flex items-center justify-center text-white transition-transform group-hover:rotate-12`}>
-                    {getIcon(channel.name)}
+                  <div className={`w-6 h-6 rounded-lg ${channel.color} flex items-center justify-center text-white transition-transform group-hover:rotate-12`}>
+                    {React.cloneElement(getIcon(channel.name), { size: 14 })}
                   </div>
-                  <span className="text-[10px] font-bold text-brand-text uppercase tracking-widest">{channel.name}</span>
+                  <span className="text-[9px] sm:text-[10px] font-bold text-brand-text uppercase tracking-widest">{channel.name}</span>
                 </motion.a>
               ))}
             </div>
@@ -59,14 +60,14 @@ export default function SocialMediaUpdates() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="bg-white rounded-[2.5rem] border border-brand-border shadow-2xl shadow-black/5 p-4 overflow-hidden"
+              className="bg-white rounded-xl sm:rounded-2xl border border-brand-border shadow-lg shadow-black/5 p-3 sm:p-4 overflow-hidden"
             >
               <div className="w-full flex justify-center">
                 <iframe 
-                  src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FPioTalibon&tabs=timeline&width=500&height=600&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId" 
+                  src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FPioTalibon&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId" 
                   width="100%" 
-                  height="600" 
-                  style={{ border: 'none', overflow: 'hidden', borderRadius: '1.5rem' }} 
+                  height="500" 
+                  style={{ border: 'none', overflow: 'hidden', borderRadius: '1rem' }} 
                   scrolling="no" 
                   frameBorder="0" 
                   allowFullScreen={true} 

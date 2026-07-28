@@ -157,7 +157,7 @@ const NewsCategoryPage: React.FC = () => {
   );
 
   const renderGallery = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
       <AnimatePresence mode="popLayout">
         {filteredNews.map((item, idx) => (
           <motion.div
@@ -167,7 +167,7 @@ const NewsCategoryPage: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ delay: idx * 0.05 }}
-            className="group relative aspect-square bg-white rounded-[2rem] overflow-hidden border border-brand-border shadow-sm hover:shadow-2xl hover:shadow-brand-primary/10 transition-all"
+            className="group relative aspect-[4/3] max-h-48 sm:max-h-56 bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-brand-border shadow-2xs hover:shadow-xl hover:shadow-brand-primary/10 transition-all"
           >
             <img
               src={item.image_url || `https://picsum.photos/seed/${item.id}/800/800`}
@@ -175,18 +175,18 @@ const NewsCategoryPage: React.FC = () => {
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-brand-text/90 via-brand-text/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
-              <p className="text-xs font-bold text-brand-secondary uppercase tracking-widest mb-2">
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-text/90 via-brand-text/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4 sm:p-5">
+              <p className="text-[9px] font-bold text-brand-secondary uppercase tracking-widest mb-1">
                 {new Date(item.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
-              <h3 className="text-xl font-extrabold text-white tracking-tight font-display">
+              <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight font-display">
                 {item.title}
               </h3>
               <Link 
                 to={`/news/view/${item.id}`}
-                className="mt-4 flex items-center gap-2 text-xs font-bold text-white hover:text-brand-secondary transition-colors"
+                className="mt-2 flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-white hover:text-brand-secondary transition-colors"
               >
-                VIEW DETAILS <ArrowRight size={16} />
+                VIEW DETAILS <ArrowRight size={13} />
               </Link>
             </div>
           </motion.div>
@@ -196,7 +196,7 @@ const NewsCategoryPage: React.FC = () => {
   );
 
   const renderForms = () => (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       <AnimatePresence mode="popLayout">
         {filteredNews.map((item, idx) => (
           <motion.div
@@ -206,25 +206,25 @@ const NewsCategoryPage: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             transition={{ delay: idx * 0.05 }}
-            className="pro-card p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-brand-primary/30"
+            className="pro-card p-3.5 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 hover:border-brand-primary/30"
           >
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all">
-                <FileText size={28} />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-11 h-11 bg-brand-primary/10 rounded-xl flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all shrink-0">
+                <FileText size={20} />
               </div>
               <div>
-                <h3 className="text-xl font-extrabold text-brand-text group-hover:text-brand-primary transition-colors tracking-tight font-display">
+                <h3 className="text-sm sm:text-base font-bold text-brand-text group-hover:text-brand-primary transition-colors tracking-tight font-display">
                   {item.title}
                 </h3>
-                <p className="text-sm font-bold text-brand-muted uppercase tracking-widest mt-1">
+                <p className="text-[10px] font-bold text-brand-muted uppercase tracking-widest mt-0.5">
                   Posted: {new Date(item.date).toLocaleDateString()}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link 
                 to={`/news/view/${item.id}`}
-                className="px-6 py-3 bg-brand-bg text-brand-muted rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-brand-border transition-all"
+                className="px-3.5 py-1.5 bg-brand-bg text-brand-muted rounded-lg font-bold text-[9px] sm:text-[10px] uppercase tracking-widest hover:bg-brand-border transition-all"
               >
                 DETAILS
               </Link>
@@ -232,9 +232,9 @@ const NewsCategoryPage: React.FC = () => {
                 href={item.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="pro-button px-8 py-3 flex items-center gap-2"
+                className="pro-button px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 text-[9px] sm:text-[10px]"
               >
-                <Download size={14} />
+                <Download size={13} />
                 DOWNLOAD FORM
               </a>
             </div>
@@ -245,7 +245,7 @@ const NewsCategoryPage: React.FC = () => {
   );
 
   const renderStandard = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
       <AnimatePresence mode="popLayout">
         {filteredNews.map((item, idx) => (
           <motion.div
@@ -255,43 +255,43 @@ const NewsCategoryPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ delay: idx * 0.05 }}
-            className="pro-card overflow-hidden flex flex-col hover:border-brand-primary/30"
+            className="pro-card rounded-xl sm:rounded-2xl overflow-hidden flex flex-col hover:border-brand-primary/30"
           >
-            <div className="aspect-video relative overflow-hidden">
+            <div className="aspect-[16/9] max-h-36 sm:max-h-44 relative overflow-hidden">
               <img
                 src={item.image_url || `https://picsum.photos/seed/${item.id}/800/600`}
                 alt={item.title}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl text-center shadow-lg border border-brand-border">
-                <p className="text-[10px] font-bold text-brand-primary uppercase tracking-wider">
+              <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl text-center shadow-md border border-brand-border">
+                <p className="text-[8px] sm:text-[9px] font-bold text-brand-primary uppercase tracking-wider">
                   {new Date(item.date).toLocaleDateString('en-US', { month: 'short' })}
                 </p>
-                <p className="text-lg font-extrabold text-brand-text leading-none">
+                <p className="text-sm sm:text-base font-black text-brand-text leading-none">
                   {new Date(item.date).getDate()}
                 </p>
               </div>
             </div>
 
-            <div className="p-8 flex-1 flex flex-col">
-              <h3 className="text-xl font-extrabold text-brand-text mb-4 group-hover:text-brand-primary transition-colors line-clamp-2 font-display">
+            <div className="p-4 sm:p-5 flex-1 flex flex-col">
+              <h3 className="text-xs sm:text-sm font-bold text-brand-text mb-1.5 group-hover:text-brand-primary transition-colors line-clamp-2 font-display tracking-tight leading-snug">
                 {item.title}
               </h3>
-              <p className="text-brand-muted font-medium leading-relaxed line-clamp-3 mb-8">
+              <p className="text-[11px] text-brand-muted font-normal leading-normal line-clamp-2 mb-4">
                 {item.summary}
               </p>
               
-              <div className="mt-auto pt-6 border-t border-brand-bg flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-brand-muted uppercase tracking-widest">
-                  <Calendar size={14} />
+              <div className="mt-auto pt-2.5 border-t border-brand-bg flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[9px] font-bold text-brand-muted uppercase tracking-widest">
+                  <Calendar size={12} />
                   {new Date(item.date).getFullYear()}
                 </div>
                 <Link 
                   to={`/news/view/${item.id}`}
-                  className="flex items-center gap-2 text-xs font-bold text-brand-primary hover:gap-3 transition-all"
+                  className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-brand-primary hover:gap-2.5 transition-all"
                 >
-                  READ MORE <ArrowRight size={16} />
+                  READ MORE <ArrowRight size={12} />
                 </Link>
               </div>
             </div>
@@ -313,7 +313,7 @@ const NewsCategoryPage: React.FC = () => {
   const isForms = category === 'forms';
 
   return (
-    <div className="pb-20 min-h-screen bg-brand-bg relative overflow-hidden">
+    <div className="pb-8 sm:pb-12 min-h-screen bg-brand-bg relative overflow-hidden">
       {/* Professional UI Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <motion.div 
@@ -339,33 +339,33 @@ const NewsCategoryPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="mb-16">
+        <div className="mb-6 sm:mb-8">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-4 mb-6"
+            className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3"
           >
-            <div className="w-12 h-1 bg-brand-primary rounded-full" />
-            <span className="text-sm font-bold text-brand-primary uppercase tracking-[0.3em]">News & Media</span>
+            <div className="w-8 h-0.5 bg-brand-primary rounded-full" />
+            <span className="text-[10px] sm:text-xs font-bold text-brand-primary uppercase tracking-[0.25em]">News & Media</span>
           </motion.div>
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12">
-            <h1 className="text-4xl md:text-6xl font-extrabold text-brand-text tracking-tight leading-none font-display">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5 sm:mb-6">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-brand-text tracking-tight leading-none font-display">
               {displayTitle[category || ''] || 'News'}
             </h1>
             
-            <div className="flex flex-col md:flex-row gap-6 items-center bg-white p-4 rounded-3xl shadow-sm border border-brand-border">
+            <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-center bg-white p-2 sm:p-2.5 rounded-2xl shadow-2xs border border-brand-border">
               <div className="relative group w-full md:w-auto">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-primary transition-colors" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-primary transition-colors" size={14} />
                 <input
                   type="text"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-brand-bg border border-transparent rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-tight focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:bg-white focus:border-brand-primary/30 transition-all w-full md:w-64"
+                  className="bg-brand-bg border border-transparent rounded-xl py-1.5 sm:py-2 pl-9 pr-3 text-[11px] font-bold tracking-tight focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:bg-white focus:border-brand-primary/30 transition-all w-full md:w-52"
                 />
               </div>
-              <div className="flex items-center gap-3 px-4 text-[10px] font-bold text-brand-muted uppercase tracking-widest border-l border-brand-border">
-                <Filter size={14} />
+              <div className="flex items-center gap-1.5 px-3 text-[9px] sm:text-[10px] font-bold text-brand-muted uppercase tracking-widest border-l border-brand-border">
+                <Filter size={12} />
                 {filteredNews.length} Items
               </div>
             </div>

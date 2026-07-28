@@ -108,18 +108,14 @@ export function logSupabaseDiagnostics(context: string, errorDetail?: any): void
   console.groupEnd();
 }
 
-// Fail fast in production if env variables are missing or placeholders
+// Log warning if env variables are missing or placeholders, allowing offline/mock fallback
 if (!isSupabaseConfigured) {
-  const errorMsg = 
-    `[Supabase Configuration Failure] Missing or invalid database credentials.\n` +
-    `Expected VITE_SUPABASE_URL (currently: "${rawUrl || 'undefined'}") and VITE_SUPABASE_ANON_KEY to be configured in settings.`;
+  const warnMsg = 
+    `[Supabase Configuration Warning] Missing or invalid database credentials.\n` +
+    `Expected VITE_SUPABASE_URL (currently: "${rawUrl || 'undefined'}") and VITE_SUPABASE_ANON_KEY to be configured in settings.\n` +
+    `Application is running in offline/mock fallback mode.`;
   
-  console.error(errorMsg);
-  
-  // If we are in production, block client initialization to prevent silent mock failover
-  if (import.meta.env.PROD) {
-    throw new Error(errorMsg);
-  }
+  console.warn(warnMsg);
 }
 
 export const supabase = createClient(

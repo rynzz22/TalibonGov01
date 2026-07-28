@@ -33,15 +33,12 @@ export const ContactOfficeCard: React.FC<ContactOfficeCardProps> = ({
   };
 
   return (
-    <div className="p-8 bg-brand-bg rounded-[2.5rem] border border-brand-border space-y-6 relative overflow-hidden group hover:border-brand-primary/20 transition-all duration-300">
+    <div className="p-4 sm:p-5 bg-brand-bg rounded-xl sm:rounded-2xl border border-brand-border space-y-4 relative overflow-hidden group hover:border-brand-primary/30 transition-all duration-300">
       {/* Decorative accent */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full blur-2xl group-hover:bg-brand-primary/10 transition-colors pointer-events-none" />
+      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-primary/5 rounded-full blur-xl group-hover:bg-brand-primary/10 transition-colors pointer-events-none" />
       
-      <h3 className="text-xs font-extrabold text-brand-text uppercase tracking-widest pb-4 border-b border-brand-border/60 flex items-center justify-between">
-        <span>Responsible Office</span>
-        <span className="text-[10px] text-brand-primary font-black uppercase tracking-[0.2em] bg-brand-primary/5 px-2.5 py-1 rounded-full">
-          DIRECT CONTACT
-        </span>
+      <h3 className="text-xs font-extrabold text-brand-text uppercase tracking-widest pb-3 border-b border-brand-border/60">
+        Responsible Office
       </h3>
       
       <div className="space-y-5 relative z-10">

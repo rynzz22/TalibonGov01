@@ -24,43 +24,43 @@ export default function CitizensCharterSection() {
   ];
 
   return (
-    <section id="charter" className="py-32 bg-brand-surface relative overflow-hidden">
+    <section id="charter" className="py-10 sm:py-14 bg-brand-surface relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-16 mb-24">
-          <div className="max-w-2xl">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12 mb-10 sm:mb-12">
+          <div className="max-w-2xl space-y-2 sm:space-y-3">
             <span className="section-label">RA 11032 — Anti-Red Tape Authority</span>
             <h2 className="section-title">Citizen's Charter 2026</h2>
-            <p className="text-base text-brand-muted font-normal leading-relaxed">
+            <p className="text-xs sm:text-sm text-brand-muted font-normal leading-relaxed">
               Official guide to government services — requirements, step-by-step procedures, fees, and processing times for each municipal office.
             </p>
           </div>
           <div className="shrink-0">
-            <button className="minimal-button-primary">
-              Download Full Charter (PDF) <Download size={18} />
+            <button className="minimal-button-primary text-xs sm:text-sm">
+              Download Full Charter (PDF) <Download size={16} />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {offices.map((office, idx) => (
             <motion.div
               key={office.name}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.05 }}
-              className="p-8 rounded-[2.5rem] bg-brand-bg border border-brand-border hover:shadow-2xl hover:shadow-black/5 transition-all duration-500 group"
+              className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-brand-bg border border-brand-border hover:shadow-lg hover:shadow-black/5 transition-all duration-300 group"
             >
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-brand-primary/5 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all duration-500">
-                  <office.icon size={24} />
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-primary/5 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all duration-300">
+                  <office.icon size={20} />
                 </div>
-                <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/5 px-3 py-1 rounded-full">
+                <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest">
                   {office.services} services
                 </span>
               </div>
-              <h3 className="text-base font-semibold text-brand-text mb-3 font-display uppercase tracking-tight">{office.name}</h3>
-              <p className="text-brand-muted text-sm font-normal leading-relaxed">
+              <h3 className="text-sm sm:text-base font-semibold text-brand-text mb-1.5 font-display uppercase tracking-tight">{office.name}</h3>
+              <p className="text-brand-muted text-xs sm:text-sm font-normal leading-relaxed">
                 {office.desc}
               </p>
             </motion.div>

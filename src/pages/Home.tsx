@@ -14,7 +14,6 @@ import SocialMediaUpdates from "../components/SocialMediaUpdates";
 import EmergencyHotlines from "../components/EmergencyHotlines";
 import WeatherWidget from "../components/WeatherWidget";
 import ServiceNavigator from "../components/ServiceNavigator";
-import AdvisoriesBanner from "../components/AdvisoriesBanner";
 import NewsTodaySection from "../components/NewsTodaySection";
 import LguEventsSection from "../components/LguEventsSection";
 import OrtsUpdatesSection from "../components/OrtsUpdatesSection";
@@ -23,7 +22,6 @@ export default function Home() {
   return (
     <main>
       <Hero />
-      <AdvisoriesBanner />
       <section className="py-12 bg-brand-bg relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <WeatherWidget />

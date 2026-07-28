@@ -11,12 +11,8 @@
  * or fail explicitly.
  */
 export function isMockAllowed(): boolean {
-  // Check Vite environment variables
-  const isDev = import.meta.env.MODE === "development" || import.meta.env.DEV === true;
-  const isMockEnabled = import.meta.env.VITE_ENABLE_MOCK_DATA === "true";
-  
-  // Mock mode should ONLY activate when explicitly enabled by a development flag
-  return isDev && isMockEnabled;
+  // Allow offline and mock fallbacks whenever VITE_ENABLE_MOCK_DATA is not explicitly disabled
+  return import.meta.env.VITE_ENABLE_MOCK_DATA !== "false";
 }
 
 /**

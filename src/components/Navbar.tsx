@@ -160,25 +160,25 @@ export default function Navbar() {
 
       {/* Tier 1: Utility Navigation */}
       <div className="bg-brand-bg/50 border-b border-brand-border backdrop-blur-md relative z-20">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-10 h-10 flex justify-between items-center text-[10px] sm:text-xs">
-          <div className="flex items-center gap-6 sm:gap-10 divide-x divide-brand-border">
-            <div className="flex items-center gap-4">
-              <Link to="/" className="font-extrabold text-brand-text hover:text-brand-primary transition-colors tracking-tight">GOVPH</Link>
+        <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 h-7 sm:h-8 flex justify-between items-center text-[9px] sm:text-[11px]">
+          <div className="flex items-center gap-2 sm:gap-4 divide-x divide-brand-border/60">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link to="/" className="font-extrabold text-brand-text hover:text-brand-primary transition-colors tracking-tight text-[10px] sm:text-xs">GOVPH</Link>
               <a 
                 href="mailto:official@talibon.gov.ph" 
-                className="hidden sm:flex items-center gap-1.5 text-brand-text hover:text-brand-primary font-semibold transition-colors text-[10px] sm:text-xs"
+                className="hidden sm:flex items-center gap-1 text-brand-text hover:text-brand-primary font-semibold transition-colors text-[9px] sm:text-[11px]"
                 title="Official Municipal Contact Email"
               >
-                <Mail size={12} className="text-brand-primary" />
+                <Mail size={11} className="text-brand-primary shrink-0" />
                 <span>official@talibon.gov.ph</span>
               </a>
             </div>
             
-            <nav className="hidden lg:flex items-center gap-8 pl-10">
+            <nav className="hidden lg:flex items-center gap-3 xl:gap-5 pl-2 sm:pl-4">
               {topNavLinks.map((link) => (
                 <div 
                   key={link.name} 
-                  className="relative h-10 flex items-center"
+                  className="relative h-7 sm:h-8 flex items-center"
                   onMouseEnter={() => link.subLinks && setActiveDropdown(link.name)}
                   onMouseLeave={() => setActiveDropdown(null)}
                 >
@@ -189,9 +189,9 @@ export default function Navbar() {
                           e.stopPropagation();
                           setActiveDropdown(activeDropdown === link.name ? null : link.name);
                         }}
-                        className="text-brand-text hover:text-brand-primary font-semibold flex items-center gap-1 transition-colors"
+                        className="text-brand-text hover:text-brand-primary font-semibold flex items-center gap-0.5 transition-colors text-[9px] sm:text-[11px]"
                       >
-                        {link.name} <ChevronDown size={12} className={activeDropdown === link.name ? 'rotate-180' : ''} />
+                        {link.name} <ChevronDown size={11} className={activeDropdown === link.name ? 'rotate-180' : ''} />
                       </button>
                       
                       <AnimatePresence>
@@ -200,7 +200,7 @@ export default function Navbar() {
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
-                            className="absolute top-full left-0 w-56 bg-brand-surface shadow-2xl border border-brand-border py-2 z-[70]"
+                            className="absolute top-full left-0 w-52 bg-brand-surface shadow-2xl border border-brand-border py-1.5 z-[70]"
                           >
                             {link.subLinks.map((sub) => (
                               <Link
@@ -208,7 +208,7 @@ export default function Navbar() {
                                 to={sub.href}
                                 target={sub.isExternal ? "_blank" : undefined}
                                 rel={sub.isExternal ? "noopener noreferrer" : undefined}
-                                className="block px-4 py-2 hover:bg-brand-bg text-brand-text hover:text-brand-primary transition-all text-xs font-semibold"
+                                className="block px-3.5 py-1.5 hover:bg-brand-bg text-brand-text hover:text-brand-primary transition-all text-[11px] font-semibold"
                               >
                                 {sub.name}
                               </Link>
@@ -221,16 +221,16 @@ export default function Navbar() {
                     <HashLink 
                       to={link.href} 
                       scroll={(el) => {
-                        const yOffset = -220;
+                        const yOffset = -130;
                         const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
                         window.scrollTo({ top: y, behavior: 'smooth' });
                       }}
-                      className="text-brand-text hover:text-brand-primary font-semibold transition-colors"
+                      className="text-brand-text hover:text-brand-primary font-semibold transition-colors text-[9px] sm:text-[11px]"
                     >
                       {link.name}
                     </HashLink>
                   ) : (
-                    <Link to={link.href} className="text-brand-text hover:text-brand-primary font-semibold transition-colors">
+                    <Link to={link.href} className="text-brand-text hover:text-brand-primary font-semibold transition-colors text-[9px] sm:text-[11px]">
                       {link.name}
                     </Link>
                   )}
@@ -238,56 +238,56 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="hidden sm:flex items-center gap-6 pl-10 border-l border-brand-border">
+            <div className="hidden sm:flex items-center gap-3 pl-2 sm:pl-4 border-l border-brand-border/60">
               {isUserAuthenticated && user ? (
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-3">
                   {/* Administrator Identity Badge */}
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 text-blue-600 font-extrabold flex items-center justify-center text-xs shadow-sm">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-6 h-6 rounded-full bg-blue-50 border border-blue-100 text-blue-600 font-extrabold flex items-center justify-center text-[10px] shadow-sm">
                       {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex flex-col text-left">
-                      <span className="text-[10px] font-black text-brand-text tracking-tight leading-none">
+                      <span className="text-[9px] font-black text-brand-text tracking-tight leading-none">
                         {profile?.full_name || user.email?.split("@")[0]}
                       </span>
-                      <span className="text-[8px] font-black text-brand-primary uppercase tracking-widest mt-1 leading-none">
+                      <span className="text-[7px] font-black text-brand-primary uppercase tracking-widest mt-0.5 leading-none">
                         {profile?.role?.replace("_", " ") || "Staff"}
                       </span>
                     </div>
                   </div>
 
-                  <Link to="/admin" className="flex items-center gap-1.5 text-brand-primary font-extrabold uppercase tracking-widest hover:opacity-85 transition-colors text-[10px]">
-                    <LayoutDashboard size={13} />
+                  <Link to="/admin" className="flex items-center gap-1 text-brand-primary font-extrabold uppercase tracking-widest hover:opacity-85 transition-colors text-[9px]">
+                    <LayoutDashboard size={11} />
                     DASHBOARD
                   </Link>
-                  <button onClick={() => signOut()} className="flex items-center gap-1.5 text-brand-muted font-extrabold uppercase tracking-widest hover:text-red-600 transition-colors text-[10px]">
-                    <LogOut size={13} />
+                  <button onClick={() => signOut()} className="flex items-center gap-1 text-brand-muted font-extrabold uppercase tracking-widest hover:text-red-600 transition-colors text-[9px]">
+                    <LogOut size={11} />
                     LOGOUT
                   </button>
                 </div>
               ) : (
-                <Link to="/login" className="flex items-center gap-2 text-brand-primary font-extrabold uppercase tracking-widest hover:opacity-80 transition-all">
-                  <LogIn size={14} />
-                  ADMIN LOGIN
+                <Link to="/login" className="flex items-center gap-1 sm:gap-1.5 text-red-600 font-black uppercase tracking-wider hover:opacity-80 transition-all text-[9px] sm:text-[10px]">
+                  <LogIn size={12} className="shrink-0" />
+                  <span>ADMIN LOGIN</span>
                 </Link>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-brand-text font-semibold">
-            <div className="hidden xl:block">{formatTime(currentTime)} (PST)</div>
-            <div className="flex items-center gap-3 pl-4 border-l border-brand-border">
+          <div className="flex items-center gap-2 sm:gap-3 text-brand-text font-semibold text-[9px] sm:text-[10px]">
+            <div className="hidden xl:block whitespace-nowrap">{formatTime(currentTime)} (PST)</div>
+            <div className="flex items-center gap-2 sm:gap-2.5 pl-2 sm:pl-3 border-l border-brand-border/60">
               <button 
                 onClick={() => setLanguage(language === 'en' ? 'ceb' : 'en')}
-                className="flex items-center gap-1.5 px-3 py-1 bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary rounded-full transition-all text-[9px] font-black tracking-widest uppercase border border-brand-primary/10"
+                className="flex items-center gap-1 px-2 py-0.5 bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary rounded-full transition-all text-[8px] sm:text-[9px] font-black tracking-widest uppercase border border-brand-primary/10"
               >
-                <Globe size={12} />
+                <Globe size={11} />
                 {language === 'en' ? 'EN' : 'CEB'}
               </button>
               <ErrorBoundary componentName="NotificationBell">
                 <NotificationBell onClick={() => setIsNotificationOpen(true)} />
               </ErrorBoundary>
-              <button className="hover:text-brand-primary text-brand-text transition-colors"><Accessibility size={16} /></button>
+              <button className="hover:text-brand-primary text-brand-text transition-colors"><Accessibility size={14} /></button>
             </div>
           </div>
         </div>
@@ -297,44 +297,59 @@ export default function Navbar() {
       <div className={`bg-transparent border-b border-gray-100/50 relative z-10 transition-all duration-300 ease-in-out overflow-hidden ${
         isScrolled 
           ? "h-0 py-0 opacity-0 pointer-events-none border-none" 
-          : "py-6 lg:py-8"
+          : "py-1.5 sm:py-2"
       }`}>
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 flex items-center justify-between">
+        <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 flex items-center justify-between">
           {/* Left Section: Logos */}
-          <div className="flex items-center gap-4 w-1/4">
-            <Link to="/" className="flex items-center gap-4 group">
-              <div className="p-1.5 bg-white rounded-full shadow-lg border-2 border-brand-primary/20 group-hover:border-brand-primary transition-all duration-300">
+          <div className="flex items-center gap-2 sm:gap-3 w-1/4">
+            <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
+              <div className="p-1 bg-white rounded-full shadow-md border border-brand-primary/20 group-hover:border-brand-primary transition-all duration-300">
                 <img 
                   src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
                   alt="Talibon Seal" 
-                  className="object-contain transition-all duration-300 rounded-full group-hover:rotate-6 w-16 h-16 sm:w-20 sm:h-20" 
+                  className="object-contain transition-all duration-300 rounded-full group-hover:rotate-6 w-11 h-11 sm:w-13 sm:h-13" 
                   referrerPolicy="no-referrer"
                 />
               </div>
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Bagong_Pilipinas_logo.png/1920px-Bagong_Pilipinas_logo.png" 
                 alt="Bagong Pilipinas" 
-                className="hidden xl:block object-contain h-10" 
+                className="hidden xl:block object-contain h-7 sm:h-8" 
                 referrerPolicy="no-referrer" 
               />
             </Link>
           </div>
 
           {/* Middle Section: Centered Text */}
-          <Link to="/" className="flex-1 flex flex-col items-center text-center px-4 transition-transform hover:scale-[1.01]">
+          <Link to="/" className="flex-1 flex flex-col items-center text-center px-2 transition-transform hover:scale-[1.01]">
             <div className="flex flex-col items-center">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="px-3 py-0.5 bg-brand-primary text-white text-[9px] font-black rounded-full animate-pulse tracking-widest shadow-sm">#TALIBOOM</div>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <div className="px-2.5 py-0.5 bg-brand-primary text-white text-[8px] font-black rounded-full animate-pulse tracking-widest shadow-2xs">#TALIBOOM</div>
               </div>
-              <h1 className="font-display font-black text-brand-primary tracking-tighter leading-none mb-1 drop-shadow-sm text-xl sm:text-3xl lg:text-4xl">MUNICIPALITY OF TALIBON</h1>
-              <div className="flex items-center gap-2">
-                <p className="text-brand-secondary font-black tracking-[0.25em] uppercase opacity-90 text-[9px] sm:text-xs lg:text-sm">BOHOL'S SEAFOOD CAPITAL 🦀</p>
+              <h1 className="font-display font-black text-brand-primary tracking-tighter leading-none mb-0.5 drop-shadow-2xs text-base sm:text-xl lg:text-[26px]">MUNICIPALITY OF TALIBON</h1>
+              <div className="flex items-center gap-1.5">
+                <p className="text-brand-secondary font-black tracking-[0.2em] uppercase opacity-90 text-[8px] sm:text-[10px] lg:text-[11px] leading-none">BOHOL'S SEAFOOD CAPITAL 🦀</p>
               </div>
             </div>
           </Link>
 
-          {/* Right Section: Empty to balance the layout */}
-          <div className="w-1/4 hidden lg:block" />
+          {/* Right Section: Province of Bohol Seal & Carlos P. Garcia Portrait */}
+          <div className="flex items-center justify-end gap-2 sm:gap-3 w-1/4">
+            <Link to="/" className="flex items-center justify-end gap-2 sm:gap-3 group">
+              <img 
+                src="/Bohol_Province_Seal.png" 
+                alt="Province of Bohol Official Seal" 
+                className="hidden xl:block object-contain h-7 sm:h-8" 
+              />
+              <div className="p-1 bg-white rounded-full shadow-md border border-brand-primary/20 group-hover:border-brand-primary transition-all duration-300">
+                <img 
+                  src="/Carlos_P_Garcia_photo.jpg" 
+                  alt="Pres. Carlos P. Garcia" 
+                  className="object-cover object-[center_15%] transition-all duration-300 rounded-full group-hover:scale-105 w-11 h-11 sm:w-13 sm:h-13" 
+                />
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -342,10 +357,10 @@ export default function Navbar() {
       <div className={`bg-gradient-to-r from-orange-600/90 to-amber-500/90 backdrop-blur-md border-t border-white/10 transition-all duration-300 ${
         isScrolled ? "shadow-md" : ""
       }`}>
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 flex items-center justify-between relative transition-all duration-300">
+        <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 flex items-center justify-between relative transition-all duration-300">
           
           {/* Left: Mini Seal & Title (Visible when scrolled) */}
-          <div className="flex items-center gap-2 min-w-[120px] lg:min-w-[180px]">
+          <div className="flex items-center gap-1.5 min-w-[100px] lg:min-w-[140px]">
             <AnimatePresence>
               {isScrolled && (
                 <motion.div
@@ -353,15 +368,15 @@ export default function Navbar() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1.5 py-1"
                 >
                   <img 
                     src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
                     alt="Talibon Seal" 
-                    className="w-8 h-8 object-contain rounded-full bg-white p-0.5 shadow-md" 
+                    className="w-6 h-6 object-contain rounded-full bg-white p-0.5 shadow-xs" 
                     referrerPolicy="no-referrer"
                   />
-                  <span className="text-white text-[11px] font-black tracking-widest uppercase font-display hidden sm:inline-block">
+                  <span className="text-white text-[10px] font-black tracking-widest uppercase font-display hidden sm:inline-block">
                     TALIBON
                   </span>
                 </motion.div>
@@ -383,9 +398,7 @@ export default function Navbar() {
                     <div className="flex items-center">
                       <Link 
                         to={link.href} 
-                        className={`pl-4 ${link.href === '#' ? 'pointer-events-none' : ''} ${
-                          isScrolled ? 'py-2.5' : 'py-4'
-                        } text-white text-[10px] font-bold tracking-wider hover:bg-white/10 transition-all duration-300`}
+                        className={`pl-2.5 sm:pl-3 ${link.href === '#' ? 'pointer-events-none' : ''} py-1 sm:py-1.5 text-white text-[9px] sm:text-[10px] font-bold tracking-wider hover:bg-white/10 transition-all duration-300`}
                       >
                         {link.name}
                       </Link>
@@ -394,20 +407,16 @@ export default function Navbar() {
                           e.stopPropagation();
                           setActiveDropdown(activeDropdown === link.name ? null : link.name);
                         }}
-                        className={`pr-4 ${
-                          isScrolled ? 'py-2.5' : 'py-4'
-                        } text-white hover:bg-white/10 transition-all duration-300`}
+                        className="pr-2.5 sm:pr-3 py-1 sm:py-1.5 text-white hover:bg-white/10 transition-all duration-300"
                       >
-                        <ChevronDown size={14} className={activeDropdown === link.name ? 'rotate-180' : ''} />
+                        <ChevronDown size={12} className={activeDropdown === link.name ? 'rotate-180' : ''} />
                       </button>
                     </div>
                   ) : (
                     <Link 
                       to={link.href} 
                       target={link.isExternal ? "_blank" : undefined}
-                      className={`px-4 ${
-                        isScrolled ? 'py-2.5' : 'py-4'
-                      } text-white text-[10px] font-bold tracking-wider hover:bg-white/10 transition-all duration-300 block`}
+                      className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-white text-[9px] sm:text-[10px] font-bold tracking-wider hover:bg-white/10 transition-all duration-300 block"
                     >
                       {link.name}
                     </Link>
@@ -419,13 +428,13 @@ export default function Navbar() {
                         initial={{ opacity: 0, scale: 0.95, y: 5 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                        className="absolute top-full left-1/2 -translate-x-1/2 w-64 bg-brand-surface shadow-2xl border border-brand-border py-3 z-[70] rounded-b-xl overflow-hidden"
+                        className="absolute top-full left-1/2 -translate-x-1/2 w-56 bg-brand-surface shadow-2xl border border-brand-border py-2 z-[70] rounded-b-xl overflow-hidden"
                       >
                         {link.subLinks.map((sub) => (
                           <Link
                             key={sub.name}
                             to={sub.href}
-                            className="block px-6 py-2.5 hover:bg-brand-primary/5 text-brand-text hover:text-brand-primary transition-all text-xs font-bold tracking-tight"
+                            className="block px-4 py-2 hover:bg-brand-primary/5 text-brand-text hover:text-brand-primary transition-all text-[11px] font-bold tracking-tight"
                           >
                             {sub.name}
                           </Link>
@@ -439,24 +448,20 @@ export default function Navbar() {
           </div>
 
           {/* Right: Search and Mobile Hamburger Buttons */}
-          <div className="flex items-center gap-2 justify-end min-w-[120px] lg:min-w-[180px]">
+          <div className="flex items-center gap-1.5 justify-end min-w-[100px] lg:min-w-[140px]">
             <button 
               onClick={() => setIsSearchOpen(true)}
-              className={`hover:bg-white/15 rounded-full text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-transparent hover:border-white/20 ${
-                isScrolled ? 'p-1.5' : 'p-2'
-              }`}
+              className="hover:bg-white/15 rounded-full text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-transparent hover:border-white/20 p-1 sm:p-1.5"
               title="Search"
             >
-              <Search size={16} className="stroke-[2.5]" />
+              <Search size={14} className="stroke-[2.5]" />
             </button>
             <button 
               onClick={() => setIsOpen(!isOpen)}
-              className={`lg:hidden hover:bg-white/15 rounded-full text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-transparent hover:border-white/20 ${
-                isScrolled ? 'p-1.5' : 'p-2'
-              }`}
+              className="lg:hidden hover:bg-white/15 rounded-full text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-transparent hover:border-white/20 p-1 sm:p-1.5"
               title="Menu"
             >
-              {isOpen ? <X size={20} className="stroke-[2.5]" /> : <Menu size={20} className="stroke-[2.5]" />}
+              {isOpen ? <X size={18} className="stroke-[2.5]" /> : <Menu size={18} className="stroke-[2.5]" />}
             </button>
           </div>
 

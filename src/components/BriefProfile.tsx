@@ -28,19 +28,15 @@ const BriefProfile: React.FC = () => {
   ];
 
   return (
-    <section id="profile" className="py-24 bg-brand-bg overflow-hidden relative">
+    <section id="profile" className="py-10 sm:py-14 bg-brand-bg overflow-hidden relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="text-center mb-10 sm:mb-12"
         >
-          <div className="inline-flex items-center gap-2 bg-white text-brand-primary px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.3em] mb-4 border border-brand-primary/10 shadow-sm uppercase">
-            <Landmark size={14} />
-            MUNICIPAL PROFILE
-          </div>
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-brand-text tracking-tight mb-6 font-display uppercase">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-brand-text tracking-tight mb-3 font-display uppercase">
             Brief <span className="text-brand-primary">Profile</span>
           </h2>
           <p className="text-base text-brand-muted max-w-3xl mx-auto font-normal">

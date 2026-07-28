@@ -183,9 +183,6 @@ const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
           >
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-brand-border relative">
               <div className="space-y-4 max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-primary/5 text-brand-primary rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
-                  <Activity size={12} /> Active Module
-                </div>
                 <h1 className="text-4xl font-black text-brand-text uppercase tracking-tighter leading-tight">
                   {activeSection?.title}
                 </h1>
