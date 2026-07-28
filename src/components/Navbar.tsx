@@ -337,13 +337,13 @@ export default function Navbar() {
           <div className="flex items-center justify-end gap-2 sm:gap-3 w-1/4">
             <Link to="/" className="flex items-center justify-end gap-2 sm:gap-3 group">
               <img 
-                src="/Bohol_Province_Seal.png" 
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Bohol_Province_Seal.png/500px-Bohol_Province_Seal.png" 
                 alt="Province of Bohol Official Seal" 
                 className="hidden xl:block object-contain h-7 sm:h-8" 
               />
               <div className="p-1 bg-white rounded-full shadow-md border border-brand-primary/20 group-hover:border-brand-primary transition-all duration-300">
                 <img 
-                  src="/Carlos_P_Garcia_photo.jpg" 
+                  src="https://upload.wikimedia.org/wikipedia/commons/9/90/Carlos_P_Garcia_photo.jpg" 
                   alt="Pres. Carlos P. Garcia" 
                   className="object-cover object-[center_15%] transition-all duration-300 rounded-full group-hover:scale-105 w-11 h-11 sm:w-13 sm:h-13" 
                 />
