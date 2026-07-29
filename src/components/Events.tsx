@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
-import { Calendar, Clock, MapPin, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { isMockAllowed } from "../lib/mode";
+import DataUnavailableState from "./DataUnavailableState";
 
 interface NewsItem {
   id: string;
@@ -13,46 +15,25 @@ interface NewsItem {
   image_url: string;
 }
 
-const MOCK_NEWS: NewsItem[] = [
-  {
-    id: "1",
-    title: "Talibon Celebrates Annual Festival with Vibrant Cultural Parade",
-    date: new Date().toISOString(),
-    category: "Events",
-    summary: "The municipality of Talibon marks its historic community celebration with a spectacular parade highlighting local culture, heritage, and unity.",
-    image_url: "https://picsum.photos/seed/festival/800/600"
-  },
-  {
-    id: "2",
-    title: "New Public Health Program Launched for Coastal Barangays",
-    date: new Date(Date.now() - 86400000).toISOString(),
-    category: "Health",
-    summary: "LGU Talibon extends comprehensive medical services, checkups, and educational seminars to remote island and coastal communities.",
-    image_url: "https://picsum.photos/seed/health/800/600"
-  },
-  {
-    id: "3",
-    title: "Infrastructure Update: Sea Wall Extension Nears Completion",
-    date: new Date(Date.now() - 172800000).toISOString(),
-    category: "Infrastructure",
-    summary: "The defense infrastructure project along the coastal zone is on schedule, ensuring safety and climate resilience for shoreline residents.",
-    image_url: "https://picsum.photos/seed/infra/800/600"
-  }
-];
-
 export default function Events() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
-  useEffect(() => {
+  const fetchNews = useCallback(async () => {
+    setLoading(true);
+    setHasError(false);
+
     if (!isSupabaseConfigured) {
-      setNews(MOCK_NEWS);
-      setLoading(false);
-      return;
+      if (!isMockAllowed()) {
+        setHasError(true);
+        setNews([]);
+        setLoading(false);
+        return;
+      }
     }
 
-    const fetchNews = async () => {
-      setLoading(true);
+    try {
       const { data, error } = await supabase
         .from('news')
         .select('*')
@@ -62,30 +43,58 @@ export default function Events() {
 
       if (error) {
         console.warn("Error fetching homepage news:", error);
-        setNews(MOCK_NEWS);
+        setHasError(true);
+        setNews([]);
       } else {
-        setNews(data as NewsItem[]);
+        setNews((data as NewsItem[]) || []);
       }
+    } catch (err) {
+      console.warn("Exception fetching homepage news:", err);
+      setHasError(true);
+      setNews([]);
+    } finally {
       setLoading(false);
-    };
+    }
+  }, []);
 
+  useEffect(() => {
     fetchNews();
 
-    const channel = supabase
-      .channel('homepage-news')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => fetchNews())
-      .subscribe();
+    if (isSupabaseConfigured) {
+      const channel = supabase
+        .channel('homepage-news')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => fetchNews())
+        .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [fetchNews]);
 
   if (loading) {
     return (
-      <section id="events" className="py-32 bg-brand-bg flex flex-col items-center justify-center gap-6">
-        <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
-        <p className="text-brand-muted font-bold animate-pulse uppercase tracking-[0.2em] text-sm">
-          Fetching latest news...
+      <section id="events" className="py-20 sm:py-28 bg-brand-bg flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 text-brand-primary animate-spin" />
+        <p className="text-brand-muted font-bold animate-pulse uppercase tracking-widest text-xs">
+          Loading municipal news...
         </p>
+      </section>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <section id="events" className="py-16 sm:py-20 bg-brand-bg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <span className="section-label">Stay Updated</span>
+            <h2 className="section-title">Latest News</h2>
+          </div>
+          <DataUnavailableState
+            title="News Updates Temporarily Unavailable"
+            message="We couldn't retrieve the latest news from the municipal database right now. Please try again or visit our official Facebook page."
+            onRetry={fetchNews}
+          />
+        </div>
       </section>
     );
   }

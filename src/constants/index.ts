@@ -63,3 +63,9 @@ export const PLACEHOLDER_IMAGES = {
   SPOT: "https://picsum.photos/seed/spot",
   DEPARTMENT: "https://via.placeholder.com/200",
 };
+
+// Official Social Media URLs
+export const OFFICIAL_FACEBOOK_URLS = {
+  PIO: "https://www.facebook.com/PioTalibon",
+  MAIN: "https://www.facebook.com/TalibonOfficialPage",
+};

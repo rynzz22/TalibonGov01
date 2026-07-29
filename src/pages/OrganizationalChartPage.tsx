@@ -1,17 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { User, Users, Loader2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-
-const MOCK_OFFICIALS = [
-  { id: "of1", level: 1, name: "Hon. Janette A. Garcia", role: "Municipal Mayor", display_order: 1 },
-  { id: "of2", level: 2, name: "Hon. Epifanio G. Evardone", role: "Municipal Vice Mayor", display_order: 1 },
-  { id: "of3", level: 2, name: "Hon. Cecilio C. Garcia", role: "SB Member", display_order: 2 },
-  { id: "of4", level: 2, name: "Hon. Gonzalo D. Castro Jr.", role: "SB Member", display_order: 3 },
-  { id: "of5", level: 3, name: "Dr. Maria Luisa M. Reyes", role: "Municipal Health Officer", display_order: 1 },
-  { id: "of6", level: 3, name: "Engr. Romeo A. Valenzuela", role: "Municipal Engineer", display_order: 2 },
-  { id: "of7", level: 3, name: "Mrs. Elsa B. Torralba", role: "Municipal Treasurer", display_order: 3 }
-];
+import { isMockAllowed } from '../lib/mode';
+import DataUnavailableState from '../components/DataUnavailableState';
 
 const DEPARTMENT_LOGOS: Record<string, string> = {
   "Office Of Municipal Agriculturist": "http://talibon.gov.ph/wp-content/uploads/2025/10/1.png",
@@ -39,22 +31,22 @@ const DEPARTMENT_LOGOS: Record<string, string> = {
 const OrganizationalChartPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
-  useEffect(() => {
+  const fetchOfficials = useCallback(async () => {
+    setLoading(true);
+    setHasError(false);
+
     if (!isSupabaseConfigured) {
-      const structuredData = {
-        mayor: MOCK_OFFICIALS.find((o: any) => o.level === 1) || { name: 'N/A', role: 'Municipal Mayor' },
-        level2: MOCK_OFFICIALS.filter((o: any) => o.level === 2),
-        departments: MOCK_OFFICIALS.filter((o: any) => o.level === 3)
-      };
-      setData(structuredData);
-      setLoading(false);
-      return;
+      if (!isMockAllowed()) {
+        setHasError(true);
+        setData(null);
+        setLoading(false);
+        return;
+      }
     }
 
-    const fetchOfficials = async () => {
-      setLoading(true);
+    try {
       const { data: officials, error: supabaseError } = await supabase
         .from('officials')
         .select('*')
@@ -63,12 +55,8 @@ const OrganizationalChartPage: React.FC = () => {
       
       if (supabaseError) {
         console.warn("Error fetching officials:", supabaseError);
-        const structuredData = {
-          mayor: MOCK_OFFICIALS.find((o: any) => o.level === 1) || { name: 'N/A', role: 'Municipal Mayor' },
-          level2: MOCK_OFFICIALS.filter((o: any) => o.level === 2),
-          departments: MOCK_OFFICIALS.filter((o: any) => o.level === 3)
-        };
-        setData(structuredData);
+        setHasError(true);
+        setData(null);
       } else if (officials && officials.length > 0) {
         const structuredData = {
           mayor: officials.find((o: any) => o.level === 1) || { name: 'N/A', role: 'Municipal Mayor' },
@@ -79,19 +67,27 @@ const OrganizationalChartPage: React.FC = () => {
       } else {
         setData(null);
       }
+    } catch (err) {
+      console.warn("Exception fetching officials:", err);
+      setHasError(true);
+      setData(null);
+    } finally {
       setLoading(false);
-    };
+    }
+  }, []);
 
+  useEffect(() => {
     fetchOfficials();
 
-    // Subscribe
-    const channel = supabase
-      .channel('officials-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'officials' }, () => fetchOfficials())
-      .subscribe();
+    if (isSupabaseConfigured) {
+      const channel = supabase
+        .channel('officials-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'officials' }, () => fetchOfficials())
+        .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [fetchOfficials]);
 
   if (loading) {
     return (
@@ -101,12 +97,14 @@ const OrganizationalChartPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (hasError) {
     return (
-      <div className="pb-20 px-4 max-w-7xl mx-auto min-h-screen bg-brand-bg pt-32">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl font-bold">
-          {error}
-        </div>
+      <div className="pb-20 px-4 max-w-4xl mx-auto min-h-screen bg-brand-bg pt-32">
+        <DataUnavailableState
+          title="Organizational Structure Unavailable"
+          message="We are currently unable to load the municipal organizational chart from the database. Please try again later or visit the Municipal Hall in person."
+          onRetry={fetchOfficials}
+        />
       </div>
     );
   }

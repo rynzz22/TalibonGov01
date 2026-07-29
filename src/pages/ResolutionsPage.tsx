@@ -1,7 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, FileText, Calendar, User, ChevronDown, ChevronUp, Download, Filter, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Search, FileText, Calendar, User, Download, Filter, ArrowUpDown, Loader2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { isMockAllowed } from '../lib/mode';
+import DataUnavailableState from '../components/DataUnavailableState';
 
 interface Resolution {
   id?: string;
@@ -12,52 +14,31 @@ interface Resolution {
   file_url?: string;
 }
 
-const MOCK_RESOLUTIONS: Resolution[] = [
-  {
-    id: "r1",
-    no: "101",
-    date: "2024-03-15",
-    author: "Hon. Maria Santos",
-    title: "A Resolution Requesting Additional Funding for Coastal Defense Facilities from the Department of Public Works and Highways",
-    file_url: "#"
-  },
-  {
-    id: "r2",
-    no: "102",
-    date: "2024-03-20",
-    author: "Hon. Jose Reyes",
-    title: "A Resolution Expressing Strong Support for the Cooperative Livelihood Expansion of Talibon Seaweed Farmers",
-    file_url: "#"
-  },
-  {
-    id: "r3",
-    no: "85",
-    date: "2023-11-10",
-    author: "Hon. Antonio Cruz",
-    title: "A Resolution Approving the Annual Barangay Investment Plans for the 25 Barangays of Talibon",
-    file_url: "#"
-  }
-];
-
 type SortKey = 'no' | 'date' | 'title';
 type SortOrder = 'asc' | 'desc';
 
 const ResolutionsPage: React.FC = () => {
   const [resolutions, setResolutions] = useState<Resolution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('no');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
-  useEffect(() => {
+  const fetchResolutions = useCallback(async () => {
+    setLoading(true);
+    setHasError(false);
+
     if (!isSupabaseConfigured) {
-      setResolutions(MOCK_RESOLUTIONS);
-      setLoading(false);
-      return;
+      if (!isMockAllowed()) {
+        setHasError(true);
+        setResolutions([]);
+        setLoading(false);
+        return;
+      }
     }
 
-    const fetchResolutions = async () => {
-      setLoading(true);
+    try {
       const { data, error } = await supabase
         .from('resolutions')
         .select('*')
@@ -65,23 +46,32 @@ const ResolutionsPage: React.FC = () => {
 
       if (error) {
         console.warn("Error fetching resolutions:", error);
-        setResolutions(MOCK_RESOLUTIONS);
+        setHasError(true);
+        setResolutions([]);
       } else {
-        setResolutions(data as Resolution[]);
+        setResolutions((data as Resolution[]) || []);
       }
+    } catch (err) {
+      console.warn("Exception fetching resolutions:", err);
+      setHasError(true);
+      setResolutions([]);
+    } finally {
       setLoading(false);
-    };
+    }
+  }, []);
 
+  useEffect(() => {
     fetchResolutions();
 
-    // Subscribe to changes
-    const channel = supabase
-      .channel('resolutions-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'resolutions' }, () => fetchResolutions())
-      .subscribe();
+    if (isSupabaseConfigured) {
+      const channel = supabase
+        .channel('resolutions-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'resolutions' }, () => fetchResolutions())
+        .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [fetchResolutions]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -177,6 +167,14 @@ const ResolutionsPage: React.FC = () => {
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
             <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Loading Resolutions...</p>
+          </div>
+        ) : hasError ? (
+          <div className="p-8">
+            <DataUnavailableState
+              title="Legislative Resolutions Unavailable"
+              message="We are currently unable to fetch municipal resolutions from the database. Please try again or contact the Sangguniang Bayan Secretary."
+              onRetry={fetchResolutions}
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">

@@ -3,9 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Calendar, User, ArrowLeft, Loader2, Share2, Bookmark } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { isMockAllowed } from '../lib/mode';
+import DataUnavailableState from '../components/DataUnavailableState';
 
 interface NewsItem {
   id: string;
+  slug?: string;
   title: string;
   content: string;
   summary: string;
@@ -13,96 +16,103 @@ interface NewsItem {
   image_url: string;
   date: string;
   author?: string;
+  status?: string;
 }
-
-const MOCK_NEWS_DETAILS: Record<string, NewsItem> = {
-  "1": {
-    id: "1",
-    title: "Talibon Celebrates Annual Festival with Vibrant Cultural Parade",
-    content: "The vibrant coastal town of Talibon came alive today as the community celebrated its annual patronal festival. Local schools, civic organizations, and barangay groups lined the streets in spectacular costumes showcasing Boholano heritage and modern progress.\n\nThe municipal leadership commended the volunteers and security personnel for a safe and deeply enriching celebration that attracted tourists from neighboring towns.",
-    summary: "The municipality of Talibon marks its historic community celebration with a spectacular parade highlighting local culture, heritage, and unity.",
-    category: "Events",
-    image_url: "https://picsum.photos/seed/festival/800/600",
-    date: new Date().toISOString(),
-    author: "LGU Media Relations"
-  },
-  "2": {
-    id: "2",
-    title: "New Public Health Program Launched for Coastal Barangays",
-    content: "In an effort to bring quality healthcare directly to the community, the local government unit of Talibon launched 'LGU Kalusugan'. The program deploys a team of physicians, dentists, nurses, and pharmacists to remote island barangays.\n\nOver 500 residents received free physical checkups, dental extractions, diagnostic screenings, and maintenance medicines during the first leg of the mission.",
-    summary: "LGU Talibon extends comprehensive medical services, checkups, and educational seminars to remote island and coastal communities.",
-    category: "Health",
-    image_url: "https://picsum.photos/seed/health/800/600",
-    date: new Date(Date.now() - 86400000).toISOString(),
-    author: "LGU Health Division"
-  },
-  "3": {
-    id: "3",
-    title: "Infrastructure Update: Sea Wall Extension Nears Completion",
-    date: new Date(Date.now() - 172800000).toISOString(),
-    category: "Infrastructure",
-    summary: "The defense infrastructure project along the coastal zone is on schedule, ensuring safety and climate resilience for shoreline residents.",
-    content: "Construction of the 500-meter shoreline sea wall extension is now 90% complete, according to the municipal engineering office. This project aims to shield low-lying coastal neighborhoods from tidal surges during the typhoon season.\n\nLocal residents expressed their relief and gratitude, noting that the sea wall has already proven effective during high tides last month.",
-    image_url: "https://picsum.photos/seed/infra/800/600",
-    author: "Municipal Engineering Office"
-  }
-};
 
 const NewsDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [item, setItem] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
-  useEffect(() => {
-    const fetchItem = async () => {
-      if (!id) return;
-      setLoading(true);
+  const fetchItem = async () => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setHasError(false);
 
-      if (!isSupabaseConfigured) {
-        setItem(MOCK_NEWS_DETAILS[id] || {
-          id: id,
-          title: "Talibon Municipal Green Initiative & Streamlining of Operations",
-          content: "The local government unit of Talibon has officially launched its unified municipal management portal, designed to serve the community with high efficiency, transparency, and digital integration. Residents can now access citizen charters, municipal services, official announcements, and executive profiles smoothly from any device.\n\nThis marks a significant milestone in our commitment to transparent and progressive governance.",
-          summary: "Talibon launches a new unified public portal, improving communication and citizen services.",
-          category: "ARTICLE",
-          image_url: "https://picsum.photos/seed/lgu/800/600",
-          date: new Date().toISOString(),
-          author: "Office of the Mayor"
-        });
-        setLoading(false);
-        return;
-      }
-
+    if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase
+        // Query 1: Direct select on news table by ID
+        let fetchedNews: any = null;
+        let { data: byId, error: errById } = await supabase
           .from('news')
-          .select('*, profiles:author_id(full_name, role)')
+          .select('*')
           .eq('id', id)
           .maybeSingle();
 
-        if (error) {
-          console.warn("Error fetching news detail:", error);
-          setItem(MOCK_NEWS_DETAILS[id] || null);
-        } else if (data) {
-          const authorDisplay = (data as any).profiles?.full_name 
-            ? `${(data as any).profiles.full_name}${(data as any).profiles.role ? ` (${(data as any).profiles.role})` : ''}` 
-            : data.author || 'Talibon LGU';
+        if (!errById && byId) {
+          fetchedNews = byId;
+        } else {
+          // Query 2: Try select on news table by slug
+          let { data: bySlug, error: errBySlug } = await supabase
+            .from('news')
+            .select('*')
+            .eq('slug', id)
+            .maybeSingle();
+          if (!errBySlug && bySlug) {
+            fetchedNews = bySlug;
+          } else if (errById && errBySlug) {
+            setHasError(true);
+            setLoading(false);
+            return;
+          }
+        }
+
+        if (fetchedNews) {
+          let authorDisplay = fetchedNews.author || 'Talibon LGU';
+          
+          if (fetchedNews.author_id) {
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, role')
+                .eq('id', fetchedNews.author_id)
+                .maybeSingle();
+              if (profile?.full_name) {
+                authorDisplay = `${profile.full_name}${profile.role ? ` (${profile.role})` : ''}`;
+              }
+            } catch {
+              // Ignore profile lookup error
+            }
+          }
+
           setItem({
-            ...data,
+            ...fetchedNews,
             author: authorDisplay
           } as NewsItem);
+          setLoading(false);
+          return;
         } else {
-          setItem(MOCK_NEWS_DETAILS[id] || null);
+          // Record does not exist in DB
+          setItem(null);
+          setLoading(false);
+          return;
         }
       } catch (err) {
-        console.warn("Exception while fetching news detail from Supabase, falling back to Mock:", err);
-        setItem(MOCK_NEWS_DETAILS[id] || null);
-      } finally {
+        console.warn("[NewsDetailPage] Supabase fetch error:", err);
+        setHasError(true);
         setLoading(false);
+        return;
       }
-    };
+    }
 
+    if (!isMockAllowed()) {
+      setHasError(true);
+      setItem(null);
+      setLoading(false);
+      return;
+    }
+
+    // Dev mode only fallback
+    setItem(null);
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchItem();
   }, [id]);
 
@@ -114,14 +124,35 @@ const NewsDetailPage: React.FC = () => {
     );
   }
 
-  if (!item) {
+  if (hasError) {
     return (
-      <div className="pb-20 px-4 max-w-7xl mx-auto min-h-screen text-center bg-brand-bg">
-        <h1 className="text-4xl font-extrabold text-brand-text mb-4 font-display">News Not Found</h1>
-        <p className="text-brand-muted mb-8 font-medium">The news article you are looking for does not exist or has been removed.</p>
+      <div className="pb-20 pt-8 px-4 max-w-4xl mx-auto min-h-screen bg-brand-bg">
         <button 
           onClick={() => navigate(-1)}
-          className="pro-button px-8 py-4"
+          className="flex items-center gap-2 text-xs font-bold text-brand-muted hover:text-brand-primary transition-colors uppercase tracking-widest mb-8 group"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          Back to News
+        </button>
+        <DataUnavailableState
+          title="News Article Temporarily Unavailable"
+          message="We couldn't retrieve this article from the municipal database right now. Please try again later or check our official Facebook page for announcements."
+          onRetry={fetchItem}
+        />
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div className="pb-20 pt-16 px-4 max-w-xl mx-auto min-h-screen text-center bg-brand-bg">
+        <h1 className="text-3xl font-extrabold text-brand-text mb-3 font-display">News Article Not Found</h1>
+        <p className="text-xs sm:text-sm text-brand-muted mb-6 font-medium leading-relaxed">
+          The requested news article does not exist or may have been removed.
+        </p>
+        <button 
+          onClick={() => navigate(-1)}
+          className="pro-button px-6 py-3 text-xs"
         >
           GO BACK
         </button>

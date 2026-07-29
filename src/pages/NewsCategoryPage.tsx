@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Newspaper, Calendar, ArrowRight, Loader2, Search, Filter, Download, Image as ImageIcon, FileText } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { isMockAllowed } from '../lib/mode';
+import DataUnavailableState from '../components/DataUnavailableState';
 
 interface NewsItem {
   id: string;
@@ -15,75 +17,11 @@ interface NewsItem {
   date: string;
 }
 
-const MOCK_NEWS_CATEGORY: Record<string, NewsItem[]> = {
-  'ARTICLE': [
-    {
-      id: "a1",
-      title: "Talibon Municipal Hall Adopts Solar Energy Integration",
-      content: "In line with Bohol's green initiative, the LGU of Talibon has installed solar power grids to power its operations.",
-      summary: "LGU Talibon implements solar power grids to transition municipal offices into clean energy.",
-      category: "ARTICLE",
-      image_url: "https://picsum.photos/seed/solar/800/600",
-      date: new Date().toISOString()
-    },
-    {
-      id: "a2",
-      title: "Local Fishers Receive High-Tech Marine GPS Systems",
-      content: "As Bohol's seafood capital, LGU distributed GPS tracking and navigation kits to municipal fishers.",
-      summary: "Modern marine tracking devices handed to fishers to increase safety and locate bountiful catch zones.",
-      category: "ARTICLE",
-      image_url: "https://picsum.photos/seed/fish/800/600",
-      date: new Date(Date.now() - 86400000).toISOString()
-    }
-  ],
-  'ADVISORY': [
-    {
-      id: "adv1",
-      title: "Scheduled Maintenance of Water Distribution Lines",
-      content: "There will be a temporary water interruption in barangays San Francisco and Poblacion on Friday.",
-      summary: "LGU water division announces maintenance schedules for pipeline repairs on July 10.",
-      category: "ADVISORY",
-      image_url: "https://picsum.photos/seed/water/800/600",
-      date: new Date().toISOString()
-    }
-  ],
-  'UPDATE': [
-    {
-      id: "upd1",
-      title: "New E-Government Portal Launched for Business Permit Applications",
-      content: "Business registration has been streamlined. Entrepreneurs can now register and renew permits online.",
-      summary: "Business owners can now file permit applications digitially via the new unified system.",
-      category: "UPDATE",
-      image_url: "https://picsum.photos/seed/biz/800/600",
-      date: new Date().toISOString()
-    }
-  ],
-  'GALLERY': [
-    {
-      id: "gal1",
-      title: "Inauguration of New Coastal Promenade",
-      content: "LGU and Bohol officials inaugurate the newly completed oceanview promenade path.",
-      summary: "Photographs from the soft opening of the Talibon Sunset Coastal Promenade.",
-      category: "GALLERY",
-      image_url: "https://picsum.photos/seed/sunset/800/800",
-      date: new Date().toISOString()
-    },
-    {
-      id: "gal2",
-      title: "Arbor Day Tree Planting Activity",
-      content: "LGU staff and community volunteers planted over 1000 mangrove saplings in Danajon Reef.",
-      summary: "Highlights from the community mangrove planting along coastal mudflats.",
-      category: "GALLERY",
-      image_url: "https://picsum.photos/seed/trees/800/800",
-      date: new Date(Date.now() - 86400000).toISOString()
-    }
-  ]
-};
-
 const NewsCategoryPage: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const categoryMap: Record<string, string> = {
@@ -108,48 +46,57 @@ const NewsCategoryPage: React.FC = () => {
     'forms': 'Downloadable Forms'
   };
 
-  useEffect(() => {
+  const fetchNews = useCallback(async () => {
     const firestoreCategory = categoryMap[category || ''] || (category?.toUpperCase().replace(/-/g, ' ') || 'ARTICLE');
 
+    setLoading(true);
+    setHasError(false);
+
     if (!isSupabaseConfigured) {
-      setNews(MOCK_NEWS_CATEGORY[firestoreCategory] || []);
-      setLoading(false);
-      return;
+      if (!isMockAllowed()) {
+        setHasError(true);
+        setNews([]);
+        setLoading(false);
+        return;
+      }
     }
 
-    const fetchNews = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('news')
-          .select('*')
-          .eq('category', firestoreCategory)
-          .is('barangay_id', null) // Main site only shows municipal news
-          .order('date', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('news')
+        .select('*')
+        .eq('category', firestoreCategory)
+        .is('barangay_id', null)
+        .order('date', { ascending: false });
 
-        if (error) {
-          console.warn("Error fetching news:", error);
-          setNews(MOCK_NEWS_CATEGORY[firestoreCategory] || []);
-        } else {
-          setNews(data as NewsItem[]);
-        }
-      } catch (err) {
-        console.warn("Exception while fetching news from Supabase, falling back to Mock:", err);
-        setNews(MOCK_NEWS_CATEGORY[firestoreCategory] || []);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.warn("Error fetching news:", error);
+        setHasError(true);
+        setNews([]);
+      } else {
+        setNews((data as NewsItem[]) || []);
       }
-    };
+    } catch (err) {
+      console.warn("Exception fetching news:", err);
+      setHasError(true);
+      setNews([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [category]);
 
+  useEffect(() => {
     fetchNews();
 
-    const channel = supabase
-      .channel('news-category-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => fetchNews())
-      .subscribe();
+    if (isSupabaseConfigured) {
+      const channel = supabase
+        .channel('news-category-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => fetchNews())
+        .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [category]);
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [category, fetchNews]);
 
   const filteredNews = news.filter(item => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -372,13 +319,19 @@ const NewsCategoryPage: React.FC = () => {
           </div>
         </div>
 
-        {filteredNews.length > 0 ? (
+        {hasError ? (
+          <DataUnavailableState
+            title={`${displayTitle[category || ''] || 'Content'} Temporarily Unavailable`}
+            message="We are currently unable to retrieve the latest updates from the municipal database. Please try again or check our official Facebook page."
+            onRetry={fetchNews}
+          />
+        ) : filteredNews.length > 0 ? (
           isGallery ? renderGallery() : isForms ? renderForms() : renderStandard()
         ) : (
-          <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-brand-border">
-            {isGallery ? <ImageIcon className="mx-auto text-brand-border mb-6" size={64} /> : <Newspaper className="mx-auto text-brand-border mb-6" size={64} />}
-            <h3 className="text-2xl font-extrabold text-brand-text mb-2 font-display">No content found</h3>
-            <p className="text-brand-muted font-medium">There are currently no items in this category.</p>
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-brand-border">
+            {isGallery ? <ImageIcon className="mx-auto text-brand-border mb-4" size={48} /> : <Newspaper className="mx-auto text-brand-border mb-4" size={48} />}
+            <h3 className="text-xl font-extrabold text-brand-text mb-1 font-display">No content found</h3>
+            <p className="text-xs text-brand-muted font-medium">There are currently no published items in this category.</p>
           </div>
         )}
       </div>

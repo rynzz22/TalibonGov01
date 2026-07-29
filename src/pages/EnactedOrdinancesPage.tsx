@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { isMockAllowed } from '../lib/mode';
+import DataUnavailableState from '../components/DataUnavailableState';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, FileText, Download, Folder, Grid, List as ListIcon, ChevronRight } from 'lucide-react';
+import { Search, FileText, Download, Folder, Grid, List as ListIcon } from 'lucide-react';
 
 interface Ordinance {
   id: string;
@@ -13,52 +15,28 @@ interface Ordinance {
   barangay_id?: string;
 }
 
-const MOCK_ORDINANCES: Ordinance[] = [
-  {
-    id: "o1",
-    title: "Ordinance No. 2024-01: An Ordinance Prescribing Guidelines for Solid Waste Management and Penalties for Violators",
-    year: "2024",
-    file_url: "#",
-    file_size: "1.2 MB",
-    created_at: new Date().toISOString()
-  },
-  {
-    id: "o2",
-    title: "Ordinance No. 2024-02: Regulation of Single-Use Plastic Bags and Encouragement of Biodegradable Alternatives",
-    year: "2024",
-    file_url: "#",
-    file_size: "890 KB",
-    created_at: new Date().toISOString()
-  },
-  {
-    id: "o3",
-    title: "Ordinance No. 2023-05: Standardizing Safety Guidelines and Licensing for Local Motorized Tricycles and Sea Vessels",
-    year: "2023",
-    file_url: "#",
-    file_size: "2.1 MB",
-    created_at: new Date().toISOString()
-  }
-];
-
 const EnactedOrdinancesPage: React.FC = () => {
   const [ordinances, setOrdinances] = useState<Ordinance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeYear, setActiveYear] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  useEffect(() => {
+  const fetchOrdinances = useCallback(async () => {
+    setLoading(true);
+    setHasError(false);
+
     if (!isSupabaseConfigured) {
-      setOrdinances(MOCK_ORDINANCES);
-      const yearsList = Array.from(new Set(MOCK_ORDINANCES.map(o => o.year))).sort((a, b) => b.localeCompare(a));
-      setActiveYear(yearsList[0] || "");
-      setLoading(false);
-      return;
+      if (!isMockAllowed()) {
+        setHasError(true);
+        setOrdinances([]);
+        setLoading(false);
+        return;
+      }
     }
 
-    const fetchOrdinances = async () => {
-      setLoading(true);
-      // Fetch only macro (municipal) ordinances for the main site
+    try {
       const { data, error } = await supabase
         .from('ordinances')
         .select('*')
@@ -68,35 +46,41 @@ const EnactedOrdinancesPage: React.FC = () => {
 
       if (error) {
         console.warn("Error fetching ordinances:", error);
-        setOrdinances(MOCK_ORDINANCES);
-        const yearsList = Array.from(new Set(MOCK_ORDINANCES.map(o => o.year))).sort((a, b) => b.localeCompare(a));
-        setActiveYear(yearsList[0] || "");
+        setHasError(true);
+        setOrdinances([]);
       } else {
-        const docs = data as Ordinance[];
+        const docs = (data as Ordinance[]) || [];
         setOrdinances(docs);
-        
         if (docs.length > 0 && !activeYear) {
           const yearsList = Array.from(new Set(docs.map(o => o.year))).sort((a, b) => b.localeCompare(a));
           setActiveYear(yearsList[0]);
         }
       }
+    } catch (err) {
+      console.warn("Exception fetching ordinances:", err);
+      setHasError(true);
+      setOrdinances([]);
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [activeYear]);
 
+  useEffect(() => {
     fetchOrdinances();
 
-    // Setup Realtime subscription
-    const channel = supabase
-      .channel('ordinances-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ordinances' }, () => {
-        fetchOrdinances();
-      })
-      .subscribe();
+    if (isSupabaseConfigured) {
+      const channel = supabase
+        .channel('ordinances-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ordinances' }, () => {
+          fetchOrdinances();
+        })
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []); // Only on mount
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [fetchOrdinances]);
 
   const years = Array.from(new Set(ordinances.map(o => o.year))).sort((a, b) => b.localeCompare(a));
   
@@ -187,6 +171,12 @@ const EnactedOrdinancesPage: React.FC = () => {
             <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-brand-muted font-bold uppercase tracking-widest text-xs">Loading records...</p>
           </div>
+        ) : hasError ? (
+          <DataUnavailableState
+            title="Enacted Ordinances Unavailable"
+            message="We are currently unable to retrieve municipal ordinances from the database. Please try again or contact the Sangguniang Bayan Office."
+            onRetry={fetchOrdinances}
+          />
         ) : filteredOrdinances.length > 0 ? (
           <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" : "space-y-4"}>
             <AnimatePresence mode="popLayout">

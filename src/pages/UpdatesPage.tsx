@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Facebook, Info, ShieldAlert } from 'lucide-react';
+import { OFFICIAL_FACEBOOK_URLS } from '../constants';
 
 const UpdatesPage: React.FC = () => {
   const [activeFeed, setActiveFeed] = React.useState<'pio' | 'main'>('pio');
@@ -8,12 +9,12 @@ const UpdatesPage: React.FC = () => {
   const feeds = {
     pio: {
       name: "Public Info Office",
-      url: "https://www.facebook.com/PioTalibon",
+      url: OFFICIAL_FACEBOOK_URLS.PIO,
       handle: "@PioTalibon"
     },
     main: {
       name: "Official LGU Page",
-      url: "https://www.facebook.com/TalibonOfficialPage",
+      url: OFFICIAL_FACEBOOK_URLS.MAIN,
       handle: "@TalibonOfficialPage"
     }
   };
