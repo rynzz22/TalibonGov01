@@ -25,10 +25,116 @@ interface Section {
 }
 
 interface GadImsData {
-  title: string;
-  subtitle: string;
-  sections: Section[];
+  title?: string;
+  subtitle?: string;
+  sections?: Section[];
 }
+
+const DEFAULT_GAD_IMS_DATA: GadImsData = {
+  title: "Talibon GAD Analytics App",
+  subtitle: "Sex-Disaggregated Data Management, Monitoring, and Reporting System",
+  sections: [
+    {
+      id: "overview",
+      title: "01. Background & Rationale",
+      content: [
+        {
+          subTitle: "Problem Statement",
+          items: [
+            "Current data collection is fragmented and manual.",
+            "Lack of consistent sex-disaggregated data.",
+            "Fragmented monitoring of program effectiveness."
+          ]
+        },
+        {
+          subTitle: "Policy Compliance",
+          items: [
+            "RA 9710 (Magna Carta of Women)",
+            "Joint Circular 2012-01 (PCW-DILG-DBM-NEDA)",
+            "Data Privacy Act of 2012 (RA 10173)"
+          ]
+        }
+      ]
+    },
+    {
+      id: "data-modules",
+      title: "02. Core System Modules",
+      content: [
+        {
+          subTitle: "User Management Module",
+          items: [
+            "Role-based access control (RBAC)",
+            "Secure login & authentication",
+            "Defined roles: Super Admin, GAD Focal, MPDC, Encoders"
+          ]
+        },
+        {
+          subTitle: "Beneficiary Profiling Module",
+          items: [
+            "Encoding of unique individual records (Name, Sex, Age, Barangay)",
+            "Automated ID generation",
+            "Editable and searchable demographic database"
+          ]
+        },
+        {
+          subTitle: "Program/Service Monitoring",
+          items: [
+            "Recording of services availed",
+            "Linking beneficiaries to specific programs",
+            "Categorization by sector and gender"
+          ]
+        }
+      ]
+    },
+    {
+      id: "analysis",
+      title: "03. Analytics & Dashboard",
+      content: [
+        {
+          subTitle: "Real-time Visualization",
+          items: [
+            "Male vs Female distribution charts",
+            "Age group breakdown and Sectoral analysis",
+            "Barangay-level statistics",
+            "Trend analysis (monthly/annual)"
+          ]
+        },
+        {
+          subTitle: "Automated Reporting",
+          items: [
+            "GPB and GAR support tables",
+            "Custom report filters",
+            "Export to Excel and PDF"
+          ]
+        }
+      ]
+    },
+    {
+      id: "admin",
+      title: "04. Governance & Strategy",
+      content: [
+        {
+          subTitle: "Implementation Strategy",
+          items: [
+            "Phase 1: Planning and Design requirements gathering",
+            "Phase 2: System coding and initial deployment",
+            "Phase 3: Capacity Building (Staff training)",
+            "Phase 4: Pilot implementation in selected offices",
+            "Phase 5: Municipality-wide full rollout"
+          ]
+        },
+        {
+          subTitle: "Security Measures",
+          items: [
+            "Encrypted data storage and regular backups",
+            "Audit trail tracking user activity",
+            "Consent-based data collection compliance"
+          ]
+        }
+      ]
+    }
+  ]
+};
 
 const SECTION_ICONS: Record<string, React.ReactNode> = {
   overview: <Info size={18} />,
@@ -59,34 +165,22 @@ const MOCK_BAR_DATA = [
   { year: '2024', budget: 75 },
 ];
 
-const GadImsSystem: React.FC<{ data: GadImsData }> = ({ data }) => {
-  const [activeTab, setActiveTab] = useState(data?.sections?.[0]?.id || "overview");
+const GadImsSystem: React.FC<{ data?: GadImsData }> = ({ data }) => {
+  const activeData = (data && data.sections && data.sections.length > 0) ? data : DEFAULT_GAD_IMS_DATA;
+  const [activeTab, setActiveTab] = useState(activeData.sections?.[0]?.id || "overview");
   const [time, setTime] = useState(new Date().toLocaleTimeString());
 
   // Inject Data Entry tab if not in data sections
-  const sections = data?.sections ? [
-    ...data.sections.slice(0, 2),
+  const sections = activeData.sections ? [
+    ...activeData.sections.slice(0, 2),
     { id: 'data-entry', title: '03. Individual Profiling', content: [] },
-    ...data.sections.slice(2)
+    ...activeData.sections.slice(2)
   ] : [];
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  if (!data?.sections || data.sections.length === 0) {
-    return (
-      <div className="p-12 text-center bg-gray-50 rounded-[2rem] border border-brand-border">
-        <Database size={48} className="mx-auto text-brand-muted mb-4 opacity-50" />
-        <h3 className="text-xl font-bold text-brand-text mb-2 tracking-tight">GAD-IMS Database Offline</h3>
-        <p className="text-sm text-brand-muted font-medium max-w-md mx-auto">
-          The Gender and Development Integrated Management System data has not been seeded yet. 
-          Please contact the system administrator to initialize the GAD database.
-        </p>
-      </div>
-    );
-  }
 
   const activeSection = sections.find(s => s.id === activeTab);
 

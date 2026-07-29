@@ -332,7 +332,7 @@ function AppLayout() {
           <Route path="/executive/vision-mission" element={<ContentPage title="Vision & Mission" fetchData={executiveApi.getVisionMission} renderContent={(data) => <VisionMissionView data={data} />} />} />
           <Route path="/executive/chart" element={<OrganizationalChartPage />} />
           <Route path="/executive/directory" element={<ContentPage title="Directory of Departments" fetchData={executiveApi.getDirectory} renderContent={(data) => <DirectoryView data={data} />} />} />
-          <Route path="/executive/gad-ims" element={<ContentPage title="Talibon GAD-IMS" fetchData={executiveApi.getGadIms} renderContent={(data) => <GadImsView data={data} />} />} />
+          <Route path="/executive/gad-ims" element={<GadImsView />} />
 
           {/* Legislative */}
           <Route path="/legislative/mandate" element={<ContentPage title="Legislative Mandate" fetchData={legislativeApi.getMandate} renderContent={(data) => <LegislativeMandateView data={data} />} />} />
