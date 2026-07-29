@@ -20,24 +20,24 @@ export default function ServiceNavigator() {
   );
 
   return (
-    <section className="py-32 bg-brand-surface dark:bg-dark-surface/50 relative overflow-hidden">
+    <section className="py-12 sm:py-16 bg-brand-surface dark:bg-dark-surface/50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-xl mx-auto mb-10">
           <span className="section-label">Service Navigator</span>
-          <h2 className="section-title">Find What You Need Instantly</h2>
-          <div className="relative mt-8">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-muted" size={20} />
+          <h2 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-dark-text font-display tracking-tight uppercase">Find What You Need Instantly</h2>
+          <div className="relative mt-5">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-muted shrink-0" size={18} />
             <input 
               type="text" 
               placeholder="Search for a service (e.g. 'Business Permit', 'Birth Certificate')..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-16 pr-6 py-6 bg-brand-bg rounded-[2rem] shadow-xl shadow-black/5 border border-brand-border focus:outline-none focus:ring-2 focus:ring-brand-primary/20 text-lg font-medium text-brand-text"
+              className="w-full pl-11 pr-4 py-2.5 sm:py-3 bg-brand-bg rounded-xl sm:rounded-2xl shadow-sm border border-brand-border focus:outline-none focus:ring-2 focus:ring-brand-primary/20 text-xs sm:text-sm font-medium text-brand-text transition-all"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           <AnimatePresence mode="popLayout">
             {filteredServices.map((service) => (
               <motion.div
@@ -47,16 +47,16 @@ export default function ServiceNavigator() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 key={service.id}
                 onClick={() => setSelectedService(service)}
-                className="minimal-card p-8 group cursor-pointer"
+                className="minimal-card p-5 sm:p-6 group cursor-pointer"
               >
-                <div className="flex items-start justify-between mb-6">
-                  <div className="w-14 h-14 rounded-2xl bg-brand-primary/5 dark:bg-white/5 flex items-center justify-center text-brand-primary dark:text-brand-secondary group-hover:bg-brand-primary group-hover:text-white transition-all duration-500">
-                    <service.icon size={28} />
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-brand-primary/5 dark:bg-white/5 flex items-center justify-center text-brand-primary dark:text-brand-secondary group-hover:bg-brand-primary group-hover:text-white transition-all duration-300">
+                    <service.icon size={22} />
                   </div>
                   <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest">{service.category}</span>
                 </div>
-                <h3 className="text-xl font-black text-brand-text dark:text-dark-text mb-2 font-display">{service.name}</h3>
-                <p className="text-sm text-brand-muted dark:text-dark-muted font-medium mb-6 line-clamp-2">{service.description}</p>
+                <h3 className="text-base sm:text-lg font-black text-brand-text dark:text-dark-text mb-1.5 font-display">{service.name}</h3>
+                <p className="text-xs sm:text-sm text-brand-muted dark:text-dark-muted font-medium mb-4 line-clamp-2">{service.description}</p>
                 <div className="flex items-center gap-2 text-brand-primary dark:text-brand-secondary font-bold text-[10px] uppercase tracking-[0.2em]">
                   View Details <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>

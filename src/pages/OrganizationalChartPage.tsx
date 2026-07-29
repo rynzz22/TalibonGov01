@@ -1,9 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { User, Users, Loader2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { isMockAllowed } from '../lib/mode';
-import DataUnavailableState from '../components/DataUnavailableState';
+
+const MOCK_OFFICIALS = [
+  { id: "of1", level: 1, name: "Hon. Janette A. Garcia", role: "Municipal Mayor", display_order: 1 },
+  { id: "of2", level: 2, name: "Hon. Epifanio G. Evardone", role: "Municipal Vice Mayor", display_order: 1 },
+  { id: "of3", level: 2, name: "Hon. Cecilio C. Garcia", role: "SB Member", display_order: 2 },
+  { id: "of4", level: 2, name: "Hon. Gonzalo D. Castro Jr.", role: "SB Member", display_order: 3 },
+  { id: "of5", level: 3, name: "Dr. Maria Luisa M. Reyes", role: "Municipal Health Officer", display_order: 1 },
+  { id: "of6", level: 3, name: "Engr. Romeo A. Valenzuela", role: "Municipal Engineer", display_order: 2 },
+  { id: "of7", level: 3, name: "Mrs. Elsa B. Torralba", role: "Municipal Treasurer", display_order: 3 }
+];
 
 const DEPARTMENT_LOGOS: Record<string, string> = {
   "Office Of Municipal Agriculturist": "http://talibon.gov.ph/wp-content/uploads/2025/10/1.png",
@@ -31,22 +39,22 @@ const DEPARTMENT_LOGOS: Record<string, string> = {
 const OrganizationalChartPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchOfficials = useCallback(async () => {
-    setLoading(true);
-    setHasError(false);
-
+  useEffect(() => {
     if (!isSupabaseConfigured) {
-      if (!isMockAllowed()) {
-        setHasError(true);
-        setData(null);
-        setLoading(false);
-        return;
-      }
+      const structuredData = {
+        mayor: MOCK_OFFICIALS.find((o: any) => o.level === 1) || { name: 'N/A', role: 'Municipal Mayor' },
+        level2: MOCK_OFFICIALS.filter((o: any) => o.level === 2),
+        departments: MOCK_OFFICIALS.filter((o: any) => o.level === 3)
+      };
+      setData(structuredData);
+      setLoading(false);
+      return;
     }
 
-    try {
+    const fetchOfficials = async () => {
+      setLoading(true);
       const { data: officials, error: supabaseError } = await supabase
         .from('officials')
         .select('*')
@@ -55,8 +63,12 @@ const OrganizationalChartPage: React.FC = () => {
       
       if (supabaseError) {
         console.warn("Error fetching officials:", supabaseError);
-        setHasError(true);
-        setData(null);
+        const structuredData = {
+          mayor: MOCK_OFFICIALS.find((o: any) => o.level === 1) || { name: 'N/A', role: 'Municipal Mayor' },
+          level2: MOCK_OFFICIALS.filter((o: any) => o.level === 2),
+          departments: MOCK_OFFICIALS.filter((o: any) => o.level === 3)
+        };
+        setData(structuredData);
       } else if (officials && officials.length > 0) {
         const structuredData = {
           mayor: officials.find((o: any) => o.level === 1) || { name: 'N/A', role: 'Municipal Mayor' },
@@ -67,27 +79,19 @@ const OrganizationalChartPage: React.FC = () => {
       } else {
         setData(null);
       }
-    } catch (err) {
-      console.warn("Exception fetching officials:", err);
-      setHasError(true);
-      setData(null);
-    } finally {
       setLoading(false);
-    }
-  }, []);
+    };
 
-  useEffect(() => {
     fetchOfficials();
 
-    if (isSupabaseConfigured) {
-      const channel = supabase
-        .channel('officials-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'officials' }, () => fetchOfficials())
-        .subscribe();
+    // Subscribe
+    const channel = supabase
+      .channel('officials-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'officials' }, () => fetchOfficials())
+      .subscribe();
 
-      return () => { supabase.removeChannel(channel); };
-    }
-  }, [fetchOfficials]);
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   if (loading) {
     return (
@@ -97,14 +101,12 @@ const OrganizationalChartPage: React.FC = () => {
     );
   }
 
-  if (hasError) {
+  if (error) {
     return (
-      <div className="pb-20 px-4 max-w-4xl mx-auto min-h-screen bg-brand-bg pt-32">
-        <DataUnavailableState
-          title="Organizational Structure Unavailable"
-          message="We are currently unable to load the municipal organizational chart from the database. Please try again later or visit the Municipal Hall in person."
-          onRetry={fetchOfficials}
-        />
+      <div className="pb-20 px-4 max-w-7xl mx-auto min-h-screen bg-brand-bg pt-32">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl font-bold">
+          {error}
+        </div>
       </div>
     );
   }
@@ -120,28 +122,28 @@ const OrganizationalChartPage: React.FC = () => {
   }
 
   return (
-    <div className="pb-20 px-4 md:px-8 max-w-7xl mx-auto min-h-screen bg-brand-bg relative overflow-hidden">
+    <div className="pb-12 px-4 md:px-6 max-w-6xl mx-auto min-h-screen bg-brand-bg relative overflow-hidden">
       <div className="relative z-10">
-        <div className="mb-16">
+        <div className="mb-6 text-center">
           <span className="section-label">Executive Structure</span>
-          <h1 className="section-title">
+          <h1 className="text-2xl sm:text-3xl font-black text-brand-text font-display uppercase tracking-tight">
             Organizational Chart
           </h1>
-          <p className="text-xl text-brand-muted font-medium max-w-3xl leading-relaxed">
-            The administrative hierarchy of the Municipality of Talibon, showcasing the leadership and departments dedicated to public service.
+          <p className="text-xs sm:text-sm text-brand-muted font-medium max-w-xl mx-auto mt-1 leading-relaxed">
+            Administrative hierarchy of the Municipality of Talibon showcasing executive leadership and departmental offices.
           </p>
         </div>
 
-        <div className="flex flex-col items-center space-y-12 py-8">
+        <div className="flex flex-col items-center space-y-4 py-2">
           {/* Level 1: Mayor */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center"
           >
-            <div className="p-10 bg-brand-primary text-white rounded-[2.5rem] shadow-2xl text-center min-w-[320px] relative flex flex-col items-center">
+            <div className="p-4 sm:p-5 bg-brand-primary text-white rounded-2xl shadow-lg text-center min-w-[260px] sm:min-w-[300px] relative flex flex-col items-center border border-brand-primary/30">
               {data.mayor.image_url && (
-                <div className="w-24 h-24 rounded-full border-4 border-white/20 overflow-hidden mb-6 bg-white/10 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full border-2 border-white/30 overflow-hidden mb-2 bg-white/10 flex items-center justify-center">
                   <img 
                     src={data.mayor.image_url} 
                     alt={`${data.mayor.name} Portrait`} 
@@ -150,81 +152,84 @@ const OrganizationalChartPage: React.FC = () => {
                   />
                 </div>
               )}
-              <h3 className="text-2xl font-bold mb-1 font-display uppercase tracking-tight">{data.mayor.name}</h3>
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">{data.mayor.role}</p>
+              <h3 className="text-lg sm:text-xl font-bold mb-0.5 font-display uppercase tracking-tight">{data.mayor.name}</h3>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/80">{data.mayor.role}</p>
             </div>
-            <div className="w-px h-12 bg-brand-border" />
+            <div className="w-px h-6 bg-brand-border" />
           </motion.div>
 
-          {/* Level 2: Admin & SB */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-32 relative w-full max-w-4xl">
-            {/* Horizontal connector */}
-            <div className="hidden md:block absolute top-0 left-1/4 right-1/4 h-px bg-brand-border -translate-y-12" />
+          {/* Level 2: Vice Mayor & SB */}
+          <div className="w-full max-w-3xl relative">
+            {/* Horizontal connector bar */}
+            <div className="hidden sm:block absolute top-0 left-12 right-12 h-px bg-brand-border" />
             
-            {data.level2.map((item: any, idx: number) => (
-              <motion.div 
-                key={`${item.role}-${idx}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + idx * 0.1 }}
-                className="flex flex-col items-center relative"
-              >
-                {/* Vertical connector to horizontal line */}
-                <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-px h-12 bg-brand-border -translate-y-12" />
-                
-                <div className="p-8 bg-brand-surface text-brand-text rounded-[2rem] text-center w-full border border-brand-border hover:border-brand-primary/30 transition-all flex flex-col items-center justify-center">
-                  {item.image_url && (
-                    <div className="w-20 h-20 rounded-full border-2 border-brand-border overflow-hidden mb-4 bg-brand-surface/50 flex items-center justify-center">
-                      <img 
-                        src={item.image_url} 
-                        alt={`${item.name} Portrait`} 
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                  )}
-                  <h4 className="text-lg font-bold mb-1 font-display uppercase tracking-tight">{item.name}</h4>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-brand-primary">{item.role}</p>
-                </div>
-                <div className="w-px h-12 bg-brand-border" />
-              </motion.div>
-            ))}
+            <div className={`grid grid-cols-1 sm:grid-cols-${Math.min(data.level2.length, 3)} gap-3 pt-4 sm:pt-6`}>
+              {data.level2.map((item: any, idx: number) => (
+                <motion.div 
+                  key={`${item.role}-${idx}`}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 + idx * 0.05 }}
+                  className="flex flex-col items-center relative"
+                >
+                  {/* Vertical connector up to horizontal line */}
+                  <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-px h-6 bg-brand-border -translate-y-6" />
+                  
+                  <div className="p-3.5 bg-brand-surface text-brand-text rounded-xl text-center w-full border border-brand-border hover:border-brand-primary/30 transition-all flex flex-col items-center justify-center shadow-xs">
+                    {item.image_url && (
+                      <div className="w-12 h-12 rounded-full border border-brand-border overflow-hidden mb-2 bg-brand-surface/50 flex items-center justify-center">
+                        <img 
+                          src={item.image_url} 
+                          alt={`${item.name} Portrait`} 
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+                    <h4 className="text-xs sm:text-sm font-bold mb-0.5 font-display uppercase tracking-tight">{item.name}</h4>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-brand-primary">{item.role}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
+
+          <div className="w-px h-6 bg-brand-border hidden sm:block" />
 
           {/* Level 3: Departments */}
           <div className="w-full relative">
             {/* Horizontal connector for departments */}
-            <div className="hidden md:block absolute top-0 left-0 right-0 h-px bg-brand-border" />
+            <div className="hidden sm:block absolute top-0 left-8 right-8 h-px bg-brand-border" />
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-12">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pt-4 sm:pt-6">
               {data.departments.map((dept: any, idx: number) => (
-                  <motion.div 
-                    key={`${dept.role}-${idx}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + idx * 0.05 }}
-                    className="flex flex-col items-center relative"
-                  >
-                    {/* Vertical connector to horizontal line */}
-                    <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-px h-12 bg-brand-border -translate-y-12" />
-                    
-                    <div className="p-6 bg-white border border-brand-border rounded-2xl hover:shadow-xl hover:border-brand-primary/30 transition-all text-center w-full group h-full flex flex-col items-center justify-center">
-                      <div className="w-12 h-12 bg-brand-surface rounded-2xl mx-auto mb-4 flex items-center justify-center overflow-hidden">
-                        {dept.image_url || DEPARTMENT_LOGOS[dept.role] ? (
-                          <img 
-                            src={dept.image_url || DEPARTMENT_LOGOS[dept.role]} 
-                            alt={`${dept.role} Logo`} 
-                            className={`w-full h-full ${dept.image_url ? 'object-cover' : 'object-contain p-2'}`}
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <User className="w-5 h-5 text-brand-muted/30" />
-                        )}
-                      </div>
-                      <h5 className="text-sm font-bold text-brand-text mb-1 leading-tight font-display uppercase tracking-tight">{dept.name}</h5>
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-brand-muted">{dept.role}</p>
+                <motion.div 
+                  key={`${dept.role}-${idx}`}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25 + idx * 0.03 }}
+                  className="flex flex-col items-center relative"
+                >
+                  {/* Vertical connector to horizontal line */}
+                  <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-px h-6 bg-brand-border -translate-y-6" />
+                  
+                  <div className="p-3 bg-white border border-brand-border rounded-xl hover:shadow-md hover:border-brand-primary/30 transition-all text-center w-full group h-full flex flex-col items-center justify-center">
+                    <div className="w-8 h-8 bg-brand-surface rounded-lg mx-auto mb-2 flex items-center justify-center overflow-hidden shrink-0">
+                      {dept.image_url || DEPARTMENT_LOGOS[dept.role] ? (
+                        <img 
+                          src={dept.image_url || DEPARTMENT_LOGOS[dept.role]} 
+                          alt={`${dept.role} Logo`} 
+                          className={`w-full h-full ${dept.image_url ? 'object-cover' : 'object-contain p-1.5'}`}
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <User className="w-4 h-4 text-brand-muted/40" />
+                      )}
                     </div>
-                  </motion.div>
+                    <h5 className="text-xs font-bold text-brand-text mb-0.5 leading-tight font-display uppercase tracking-tight">{dept.name}</h5>
+                    <p className="text-[8.5px] font-bold uppercase tracking-wider text-brand-muted">{dept.role}</p>
+                  </div>
+                </motion.div>
               ))}
             </div>
           </div>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Facebook, Info, ShieldAlert } from 'lucide-react';
-import { OFFICIAL_FACEBOOK_URLS } from '../constants';
 
 const UpdatesPage: React.FC = () => {
   const [activeFeed, setActiveFeed] = React.useState<'pio' | 'main'>('pio');
@@ -9,26 +8,26 @@ const UpdatesPage: React.FC = () => {
   const feeds = {
     pio: {
       name: "Public Info Office",
-      url: OFFICIAL_FACEBOOK_URLS.PIO,
+      url: "https://www.facebook.com/PioTalibon",
       handle: "@PioTalibon"
     },
     main: {
       name: "Official LGU Page",
-      url: OFFICIAL_FACEBOOK_URLS.MAIN,
+      url: "https://www.facebook.com/TalibonOfficialPage",
       handle: "@TalibonOfficialPage"
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 pb-12 px-4">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-brand-primary text-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl relative overflow-hidden">
-        <div className="relative z-10 space-y-2">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-none font-display uppercase">Municipal News Feed</h1>
-          <p className="text-white/80 font-medium text-xs sm:text-sm max-w-md">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-brand-primary text-white p-4 sm:p-5 rounded-xl sm:rounded-2xl shadow-md relative overflow-hidden">
+        <div className="relative z-10 space-y-1">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight leading-none font-display uppercase">Municipal News Feed</h1>
+          <p className="text-white/80 font-medium text-xs max-w-md">
             The official digital bulletin board for the Municipality of Talibon.
           </p>
         </div>
-        <Facebook size={120} className="absolute -right-8 -bottom-8 opacity-10 rotate-12" />
+        <Facebook size={90} className="absolute -right-6 -bottom-6 opacity-10 rotate-12" />
       </div>
 
       {/* Feed Selector */}

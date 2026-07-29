@@ -45,16 +45,16 @@ const ContentPage: React.FC<ContentPageProps> = ({
   };
 
   return (
-    <div className="pb-20 min-h-screen bg-brand-bg relative overflow-hidden">
+    <div className="pb-12 min-h-screen bg-brand-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
         >
-          <div className="mb-16">
+          <div className="mb-6">
             <span className="section-label">Information</span>
-            <h1 className="section-title">{title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-brand-text font-display uppercase tracking-tight">{title}</h1>
           </div>
 
           {loading ? (

@@ -271,29 +271,29 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             onSubmit={handleFormSubmit}
-            className="space-y-8"
+            className="space-y-4"
           >
             {validationError && (
-              <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-black uppercase tracking-wide flex items-center gap-3">
-                <AlertCircle size={18} className="shrink-0" />
+              <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center gap-2.5">
+                <AlertCircle size={16} className="shrink-0" />
                 <span>{validationError}</span>
               </div>
             )}
 
             {/* SECTION 1: Personal Information */}
-            <div className="bg-white border border-brand-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <div className="flex items-center gap-3 border-b border-brand-border pb-4">
-                <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
-                  <User size={20} />
+            <div className="bg-white border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-brand-border pb-3">
+                <div className="w-8 h-8 bg-brand-primary/10 text-brand-primary rounded-lg flex items-center justify-center shrink-0">
+                  <User size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-brand-text uppercase tracking-wider font-display">Personal Information</h3>
-                  <p className="text-[10px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Primary identification registry</p>
+                  <h3 className="text-xs sm:text-sm font-black text-brand-text uppercase tracking-wider font-display">Personal Information</h3>
+                  <p className="text-[9px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Primary identification registry</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="md:col-span-1.5 space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3.5">
+                <div className="md:col-span-1.5 space-y-1.5">
                   <label className="form-label" htmlFor="firstName">First Name *</label>
                   <input
                     id="firstName"
@@ -303,10 +303,10 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="e.g. Maria Clara"
                     value={formData.firstName}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
-                <div className="md:col-span-1 space-y-2">
+                <div className="md:col-span-1 space-y-1.5">
                   <label className="form-label" htmlFor="middleName">Middle Name</label>
                   <input
                     id="middleName"
@@ -315,10 +315,10 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="e.g. Lopez"
                     value={formData.middleName}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
-                <div className="md:col-span-1 space-y-2">
+                <div className="md:col-span-1 space-y-1.5">
                   <label className="form-label" htmlFor="lastName">Last Name *</label>
                   <input
                     id="lastName"
@@ -328,10 +328,10 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="e.g. Santos"
                     value={formData.lastName}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
-                <div className="md:col-span-0.5 space-y-2">
+                <div className="md:col-span-0.5 space-y-1.5">
                   <label className="form-label" htmlFor="suffix">Suffix</label>
                   <input
                     id="suffix"
@@ -340,13 +340,13 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="Jr. / III"
                     value={formData.suffix}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="birthDate">Date of Birth *</label>
                   <input
                     id="birthDate"
@@ -355,10 +355,10 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     required
                     value={formData.birthDate}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="birthPlace">Place of Birth *</label>
                   <input
                     id="birthPlace"
@@ -368,48 +368,48 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="Municipality, Province"
                     value={formData.birthPlace}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="gender">Gender *</label>
                   <select
                     id="gender"
                     name="gender"
                     value={formData.gender}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   >
                     {GENDER_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="civilStatus">Civil Status *</label>
                   <select
                     id="civilStatus"
                     name="civilStatus"
                     value={formData.civilStatus}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   >
                     {CIVIL_STATUS_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="citizenship">Citizenship *</label>
                   <select
                     id="citizenship"
                     name="citizenship"
                     value={formData.citizenship}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   >
                     {CITIZENSHIP_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -420,22 +420,22 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
             </div>
 
             {/* SECTION 2: Contact Information */}
-            <div className="bg-white border border-brand-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <div className="flex items-center gap-3 border-b border-brand-border pb-4">
-                <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
-                  <Mail size={20} />
+            <div className="bg-white border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-brand-border pb-3">
+                <div className="w-8 h-8 bg-brand-primary/10 text-brand-primary rounded-lg flex items-center justify-center shrink-0">
+                  <Mail size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-brand-text uppercase tracking-wider font-display">Contact Information</h3>
-                  <p className="text-[10px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Municipal communication channels</p>
+                  <h3 className="text-xs sm:text-sm font-black text-brand-text uppercase tracking-wider font-display">Contact Information</h3>
+                  <p className="text-[9px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Municipal communication channels</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="mobileNumber">Mobile Number *</label>
                   <div className="relative">
-                    <span className="absolute left-6 top-4 font-bold text-brand-muted text-sm">+63</span>
+                    <span className="absolute left-3.5 top-2 sm:top-2.5 font-semibold text-brand-muted text-xs sm:text-sm">+63</span>
                     <input
                       id="mobileNumber"
                       type="tel"
@@ -444,11 +444,11 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                       placeholder="9XXXXXXXXX"
                       value={formData.mobileNumber}
                       onChange={handleChange}
-                      className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 pl-16 pr-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                      className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 pl-12 pr-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="email">Email Address *</label>
                   <input
                     id="email"
@@ -458,26 +458,26 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="e.g. maria@clara.com"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
               </div>
             </div>
 
             {/* SECTION 3: Address Information */}
-            <div className="bg-white border border-brand-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <div className="flex items-center gap-3 border-b border-brand-border pb-4">
-                <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
-                  <MapPin size={20} />
+            <div className="bg-white border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-brand-border pb-3">
+                <div className="w-8 h-8 bg-brand-primary/10 text-brand-primary rounded-lg flex items-center justify-center shrink-0">
+                  <MapPin size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-brand-text uppercase tracking-wider font-display">Address Information</h3>
-                  <p className="text-[10px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Registered residence in Talibon</p>
+                  <h3 className="text-xs sm:text-sm font-black text-brand-text uppercase tracking-wider font-display">Address Information</h3>
+                  <p className="text-[9px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Registered residence in Talibon</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2 md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5 md:col-span-2">
                   <label className="form-label" htmlFor="address">House Number / Street / Sitio *</label>
                   <input
                     id="address"
@@ -487,18 +487,18 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="e.g. Unit 123, Bonifacio Street"
                     value={formData.address}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="barangay">Barangay *</label>
                   <select
                     id="barangay"
                     name="barangay"
                     value={formData.barangay}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   >
                     {BARANGAYS.map(brgy => (
                       <option key={brgy.id} value={brgy.slug}>{brgy.name}</option>
@@ -506,7 +506,7 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                   </select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="municipality">Municipality</label>
                   <input
                     id="municipality"
@@ -514,11 +514,11 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     name="municipality"
                     readOnly
                     value={formData.municipality}
-                    className="w-full bg-gray-100 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-muted cursor-not-allowed text-sm"
+                    className="w-full bg-gray-100 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-muted cursor-not-allowed text-xs sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="province">Province</label>
                   <input
                     id="province"
@@ -526,11 +526,11 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     name="province"
                     readOnly
                     value={formData.province}
-                    className="w-full bg-gray-100 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-muted cursor-not-allowed text-sm"
+                    className="w-full bg-gray-100 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-muted cursor-not-allowed text-xs sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="zipCode">ZIP Code</label>
                   <input
                     id="zipCode"
@@ -538,26 +538,26 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     name="zipCode"
                     readOnly
                     value={formData.zipCode}
-                    className="w-full bg-gray-100 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-muted cursor-not-allowed text-sm"
+                    className="w-full bg-gray-100 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-muted cursor-not-allowed text-xs sm:text-sm"
                   />
                 </div>
               </div>
             </div>
 
             {/* SECTION 4: Employment Information */}
-            <div className="bg-white border border-brand-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <div className="flex items-center gap-3 border-b border-brand-border pb-4">
-                <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
-                  <Briefcase size={20} />
+            <div className="bg-white border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-brand-border pb-3">
+                <div className="w-8 h-8 bg-brand-primary/10 text-brand-primary rounded-lg flex items-center justify-center shrink-0">
+                  <Briefcase size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-brand-text uppercase tracking-wider font-display">Employment Information</h3>
-                  <p className="text-[10px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Professional credentials</p>
+                  <h3 className="text-xs sm:text-sm font-black text-brand-text uppercase tracking-wider font-display">Employment Information</h3>
+                  <p className="text-[9px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Professional credentials</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="occupation">Occupation *</label>
                   <input
                     id="occupation"
@@ -567,10 +567,10 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="e.g. Teacher / Businessman / Farmer"
                     value={formData.occupation}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-1.5 md:col-span-2">
                   <label className="form-label" htmlFor="employer">Employer / Business Name</label>
                   <input
                     id="employer"
@@ -579,10 +579,10 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="e.g. Department of Education"
                     value={formData.employer}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
-                <div className="space-y-2 md:col-span-3">
+                <div className="space-y-1.5 md:col-span-3">
                   <label className="form-label" htmlFor="employerAddress">Employer / Business Address</label>
                   <input
                     id="employerAddress"
@@ -591,26 +591,26 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="e.g. Poblacion, Talibon, Bohol"
                     value={formData.employerAddress}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
               </div>
             </div>
 
             {/* SECTION 5: Tax & Application Details */}
-            <div className="bg-white border border-brand-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              <div className="flex items-center gap-3 border-b border-brand-border pb-4">
-                <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center">
-                  <Calculator size={20} />
+            <div className="bg-white border border-brand-border rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-brand-border pb-3">
+                <div className="w-8 h-8 bg-brand-primary/10 text-brand-primary rounded-lg flex items-center justify-center shrink-0">
+                  <Calculator size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-brand-text uppercase tracking-wider font-display">Tax & Purpose Details</h3>
-                  <p className="text-[10px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Real-time local tax computation</p>
+                  <h3 className="text-xs sm:text-sm font-black text-brand-text uppercase tracking-wider font-display">Tax & Purpose Details</h3>
+                  <p className="text-[9px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Real-time local tax computation</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="tin">TIN Number <span className="text-[9px] text-brand-muted lowercase italic">(optional)</span></label>
                   <input
                     id="tin"
@@ -619,14 +619,14 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     placeholder="000-000-000-000"
                     value={formData.tin}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="form-label" htmlFor="annualIncome">Gross Annual Income (PHP) *</label>
                   <div className="relative">
-                    <span className="absolute left-6 top-4 font-black text-brand-primary">₱</span>
+                    <span className="absolute left-3.5 top-2 sm:top-2.5 font-black text-brand-primary text-xs sm:text-sm">₱</span>
                     <input
                       id="annualIncome"
                       type="number"
@@ -637,19 +637,19 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                       placeholder="e.g. 240000"
                       value={formData.annualIncome || ""}
                       onChange={handleChange}
-                      className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 pl-12 pr-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                      className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 pl-9 pr-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-1.5 md:col-span-2">
                   <label className="form-label" htmlFor="purpose">Purpose of Application *</label>
                   <select
                     id="purpose"
                     name="purpose"
                     value={formData.purpose}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
                   >
                     {PURPOSE_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -657,56 +657,56 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                   </select>
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-1.5 md:col-span-2">
                   <label className="form-label" htmlFor="remarks">Additional Remarks</label>
                   <textarea
                     id="remarks"
                     name="remarks"
-                    rows={3}
+                    rows={2}
                     placeholder="Specify secondary reasons or comments here..."
                     value={formData.remarks}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-brand-border rounded-2xl py-4 px-6 font-bold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all resize-none text-sm"
+                    className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all resize-none text-xs sm:text-sm"
                   />
                 </div>
               </div>
 
               {/* Dynamic Assessment Bill Panel */}
-              <div className="p-6 bg-brand-primary/5 rounded-2xl border border-brand-primary/10 mt-4 space-y-4">
+              <div className="p-4 bg-brand-primary/5 rounded-xl border border-brand-primary/10 mt-2 space-y-3">
                 <div className="flex items-center gap-2 text-brand-primary font-black text-xs uppercase tracking-widest">
-                  <Calculator size={16} />
+                  <Calculator size={14} />
                   <span>Interactive Fee Assessment (Estimated)</span>
                 </div>
                 
-                <div className="divide-y divide-brand-primary/10 text-xs font-bold uppercase text-brand-text space-y-2 pt-2">
-                  <div className="flex justify-between pb-2">
+                <div className="divide-y divide-brand-primary/10 text-[11px] sm:text-xs font-bold uppercase text-brand-text space-y-1.5 pt-1">
+                  <div className="flex justify-between pb-1.5">
                     <span className="text-brand-muted">Basic Individual Community Tax</span>
                     <span>₱{taxCalculation.basic.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between py-2">
+                  <div className="flex justify-between py-1.5">
                     <span className="text-brand-muted">Additional Income Tax (₱1.00 per ₱1,000 gross)</span>
                     <span>₱{taxCalculation.additional.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between pt-2 text-sm font-black text-brand-primary">
+                  <div className="flex justify-between pt-1.5 text-xs sm:text-sm font-black text-brand-primary">
                     <span>Total Community Tax Due (Cedula)</span>
                     <span>₱{taxCalculation.total.toFixed(2)}</span>
                   </div>
                 </div>
 
-                <p className="text-[10px] text-brand-muted leading-relaxed font-semibold">
-                  * Community Tax values are calculated in strict compliance with the Philippine Local Government Code of 1991 (RA 7160). The basic individual tax rate of ₱5.00 is added to ₱1.00 for every ₱1,000.00 of gross annual revenue.
+                <p className="text-[9px] text-brand-muted leading-relaxed font-semibold">
+                  * Community Tax values are calculated in strict compliance with RA 7160.
                 </p>
               </div>
             </div>
 
             {/* Application Consent & Submission */}
-            <div className="bg-orange-50 border border-orange-100 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-start gap-4 text-orange-950">
-                <ShieldCheck size={28} className="text-brand-primary shrink-0 mt-1" />
-                <div className="space-y-1">
-                  <h4 className="text-xs font-black uppercase tracking-wider">RA 10173 Data Privacy Compliance</h4>
-                  <p className="text-[11px] leading-relaxed font-semibold">
-                    By submitting this form, you authorize the Local Government Unit of Talibon to collect, process, and retain your personal data to facilitate the issuance of your Electronic Community Tax Certificate.
+            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-start gap-3 text-orange-950">
+                <ShieldCheck size={22} className="text-brand-primary shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <h4 className="text-[11px] font-black uppercase tracking-wider">RA 10173 Data Privacy Compliance</h4>
+                  <p className="text-[10px] leading-relaxed font-semibold">
+                    By submitting, you authorize LGU Talibon to process your personal data for Electronic Community Tax Certificate issuance.
                   </p>
                 </div>
               </div>
@@ -714,12 +714,12 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full md:w-auto px-10 py-5 bg-brand-primary hover:bg-brand-secondary text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50 shrink-0"
+                className="w-full sm:w-auto px-6 py-2.5 bg-brand-primary hover:bg-brand-secondary text-white rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-[0.98] disabled:opacity-50 shrink-0"
               >
                 {isSubmitting ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <>File E-Cedula <ArrowRight size={16} /></>
+                  <>File E-Cedula <ArrowRight size={14} /></>
                 )}
               </button>
             </div>

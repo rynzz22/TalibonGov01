@@ -42,27 +42,27 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       <motion.button
-        whileHover={{ scale: isLoading ? 1 : 1.02 }}
+        whileHover={{ scale: isLoading ? 1 : 1.01 }}
         whileTap={{ scale: isLoading ? 1 : 0.98 }}
         onClick={handlePayment}
         disabled={isLoading}
         aria-busy={isLoading}
-        className="w-full flex items-center justify-between gap-4 px-8 py-4 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-brand-primary/20 hover:bg-brand-text transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+        className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-brand-primary text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm hover:bg-brand-text transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           {isLoading ? (
-            <Loader2 className="animate-spin" size={20} aria-hidden="true" />
+            <Loader2 className="animate-spin" size={16} aria-hidden="true" />
           ) : (
-            <CreditCard size={20} className="group-hover:rotate-12 transition-transform" aria-hidden="true" />
+            <CreditCard size={16} className="group-hover:rotate-12 transition-transform" aria-hidden="true" />
           )}
           <span>{isLoading ? "Processing..." : label}</span>
         </div>
         {!isLoading && (
-          <div className="flex items-center gap-4">
-            <span className="text-white/60 font-mono tracking-tighter">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-white/80 font-mono text-[11px]">
               PHP {amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+            <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
           </div>
         )}
       </motion.button>

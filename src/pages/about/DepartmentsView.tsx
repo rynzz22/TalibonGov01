@@ -19,69 +19,67 @@ interface DepartmentsViewProps {
 
 export default function DepartmentsView({ data }: DepartmentsViewProps) {
   return (
-    <div className="space-y-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.isArray(data) && data.length > 0 ? (
           data.map((dept: Department, idx: number) => {
-            const isWide = idx === 0 || idx === 3;
             return (
               <motion.div 
                 key={`${dept.name}-${idx}`} 
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.05 }}
-                className={`group relative overflow-hidden bg-white border border-brand-border rounded-3xl p-8 hover:border-brand-primary transition-all duration-500 shadow-sm hover:shadow-2xl hover:-translate-y-1 ${isWide ? 'md:col-span-2' : ''}`}
+                transition={{ delay: idx * 0.03 }}
+                className="group relative overflow-hidden bg-white border border-brand-border rounded-xl p-4 hover:border-brand-primary/40 transition-all duration-300 shadow-xs hover:shadow-md flex flex-col justify-between"
               >
-                {/* Background Code Decor */}
-                <div className="absolute top-4 right-4 font-mono text-[8px] opacity-10 group-hover:opacity-30 transition-opacity select-none pointer-events-none uppercase tracking-tighter text-right">
-                  <div className="text-brand-primary">DEPT_ID: {idx.toString().padStart(3, '0')}</div>
-                  <div>MUNICIPAL_CODE: 071221</div>
-                  <div>COORD: 10.15N/124.33E</div>
-                </div>
-
-                <div className="relative z-10 h-full flex flex-col">
-                  <div className="flex justify-between items-start mb-6">
-                    {dept.logoUrl && (
-                      <div className="w-16 h-16 bg-white rounded-2xl p-2 shadow-inner group-hover:scale-110 transition-transform duration-500 border border-brand-border">
-                        <img 
-                          src={dept.logoUrl} 
-                          alt="" 
-                          className="w-full h-full object-contain"
-                          referrerPolicy="no-referrer"
-                        />
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    <div className="flex justify-between items-start gap-2 mb-3">
+                      {dept.logoUrl ? (
+                        <div className="w-10 h-10 bg-white rounded-lg p-1 shadow-xs border border-brand-border shrink-0">
+                          <img 
+                            src={dept.logoUrl} 
+                            alt="" 
+                            className="w-full h-full object-contain"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 bg-brand-surface rounded-lg flex items-center justify-center border border-brand-border shrink-0">
+                          <Building2 size={16} className="text-brand-primary" />
+                        </div>
+                      )}
+                      <div className="px-2 py-0.5 bg-brand-primary/5 text-brand-primary text-[8px] font-bold rounded-full border border-brand-primary/10 tracking-wider uppercase ml-auto">
+                        {dept.type}
                       </div>
-                    )}
-                    <div className="px-3 py-1 bg-brand-primary/5 text-brand-primary text-[8px] font-black rounded-full border border-brand-primary/10 tracking-[0.2em] uppercase">
-                      {dept.type}
+                    </div>
+
+                    <div>
+                      <h3 className="text-base font-bold text-brand-text uppercase tracking-tight leading-snug mb-1 group-hover:text-brand-primary transition-colors">
+                        {dept.name}
+                      </h3>
+                      <p className="text-[9.5px] font-mono font-medium text-brand-muted uppercase tracking-wider mb-2 border-l-2 border-brand-primary/20 pl-2">
+                        {dept.officialName}
+                      </p>
+                      <p className="text-xs text-brand-muted leading-relaxed mb-4 opacity-90 line-clamp-3">
+                        {dept.description}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-black text-brand-text uppercase tracking-tight leading-none mb-3 group-hover:text-brand-primary transition-colors">
-                      {dept.name}
-                    </h3>
-                    <p className="text-[10px] font-mono font-bold text-brand-muted uppercase tracking-widest mb-6 border-l-2 border-brand-primary/20 pl-3">
-                      {dept.officialName}
-                    </p>
-                    <p className="text-sm text-brand-muted leading-relaxed mb-8 opacity-80 group-hover:opacity-100 transition-opacity">
-                      {dept.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-6 border-t border-brand-border mt-auto">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <span className="text-[8px] font-black text-brand-muted uppercase tracking-widest block opacity-60">Director / Head</span>
-                        <div className="flex items-center gap-2 text-xs font-black text-brand-text uppercase tracking-tight group-hover:text-brand-primary transition-colors">
-                          <User size={12} className="shrink-0" />
+                  <div className="pt-3 border-t border-brand-border/60 mt-auto">
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="space-y-0.5">
+                        <span className="text-[8px] font-bold text-brand-muted uppercase tracking-wider block opacity-70">Director / Head</span>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-brand-text uppercase tracking-tight group-hover:text-brand-primary transition-colors">
+                          <User size={11} className="shrink-0 text-brand-primary/80" />
                           <span className="truncate">{dept.head || "OIC"}</span>
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <span className="text-[8px] font-black text-brand-muted uppercase tracking-widest block opacity-60">Operations</span>
-                        <div className="flex items-center gap-2 text-xs font-black text-brand-text uppercase tracking-tight">
-                          <Phone size={12} className="shrink-0 text-brand-primary" />
+                      <div className="space-y-0.5">
+                        <span className="text-[8px] font-bold text-brand-muted uppercase tracking-wider block opacity-70">Operations</span>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-brand-text uppercase tracking-tight">
+                          <Phone size={11} className="shrink-0 text-brand-primary" />
                           <span className="truncate">{dept.contact || "-"}</span>
                         </div>
                       </div>
@@ -89,22 +87,22 @@ export default function DepartmentsView({ data }: DepartmentsViewProps) {
 
                     <a 
                       href={dept.serviceLink || "/about/services"}
-                      className="mt-6 w-full flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-4 bg-gray-50 group-hover:bg-brand-text group-hover:text-white rounded-2xl transition-all"
+                      className="w-full flex items-center justify-between gap-2 text-[9px] font-bold uppercase tracking-wider px-3 py-2 bg-gray-50 hover:bg-brand-text hover:text-white rounded-lg transition-all border border-brand-border/40"
                     >
-                      ACCESS SERVICES <ExternalLink size={14} />
+                      <span>Access Services</span> <ExternalLink size={12} />
                     </a>
                   </div>
                 </div>
 
-                {/* Large Background Icon */}
-                <div className="absolute -bottom-8 -right-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none select-none">
-                  <Building2 size={200} />
+                {/* Background Icon */}
+                <div className="absolute -bottom-4 -right-4 opacity-[0.02] group-hover:opacity-[0.04] transition-opacity pointer-events-none select-none">
+                  <Building2 size={120} />
                 </div>
               </motion.div>
             );
           })
         ) : (
-          <div className="col-span-full text-center py-24 text-brand-muted font-bold uppercase tracking-widest">
+          <div className="col-span-full text-center py-12 text-brand-muted font-bold text-xs uppercase tracking-wider">
             No departments found in technical database.
           </div>
         )}

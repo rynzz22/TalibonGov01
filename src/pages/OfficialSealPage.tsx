@@ -13,30 +13,30 @@ const OfficialSealPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white pb-24 flex flex-col items-center relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-        <div className="mb-16">
+        <div className="mb-6 text-center sm:text-left">
           <span className="section-label">Symbolism</span>
-          <h1 className="section-title">Official Seal</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-brand-text font-display uppercase tracking-tight">Official Seal</h1>
         </div>
 
-        <div className="flex flex-col items-center justify-center space-y-12">
+        <div className="flex flex-col items-center justify-center space-y-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, type: "spring", damping: 20 }}
-            className="relative w-full max-w-2xl"
+            transition={{ duration: 0.6, type: "spring", damping: 20 }}
+            className="relative w-full max-w-sm"
           >
-            <div className="bg-brand-surface p-8 md:p-16 rounded-[4rem] border border-brand-border shadow-xl">
+            <div className="bg-brand-surface p-6 sm:p-8 rounded-2xl border border-brand-border shadow-md">
               <img 
                 src={sealUrl} 
                 alt="Official Seal of Talibon" 
-                className="w-full h-auto max-w-[600px] mx-auto"
+                className="w-full h-auto max-w-[220px] sm:max-w-[260px] mx-auto drop-shadow-sm"
                 referrerPolicy="no-referrer"
               />
             </div>
           </motion.div>
           
-          <div className="max-w-2xl text-center">
-            <p className="text-xl text-brand-muted font-medium leading-relaxed">
+          <div className="max-w-xl text-center">
+            <p className="text-xs sm:text-sm text-brand-muted font-medium leading-relaxed">
               The official seal of the Municipality of Talibon, Bohol, Philippines represents our rich history, our connection to the sea, and our commitment to progress and unity.
             </p>
           </div>

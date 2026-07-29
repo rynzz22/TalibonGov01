@@ -299,7 +299,6 @@ const GadEntryModule: React.FC = () => {
                   <h2 className="text-xl md:text-2xl font-black text-brand-text tracking-tighter uppercase mb-1">
                     {editingItem ? 'Update Profile' : 'Encoding New'}
                   </h2>
-                  <p className="text-[8px] md:text-[10px] font-black text-brand-primary tracking-widest uppercase opacity-60 font-mono">GAD_PROFILING_MODULE_V1</p>
                 </div>
                 <button 
                   onClick={() => setIsModalOpen(false)}
