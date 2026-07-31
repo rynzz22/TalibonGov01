@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Download, ArrowRight, Building2, Users, HeartPulse, GraduationCap, Sprout, ShieldCheck, Smartphone, Globe, Search, FileText, CreditCard, Scale, Briefcase, Landmark, Shovel, MapPin, Trash2, Camera, UserPlus, Cross } from "lucide-react";
+import { Download, ArrowRight, BookOpen, HeartPulse, Sprout, ShieldCheck, Globe, FileText, CreditCard, Scale, Briefcase, Landmark, Shovel, MapPin, Trash2, Camera, Users, Cross } from "lucide-react";
 
 export default function CitizensCharterSection() {
   const offices = [
@@ -23,46 +23,67 @@ export default function CitizensCharterSection() {
     { name: "Cemetery Office", services: 4, desc: "Administers burial lot availments and niche reservations.", icon: Cross },
   ];
 
+  const pdfUrl = "http://talibon.gov.ph/wp-content/uploads/2026/02/2025-CITIZENS-CHARTER-FINALE.pdf";
+
   return (
-    <section id="charter" className="py-10 sm:py-14 bg-brand-surface relative overflow-hidden">
+    <section id="charter" className="py-12 sm:py-16 bg-brand-surface relative overflow-hidden border-y border-brand-border/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12 mb-10 sm:mb-12">
-          <div className="max-w-2xl space-y-2 sm:space-y-3">
-            <span className="section-label">RA 11032 — Anti-Red Tape Authority</span>
-            <h2 className="section-title">Citizen's Charter 2026</h2>
-            <p className="text-xs sm:text-sm text-brand-muted font-normal leading-relaxed">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 sm:mb-10">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-primary/10 border border-brand-primary/20 rounded-full mb-2.5">
+              <BookOpen size={13} className="text-brand-primary" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary">
+                RA 11032 — ANTI-RED TAPE AUTHORITY
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-brand-text uppercase tracking-tight font-display">
+              Citizen's Charter 2026
+            </h2>
+            <p className="text-xs sm:text-sm text-brand-muted font-medium mt-1.5 leading-relaxed">
               Official guide to government services — requirements, step-by-step procedures, fees, and processing times for each municipal office.
             </p>
           </div>
-          <div className="shrink-0">
-            <button className="minimal-button-primary text-xs sm:text-sm">
-              Download Full Charter (PDF) <Download size={16} />
-            </button>
-          </div>
+
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2.5 bg-brand-primary hover:bg-brand-accent text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all inline-flex items-center gap-2 self-start md:self-auto shadow-md border border-brand-primary/30 hover:scale-105 active:scale-95 shrink-0"
+          >
+            <span>Download Full Charter (PDF)</span>
+            <Download size={14} />
+          </a>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
           {offices.map((office, idx) => (
             <motion.div
               key={office.name}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.05 }}
-              className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-brand-bg border border-brand-border hover:shadow-lg hover:shadow-black/5 transition-all duration-300 group"
+              transition={{ delay: idx * 0.03 }}
+              className="p-3.5 sm:p-4 rounded-2xl bg-brand-bg border border-brand-border/80 hover:border-brand-primary/40 hover:shadow-md transition-all duration-300 flex flex-col justify-between group hover:-translate-y-0.5"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-brand-primary/5 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all duration-300">
-                  <office.icon size={20} />
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-colors duration-300">
+                    <office.icon size={16} />
+                  </div>
+                  <span className="px-2 py-0.5 bg-brand-primary/10 text-brand-primary text-[9px] font-black rounded-full uppercase tracking-wider">
+                    {office.services} {office.services === 1 ? 'service' : 'services'}
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest">
-                  {office.services} services
-                </span>
+
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-brand-text mb-1 font-display uppercase tracking-tight group-hover:text-brand-primary transition-colors">
+                    {office.name}
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-brand-muted font-normal leading-relaxed line-clamp-2">
+                    {office.desc}
+                  </p>
+                </div>
               </div>
-              <h3 className="text-sm sm:text-base font-semibold text-brand-text mb-1.5 font-display uppercase tracking-tight">{office.name}</h3>
-              <p className="text-brand-muted text-xs sm:text-sm font-normal leading-relaxed">
-                {office.desc}
-              </p>
             </motion.div>
           ))}
         </div>
@@ -70,3 +91,4 @@ export default function CitizensCharterSection() {
     </section>
   );
 }
+

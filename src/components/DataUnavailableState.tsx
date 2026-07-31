@@ -21,16 +21,16 @@ export default function DataUnavailableState({
 }: DataUnavailableStateProps) {
   if (compact) {
     return (
-      <div className={`p-4 bg-amber-50/80 border border-amber-200/80 rounded-2xl text-amber-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs ${className}`}>
+      <div className={`p-4 bg-sky-50/80 border border-sky-200/80 rounded-2xl text-sky-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs ${className}`}>
         <div className="flex items-center gap-2.5">
-          <AlertTriangle size={18} className="text-amber-600 shrink-0" />
+          <AlertTriangle size={18} className="text-sky-600 shrink-0" />
           <span className="font-semibold leading-tight">{message}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
           {onRetry && (
             <button
               onClick={onRetry}
-              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold uppercase tracking-wider text-[10px] flex items-center gap-1 transition-all cursor-pointer"
+              className="px-3 py-1.5 bg-[#3A8FC2] hover:bg-[#2B82B8] text-white rounded-xl font-bold uppercase tracking-wider text-[10px] flex items-center gap-1 transition-all cursor-pointer"
             >
               <RotateCcw size={12} />
               <span>Retry</span>
@@ -54,7 +54,7 @@ export default function DataUnavailableState({
 
   return (
     <div className={`p-8 sm:p-12 bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm text-center flex flex-col items-center justify-center space-y-4 max-w-2xl mx-auto my-6 ${className}`}>
-      <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center shadow-xs">
+      <div className="w-14 h-14 bg-sky-100 text-sky-700 rounded-2xl flex items-center justify-center shadow-xs">
         <AlertTriangle size={28} />
       </div>
 

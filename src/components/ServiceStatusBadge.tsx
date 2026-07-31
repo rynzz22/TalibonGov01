@@ -17,8 +17,8 @@ export const ServiceStatusBadge: React.FC<ServiceStatusBadgeProps> = ({ status }
         };
       case "coming-soon":
         return {
-          bg: "bg-amber-50 dark:bg-amber-950/30 border-amber-500/20 text-amber-700 dark:text-amber-400",
-          dot: "bg-amber-500 animate-pulse",
+          bg: "bg-sky-50 dark:bg-sky-950/30 border-sky-500/20 text-sky-700 dark:text-sky-400",
+          dot: "bg-sky-500 animate-pulse",
           text: "Coming Soon to E-Services",
           icon: <Clock size={12} className="mr-1.5" />
         };

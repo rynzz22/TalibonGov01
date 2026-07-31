@@ -478,7 +478,7 @@ export default function EServicesPage() {
         <div 
           className="absolute top-0 left-0 w-full h-full opacity-[0.25]" 
           style={{ 
-            backgroundImage: 'radial-gradient(#f97316 1px, transparent 1px)', 
+            backgroundImage: 'radial-gradient(#4fa8d8 1px, transparent 1px)', 
             backgroundSize: '40px 40px' 
           }} 
         />
@@ -526,7 +526,7 @@ export default function EServicesPage() {
                       >
                         <div className="space-y-3">
                           <div className="flex justify-between items-start">
-                            <div className="w-10 h-10 bg-orange-50 text-brand-primary rounded-2xl flex items-center justify-center">
+                            <div className="w-10 h-10 bg-sky-50 text-brand-primary rounded-2xl flex items-center justify-center">
                               <FileText size={20} />
                             </div>
                             <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border border-green-100 bg-green-50 text-green-700">Fully Online</span>
@@ -552,7 +552,7 @@ export default function EServicesPage() {
                             <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
                               <Briefcase size={20} />
                             </div>
-                            <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border border-blue-100 bg-blue-50 text-blue-700">Form & Payment</span>
+                            <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border border-blue-100 bg-blue-50 text-blue-700">Online Request</span>
                           </div>
                           <div>
                             <h3 className="text-sm font-black text-brand-text uppercase tracking-tight group-hover:text-brand-primary transition-colors font-display">Business Permit</h3>
@@ -827,7 +827,7 @@ export default function EServicesPage() {
                   </div>
 
                   {/* Timeline expected card */}
-                  <div className="p-6 bg-orange-50/50 border border-orange-100 rounded-3xl text-orange-950 text-left max-w-md mx-auto space-y-3">
+                  <div className="p-6 bg-sky-50/50 border border-sky-100 rounded-3xl text-sky-950 text-left max-w-md mx-auto space-y-3">
                     <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wide">
                       <Clock size={16} className="text-brand-primary" />
                       <span>Expected Processing Time</span>

@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ClipboardList, Users, Database, Search, 
   BarChart3, Activity, FileCheck, Landmark, 
   GraduationCap, Settings, ChevronRight, Info,
-  ShieldCheck, Cpu, Wifi, Globe, Terminal, Clock as ClockIcon,
-  UserPlus, ExternalLink
+  Globe, UserPlus, ExternalLink
 } from 'lucide-react';
 import GadEntryModule from './GadEntryModule';
 import { 
@@ -25,10 +24,39 @@ interface Section {
 }
 
 interface GadImsData {
-  title?: string;
-  subtitle?: string;
-  sections?: Section[];
+  title: string;
+  subtitle: string;
+  sections: Section[];
 }
+
+const SECTION_ICONS: Record<string, React.ReactNode> = {
+  overview: <Info size={18} />,
+  governance: <Landmark size={18} />,
+  "data-entry": <UserPlus size={18} />,
+  "data-modules": <Database size={18} />,
+  analysis: <Search size={18} />,
+  budgeting: <BarChart3 size={18} />,
+  me: <Activity size={18} />,
+  reporting: <ClipboardList size={18} />,
+  barangay: <Users size={18} />,
+  knowledge: <GraduationCap size={18} />,
+  admin: <Settings size={18} />,
+  annexes: <FileCheck size={18} />,
+};
+
+const MOCK_CHART_DATA = [
+  { name: 'Health', value: 400, color: '#2563eb' },
+  { name: 'Education', value: 300, color: '#3b82f6' },
+  { name: 'Economy', value: 300, color: '#60a5fa' },
+  { name: 'Governance', value: 200, color: '#93c5fd' },
+];
+
+const MOCK_BAR_DATA = [
+  { year: '2021', budget: 45 },
+  { year: '2022', budget: 52 },
+  { year: '2023', budget: 61 },
+  { year: '2024', budget: 75 },
+];
 
 const DEFAULT_GAD_IMS_DATA: GadImsData = {
   title: "Talibon GAD Analytics App",
@@ -136,39 +164,9 @@ const DEFAULT_GAD_IMS_DATA: GadImsData = {
   ]
 };
 
-const SECTION_ICONS: Record<string, React.ReactNode> = {
-  overview: <Info size={18} />,
-  governance: <Landmark size={18} />,
-  "data-entry": <UserPlus size={18} />,
-  "data-modules": <Database size={18} />,
-  analysis: <Search size={18} />,
-  budgeting: <BarChart3 size={18} />,
-  me: <Activity size={18} />,
-  reporting: <ClipboardList size={18} />,
-  barangay: <Users size={18} />,
-  knowledge: <GraduationCap size={18} />,
-  admin: <Settings size={18} />,
-  annexes: <FileCheck size={18} />,
-};
-
-const MOCK_CHART_DATA = [
-  { name: 'Health', value: 400, color: '#2563eb' },
-  { name: 'Education', value: 300, color: '#3b82f6' },
-  { name: 'Economy', value: 300, color: '#60a5fa' },
-  { name: 'Governance', value: 200, color: '#93c5fd' },
-];
-
-const MOCK_BAR_DATA = [
-  { year: '2021', budget: 45 },
-  { year: '2022', budget: 52 },
-  { year: '2023', budget: 61 },
-  { year: '2024', budget: 75 },
-];
-
 const GadImsSystem: React.FC<{ data?: GadImsData }> = ({ data }) => {
   const activeData = (data && data.sections && data.sections.length > 0) ? data : DEFAULT_GAD_IMS_DATA;
   const [activeTab, setActiveTab] = useState(activeData.sections?.[0]?.id || "overview");
-  const [time, setTime] = useState(new Date().toLocaleTimeString());
 
   // Inject Data Entry tab if not in data sections
   const sections = activeData.sections ? [
@@ -177,26 +175,21 @@ const GadImsSystem: React.FC<{ data?: GadImsData }> = ({ data }) => {
     ...activeData.sections.slice(2)
   ] : [];
 
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const activeSection = sections.find(s => s.id === activeTab);
 
   return (
     <div className="space-y-6">
       {/* Top Call-to-Action Banner for External GAD-IMS System */}
-      <div className="bg-gradient-to-r from-brand-text via-slate-900 to-brand-text text-white p-6 sm:p-8 rounded-[2rem] shadow-xl border border-brand-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden group">
-        <div className="relative z-10 space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-primary/20 border border-brand-primary/30 rounded-full text-brand-accent text-[10px] font-black uppercase tracking-widest">
-            <span className="w-2 h-2 rounded-full bg-brand-accent animate-pulse" />
+      <div className="bg-gradient-to-r from-brand-text via-slate-900 to-brand-text text-white p-4 sm:p-5 rounded-2xl shadow-md border border-brand-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden group">
+        <div className="relative z-10 space-y-1 max-w-xl">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-brand-primary/20 border border-brand-primary/30 rounded-full text-brand-accent text-[9px] font-bold uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse" />
             Live System Available
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white font-display">
+          <h2 className="text-lg sm:text-xl font-bold uppercase tracking-tight text-white font-display">
             Access GAD-IMS Portal
           </h2>
-          <p className="text-xs sm:text-sm text-white/70 font-medium leading-relaxed">
+          <p className="text-xs text-white/70 font-medium leading-relaxed">
             Open the GAD-IMS Management System for real-time gender profiling, budget tracking, and governance reports.
           </p>
         </div>
@@ -204,121 +197,87 @@ const GadImsSystem: React.FC<{ data?: GadImsData }> = ({ data }) => {
           href="https://tagad-sys.vercel.app/"
           target="_blank"
           rel="noopener noreferrer"
-          className="relative z-10 inline-flex items-center justify-center gap-2.5 px-6 py-4 bg-brand-primary hover:bg-brand-primary/90 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all duration-300 shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 active:translate-y-0 shrink-0 group/btn w-full sm:w-auto"
+          className="relative z-10 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-sm hover:shadow-brand-primary/30 hover:-translate-y-0.5 active:translate-y-0 shrink-0 group/btn w-full sm:w-auto"
         >
           <span>Access GAD-IMS</span>
-          <ExternalLink size={18} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform shrink-0" />
+          <ExternalLink size={15} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform shrink-0" />
         </a>
         <div className="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-105 transition-transform duration-700 pointer-events-none">
-          <Globe size={180} />
+          <Globe size={120} />
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 bg-brand-surface border border-brand-border rounded-[2.5rem] p-4 lg:p-10 shadow-2xl relative overflow-hidden">
-        {/* System Decoration */}
-        <div className="absolute top-0 right-0 p-8 flex items-center gap-6 opacity-30 select-none pointer-events-none">
-          <div className="text-right">
-            <div className="text-[10px] font-mono font-black text-brand-primary uppercase tracking-widest">SYSTEM_VERSION: 2.1.0-STABLE</div>
-            <div className="text-[10px] font-mono text-brand-muted uppercase tracking-widest">ENCRYPTION: AES-256-GCM</div>
-          </div>
-          <div className="p-3 bg-brand-primary/5 rounded-2xl">
-            <ShieldCheck size={24} className="text-brand-primary" />
-          </div>
-        </div>
-
+      <div className="flex flex-col lg:flex-row gap-5 bg-brand-surface border border-brand-border rounded-2xl p-4 lg:p-6 shadow-xs relative overflow-hidden">
         {/* Sidebar Navigation */}
-        <aside className="w-full lg:w-80 shrink-0 flex flex-col gap-6">
-          <div className="bg-brand-text text-white p-8 rounded-[2rem] shadow-xl relative overflow-hidden group">
+        <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-4">
+          <div className="bg-brand-text text-white p-5 rounded-2xl shadow-md relative overflow-hidden group">
             <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-white/10 rounded-lg backdrop-blur-md">
-                  <Cpu size={20} className="text-brand-accent animate-pulse" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-accent">CORE_SYSTEM</span>
-              </div>
-              <h2 className="text-2xl font-black leading-tight uppercase tracking-tighter mb-2">Talibon GAD-IMS</h2>
-              <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-relaxed mb-6">
+              <h2 className="text-lg font-bold leading-tight uppercase tracking-tight mb-1.5">Talibon GAD-IMS</h2>
+              <p className="text-[10px] font-medium text-white/60 uppercase tracking-wider leading-relaxed mb-4">
                 Mainstreaming Gender-Responsive Governance through Data
               </p>
               <a
                 href="https://tagad-sys.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full px-5 py-3.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-lg hover:shadow-brand-primary/20 active:scale-95 group/btn"
+                className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-sm active:scale-95 group/btn"
               >
                 <span>Access GAD-IMS</span>
-                <ExternalLink size={15} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform shrink-0" />
+                <ExternalLink size={14} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform shrink-0" />
               </a>
             </div>
             <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
-              <Globe size={120} />
+              <Globe size={90} />
             </div>
           </div>
         
-        <nav className="flex flex-col gap-1 p-2 bg-brand-bg rounded-[2rem] border border-brand-border/50">
+        <nav className="flex flex-col gap-1 p-1.5 bg-brand-bg rounded-xl border border-brand-border/50">
           {sections.map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveTab(section.id)}
-              className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-left relative group ${
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all text-left relative group ${
                 activeTab === section.id 
-                  ? 'bg-brand-bg text-brand-text shadow-md border border-brand-border' 
+                  ? 'bg-brand-bg text-brand-text shadow-xs border border-brand-border' 
                   : 'text-brand-muted hover:text-brand-text hover:bg-brand-bg/50'
               }`}
             >
-              <span className={`transition-colors p-2 rounded-xl scale-90 ${activeTab === section.id ? 'bg-brand-primary text-white' : 'bg-brand-bg text-brand-muted group-hover:bg-brand-surface transition-all'}`}>
-                {SECTION_ICONS[section.id] || <ChevronRight size={18} />}
+              <span className={`transition-colors p-1.5 rounded-md ${activeTab === section.id ? 'bg-brand-primary text-white' : 'bg-brand-bg text-brand-muted group-hover:bg-brand-surface transition-all'}`}>
+                {SECTION_ICONS[section.id] || <ChevronRight size={14} />}
               </span>
               <div className="flex flex-col">
-                <span className="text-[8px] font-black text-brand-primary opacity-50 uppercase tracking-tighter mb-0.5">
-                  MODULE_{section.id.toUpperCase()}
-                </span>
-                <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                <span className="text-[11px] font-bold uppercase tracking-wider leading-none">
                   {section.title.split('. ')[1] || section.title}
                 </span>
               </div>
               {activeTab === section.id && (
                 <motion.div 
                   layoutId="active-nav-bg"
-                  className="absolute left-1 w-1 h-6 bg-brand-primary rounded-full"
+                  className="absolute left-1 w-1 h-5 bg-brand-primary rounded-full"
                 />
               )}
             </button>
           ))}
         </nav>
-
-        {/* System Stats Footer */}
-        <div className="mt-auto p-6 bg-gray-50 rounded-2xl border border-brand-border/50 font-mono text-[10px] space-y-3 uppercase tracking-tighter">
-          <div className="flex justify-between items-center text-brand-muted">
-            <span className="flex items-center gap-2"><Wifi size={10} className="text-green-500" /> Connection</span>
-            <span className="font-bold text-gray-900 leading-none">SECURE_ACTIVE</span>
-          </div>
-          <div className="flex justify-between items-center text-brand-muted">
-            <span className="flex items-center gap-2"><Terminal size={10} /> Local Time</span>
-            <span className="font-bold text-brand-text flex items-center gap-1">
-              <ClockIcon size={10} /> {time}
-            </span>
-          </div>
-        </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col gap-8 relative">
+      <main className="flex-1 flex flex-col gap-6 relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="flex-1 flex flex-col gap-10"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="flex-1 flex flex-col gap-6"
           >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-brand-border relative">
-              <div className="space-y-2 max-w-2xl">
-                <h1 className="text-3xl md:text-4xl font-black text-brand-text uppercase tracking-tighter leading-tight">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-brand-border relative">
+              <div className="space-y-1 max-w-xl">
+                <h1 className="text-xl md:text-2xl font-bold text-brand-text uppercase tracking-tight leading-tight">
                   {activeSection?.title}
                 </h1>
-                <p className="text-xs text-brand-muted font-semibold">
+                <p className="text-xs text-brand-muted font-medium">
                   Open the GAD-IMS Management System
                 </p>
               </div>
@@ -326,46 +285,45 @@ const GadImsSystem: React.FC<{ data?: GadImsData }> = ({ data }) => {
                 href="https://tagad-sys.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2.5 px-5 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 shrink-0 border border-brand-primary/20"
+                className="inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-xs hover:-translate-y-0.5 active:translate-y-0 shrink-0 border border-brand-primary/20"
               >
                 <span>Access GAD-IMS</span>
-                <ExternalLink size={15} className="shrink-0" />
+                <ExternalLink size={14} className="shrink-0" />
               </a>
             </div>
 
             {/* Dashboard Visualization Overlay (Optional based on section) */}
             {activeTab === 'reporting' || activeTab === 'budgeting' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 bg-brand-text text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
-                <div className="space-y-6 relative z-10">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">System Dashboard / Metrics</h4>
-                  <div className="h-[200px] w-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-brand-text text-white rounded-2xl shadow-md relative overflow-hidden">
+                <div className="space-y-4 relative z-10">
+                  <h4 className="text-[9px] font-bold uppercase tracking-widest opacity-50">System Dashboard / Metrics</h4>
+                  <div className="h-[180px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={MOCK_BAR_DATA}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                         <XAxis dataKey="year" stroke="#ffffff60" fontSize={10} />
                         <YAxis stroke="#ffffff60" fontSize={10} />
                         <Tooltip 
-                          contentStyle={{ backgroundColor: '#1d1d1f', border: 'none', borderRadius: '12px' }}
+                          contentStyle={{ backgroundColor: '#1d1d1f', border: 'none', borderRadius: '8px' }}
                           itemStyle={{ color: '#fff' }}
                         />
                         <Bar dataKey="budget" fill="#58a6ff" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-[10px] font-mono text-white/40 uppercase">Interactive Budget Attribution Analysis v1.4</p>
                 </div>
-                <div className="space-y-6 relative z-10">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Gender Sector Distribution</h4>
-                  <div className="h-[200px] w-full">
+                <div className="space-y-4 relative z-10">
+                  <h4 className="text-[9px] font-bold uppercase tracking-widest opacity-50">Gender Sector Distribution</h4>
+                  <div className="h-[180px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={MOCK_CHART_DATA}
                           cx="50%"
                           cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={5}
+                          innerRadius={50}
+                          outerRadius={70}
+                          paddingAngle={4}
                           dataKey="value"
                         >
                           {MOCK_CHART_DATA.map((entry, index) => (
@@ -376,11 +334,11 @@ const GadImsSystem: React.FC<{ data?: GadImsData }> = ({ data }) => {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="flex flex-wrap gap-4 justify-center">
+                  <div className="flex flex-wrap gap-3 justify-center">
                     {MOCK_CHART_DATA.map(d => (
-                      <div key={`chart-legend-${d.name}`} className="flex items-center gap-2">
+                      <div key={`chart-legend-${d.name}`} className="flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
-                        <span className="text-[8px] font-black uppercase tracking-widest">{d.name}</span>
+                        <span className="text-[8px] font-bold uppercase tracking-wider">{d.name}</span>
                       </div>
                     ))}
                   </div>
@@ -389,38 +347,37 @@ const GadImsSystem: React.FC<{ data?: GadImsData }> = ({ data }) => {
             ) : null}
 
             {activeTab === 'data-entry' ? (
-              <div className="flex-1 mt-4">
+              <div className="flex-1 mt-2">
                 <GadEntryModule />
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                 {activeSection?.content.map((sub, idx) => (
                   <motion.div 
                     key={`gad-subsection-${idx}`} 
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="bg-brand-surface border border-brand-border rounded-[2rem] p-8 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden"
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-brand-surface border border-brand-border rounded-xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-300 group relative overflow-hidden"
                   >
                     <div className="relative z-10">
-                      <h3 className="text-sm font-black text-brand-text uppercase tracking-widest pb-4 mb-6 border-b border-brand-border flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-brand-text uppercase tracking-wider pb-3 mb-4 border-b border-brand-border flex items-center justify-between">
                         {sub.subTitle}
-                        <span className="text-[8px] font-mono text-brand-primary opacity-30">SUB_SEC_{idx.toString().padStart(2, '0')}</span>
                       </h3>
-                      <ul className="space-y-4">
+                      <ul className="space-y-3">
                         {sub.items.map((item, i) => (
-                          <li key={`gad-item-${idx}-${i}`} className="flex gap-4 text-xs text-brand-muted font-bold leading-relaxed group/item">
+                          <li key={`gad-item-${idx}-${i}`} className="flex gap-3 text-xs text-brand-muted font-medium leading-relaxed group/item">
                             <div className="mt-1 flex flex-col items-center">
-                              <div className="w-1.5 h-1.5 rounded-full bg-brand-primary group-hover/item:scale-150 transition-transform shrink-0" />
-                              <div className="w-px h-full bg-brand-border mt-1" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-brand-primary group-hover/item:scale-125 transition-transform shrink-0" />
+                              <div className="w-px h-full bg-brand-border/60 mt-1" />
                             </div>
                             <span>{item}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
-                    <div className="absolute top-1/2 -right-4 -translate-y-1/2 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000">
-                      <Database size={100} />
+                    <div className="absolute top-1/2 -right-4 -translate-y-1/2 opacity-[0.03] group-hover:scale-105 transition-transform duration-700">
+                      <Database size={80} />
                     </div>
                   </motion.div>
                 ))}

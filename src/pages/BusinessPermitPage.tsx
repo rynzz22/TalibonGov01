@@ -103,10 +103,10 @@ const BusinessPermitPage: React.FC = () => {
 
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-bold text-brand-text uppercase tracking-tight font-display">
-                    Simplified Online Payment
+                    Online Payment Coming Soon
                   </h3>
                   <p className="text-brand-muted font-medium text-xs mt-0.5 leading-relaxed">
-                    Skip the long lines. Pay your processing fees online securely via GCash, Maya, or Cards.
+                    Online payments will be available in Phase 2. Submit your application online, then settle fees directly at the Municipal Treasurer's Office upon document pickup.
                   </p>
                 </div>
               </div>

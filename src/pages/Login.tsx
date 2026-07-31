@@ -18,6 +18,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   // Profile Setup Form States
   const [selectedRole, setSelectedRole] = useState<OfficialRole>("barangay_admin");
@@ -367,15 +368,6 @@ const Login: React.FC = () => {
           >
             ← Back
           </button>
-          
-          <button
-            type="button"
-            onClick={() => navigate("/", { replace: true })}
-            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-brand-bg text-brand-muted hover:text-red-500 transition-all cursor-pointer text-xs font-black"
-            aria-label="Close"
-          >
-            ✕
-          </button>
         </div>
 
         <div className="flex flex-col text-center">
@@ -449,6 +441,8 @@ const Login: React.FC = () => {
                       type={showPassword ? "text" : "password"} 
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setIsPasswordFocused(true)}
+                      onBlur={() => setIsPasswordFocused(false)}
                       placeholder="••••••••"
                       required
                       className="w-full bg-brand-bg border border-brand-border rounded-2xl py-4 pl-12 pr-12 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
@@ -475,20 +469,29 @@ const Login: React.FC = () => {
                   </label>
                 </div>
 
-                <button 
-                  type="submit"
-                  disabled={isLoading}
-                  className="minimal-button-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-brand-primary/10"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <span>Sign In to System</span>
-                      <ArrowRight size={16} />
-                    </>
-                  )}
-                </button>
+                {(() => {
+                  const isSignInActive = isPasswordFocused || (email.trim() !== "" && password.trim() !== "") || password.trim() !== "";
+                  return (
+                    <button 
+                      type="submit"
+                      disabled={isLoading}
+                      className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 text-xs font-black uppercase tracking-widest ${
+                        isSignInActive
+                          ? "bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-600/30 active:scale-[0.99]"
+                          : "bg-sky-100/90 hover:bg-sky-200/80 text-sky-700 border border-sky-300/60 shadow-2xs"
+                      }`}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <span>Sign In to System</span>
+                          <ArrowRight size={16} />
+                        </>
+                      )}
+                    </button>
+                  );
+                })()}
 
                 <div className="mt-6 text-center">
                   <p className="text-xs text-brand-muted font-bold">

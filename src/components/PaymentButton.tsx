@@ -1,6 +1,5 @@
-import React, { useState, useRef } from "react";
-import { CreditCard, Loader2, ArrowRight } from "lucide-react";
-import { paymentService } from "../services/paymentService";
+import React from "react";
+import { Clock, ShieldCheck, Banknote } from "lucide-react";
 import { motion } from "motion/react";
 
 interface PaymentButtonProps {
@@ -14,75 +13,37 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   itemName,
   amount,
   className = "",
-  label = "Pay Fee Online",
+  label = "Fee Assessment",
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const clickedRef = useRef(false);
-
-  const handlePayment = async () => {
-    if (clickedRef.current || isLoading) return;
-    clickedRef.current = true;
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      await paymentService.createCheckoutSession(itemName, amount);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again.";
-      setError(message);
-      setIsLoading(false);
-      clickedRef.current = false;
-    }
-  };
-
   return (
-    <div className={`space-y-4 ${className}`}>
-      <motion.button
-        whileHover={{ scale: isLoading ? 1 : 1.01 }}
-        whileTap={{ scale: isLoading ? 1 : 0.98 }}
-        onClick={handlePayment}
-        disabled={isLoading}
-        aria-busy={isLoading}
-        className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-brand-primary text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm hover:bg-brand-text transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+    <div className={`space-y-3 ${className}`}>
+      <motion.div
+        whileHover={{ scale: 1.01 }}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-bold uppercase tracking-wider shadow-2xs"
       >
         <div className="flex items-center gap-2 shrink-0">
-          {isLoading ? (
-            <Loader2 className="animate-spin" size={16} aria-hidden="true" />
-          ) : (
-            <CreditCard size={16} className="group-hover:rotate-12 transition-transform" aria-hidden="true" />
-          )}
-          <span>{isLoading ? "Processing..." : label}</span>
+          <Clock size={16} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+          <span>Online Payment Coming Soon</span>
         </div>
-        {!isLoading && (
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-white/80 font-mono text-[11px]">
-              PHP {amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-            <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-          </div>
-        )}
-      </motion.button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-amber-900/80 dark:text-amber-200 font-mono text-[11px] font-bold">
+            PHP {amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      </motion.div>
 
-      {error && (
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          role="alert"
-          className="text-red-600 text-xs font-bold uppercase tracking-widest text-center bg-red-50 py-2 px-4 rounded-lg border border-red-100"
-        >
-          {error}
-        </motion.p>
-      )}
-
-      <p className="text-[10px] text-brand-muted font-bold uppercase tracking-[0.15em] text-center opacity-60">
-        Secure payment via Xendit. GCash, Maya, and Cards accepted.
-      </p>
+      <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1.5 text-center">
+        <div className="flex items-center justify-center gap-1.5 text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+          <Banknote size={13} className="text-emerald-600" />
+          <span>Pay at Treasurer's Office</span>
+        </div>
+        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+          No online payment required now. Pay directly at the Municipal Treasurer's Office upon document verification and pickup.
+        </p>
+      </div>
     </div>
   );
 };
 
 export default PaymentButton;
+

@@ -1,11 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, DownloadableItem } from "./cmsService";
 import { isMockAllowed } from "../lib/mode";
-import { apiCache } from "../lib/apiCache";
-import { logServiceEvent } from "../lib/logger";
-
-const CACHE_KEY = "downloadables:list";
-const CACHE_TTL_MS = 1000 * 60 * 5; // 5 minutes TTL for downloadables
 
 const INITIAL_DOWNLOADS: DownloadableItem[] = [
   {
@@ -43,40 +38,29 @@ function setStorageDownloads(data: DownloadableItem[]): void {
 
 export const downloadablesService = {
   async getDownloadables(): Promise<DownloadableItem[]> {
-    const cached = apiCache.get<DownloadableItem[]>(CACHE_KEY);
-    if (cached) return cached.data;
-
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
           .from("downloadables")
-          .select("id, title, description, category, file_url, file_size, status, created_at")
-          .order("created_at", { ascending: false })
-          .limit(100);
+          .select("*")
+          .order("created_at", { ascending: false });
         if (error) throw error;
-        if (data) {
-          const result = data as DownloadableItem[];
-          apiCache.set(CACHE_KEY, result, CACHE_TTL_MS, ["downloadables"]);
-          return result;
-        }
+        if (data) return data as DownloadableItem[];
       } catch (e: any) {
-        logServiceEvent("DownloadablesService", "getDownloadables", "error", "Fetch failed", { error: e.message });
         if (!isMockAllowed()) {
           throw new Error(`[DownloadablesService] Failed to load downloadables: ${e.message}`);
         }
+        console.error("[DownloadablesService] Supabase Downloadables fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 
     if (!isMockAllowed()) {
       throw new Error("[DownloadablesService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
-    const fallback = getStorageDownloads();
-    apiCache.set(CACHE_KEY, fallback, CACHE_TTL_MS, ["downloadables"], "FALLBACK");
-    return fallback;
+    return getStorageDownloads();
   },
 
   async createDownloadable(item: Omit<DownloadableItem, "id">, userEmail: string): Promise<DownloadableItem> {
-    apiCache.invalidateTag("downloadables");
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
@@ -87,11 +71,10 @@ export const downloadablesService = {
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "downloadables", data.id);
-          logServiceEvent("DownloadablesService", "createDownloadable", "info", "Created downloadable", { id: data.id });
           return data as DownloadableItem;
         }
       } catch (e: any) {
-        logServiceEvent("DownloadablesService", "createDownloadable", "error", "Insert failed", { error: e.message });
+        console.error("[DownloadablesService] Supabase Downloadables insert failed:", e.message || e);
         throw e;
       }
     }
@@ -110,7 +93,6 @@ export const downloadablesService = {
   },
 
   async updateDownloadable(id: string, item: Partial<DownloadableItem>, userEmail: string): Promise<DownloadableItem> {
-    apiCache.invalidateTag("downloadables");
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
@@ -122,11 +104,10 @@ export const downloadablesService = {
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "downloadables", id);
-          logServiceEvent("DownloadablesService", "updateDownloadable", "info", "Updated downloadable", { id });
           return data as DownloadableItem;
         }
       } catch (e: any) {
-        logServiceEvent("DownloadablesService", "updateDownloadable", "error", "Update failed", { id, error: e.message });
+        console.error("[DownloadablesService] Supabase Downloadables update failed:", e.message || e);
         throw e;
       }
     }
@@ -147,7 +128,6 @@ export const downloadablesService = {
   },
 
   async deleteDownloadable(id: string, userEmail: string): Promise<boolean> {
-    apiCache.invalidateTag("downloadables");
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase
@@ -156,10 +136,9 @@ export const downloadablesService = {
           .eq("id", id);
         if (error) throw error;
         await logCmsAction(userEmail, "DELETE", "downloadables", id);
-        logServiceEvent("DownloadablesService", "deleteDownloadable", "info", "Deleted downloadable", { id });
         return true;
       } catch (e: any) {
-        logServiceEvent("DownloadablesService", "deleteDownloadable", "error", "Delete failed", { id, error: e.message });
+        console.error("[DownloadablesService] Supabase Downloadables delete failed:", e.message || e);
         throw e;
       }
     }
@@ -175,4 +154,3 @@ export const downloadablesService = {
     return true;
   }
 };
-

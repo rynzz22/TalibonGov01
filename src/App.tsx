@@ -286,7 +286,7 @@ function AppLayout() {
             <span className="text-sm">⚠️</span>
             <div className="flex flex-col text-left">
               <span className="text-[10px] font-black uppercase tracking-widest">Offline Mode</span>
-              <span className="text-[9px] font-mono text-amber-600 uppercase">Operating on cached local core.</span>
+              <span className="text-[9px] font-medium text-amber-600">Please check your internet connection.</span>
             </div>
           </div>
         )}
@@ -332,7 +332,7 @@ function AppLayout() {
           <Route path="/executive/vision-mission" element={<ContentPage title="Vision & Mission" fetchData={executiveApi.getVisionMission} renderContent={(data) => <VisionMissionView data={data} />} />} />
           <Route path="/executive/chart" element={<OrganizationalChartPage />} />
           <Route path="/executive/directory" element={<ContentPage title="Directory of Departments" fetchData={executiveApi.getDirectory} renderContent={(data) => <DirectoryView data={data} />} />} />
-          <Route path="/executive/gad-ims" element={<GadImsView />} />
+          <Route path="/executive/gad-ims" element={<ContentPage title="Talibon GAD-IMS" fetchData={executiveApi.getGadIms} renderContent={(data) => <GadImsView data={data} />} />} />
 
           {/* Legislative */}
           <Route path="/legislative/mandate" element={<ContentPage title="Legislative Mandate" fetchData={legislativeApi.getMandate} renderContent={(data) => <LegislativeMandateView data={data} />} />} />

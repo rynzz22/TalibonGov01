@@ -700,8 +700,8 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
             </div>
 
             {/* Application Consent & Submission */}
-            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-start gap-3 text-orange-950">
+            <div className="bg-sky-50 border border-sky-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-start gap-3 text-sky-950">
                 <ShieldCheck size={22} className="text-brand-primary shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
                   <h4 className="text-[11px] font-black uppercase tracking-wider">RA 10173 Data Privacy Compliance</h4>
@@ -777,66 +777,66 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
             </div>
 
             {/* Printable Digital Cedula Mock (Visual Proof of High Craftsmanship!) */}
-            <div className="bg-amber-50/50 border-4 border-double border-amber-600/30 rounded-[2.5rem] p-6 md:p-10 space-y-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-amber-600/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 select-none pointer-events-none" />
+            <div className="bg-sky-50/50 border-4 border-double border-sky-600/30 rounded-[2.5rem] p-6 md:p-10 space-y-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-sky-600/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 select-none pointer-events-none" />
               
               {/* Cedula Headers */}
-              <div className="text-center border-b border-amber-600/20 pb-6">
-                <p className="text-[10px] font-extrabold text-amber-800 uppercase tracking-widest">Republic of the Philippines</p>
-                <h4 className="text-lg font-black text-amber-950 font-display uppercase tracking-tight">COMMUNITY TAX CERTIFICATE</h4>
-                <p className="text-[9px] font-black text-amber-700 uppercase tracking-[0.25em] mt-1">INDIVIDUAL • LGU OF TALIBON, BOHOL</p>
+              <div className="text-center border-b border-sky-600/20 pb-6">
+                <p className="text-[10px] font-extrabold text-sky-800 uppercase tracking-widest">Republic of the Philippines</p>
+                <h4 className="text-lg font-black text-sky-950 font-display uppercase tracking-tight">COMMUNITY TAX CERTIFICATE</h4>
+                <p className="text-[9px] font-black text-sky-700 uppercase tracking-[0.25em] mt-1">INDIVIDUAL • LGU OF TALIBON, BOHOL</p>
               </div>
 
               {/* Cedula Details Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-[11px] font-semibold text-amber-950">
-                <div className="md:col-span-2 border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">Taxpayer Name (Last, First, Middle)</span>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-[11px] font-semibold text-sky-950">
+                <div className="md:col-span-2 border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">Taxpayer Name (Last, First, Middle)</span>
                   <span className="font-extrabold uppercase">{receipt.lastName}, {receipt.firstName} {receipt.middleName} {receipt.suffix}</span>
                 </div>
-                <div className="border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">Citizenship</span>
+                <div className="border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">Citizenship</span>
                   <span className="font-extrabold uppercase">{receipt.citizenship}</span>
                 </div>
-                <div className="border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">Civil Status</span>
+                <div className="border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">Civil Status</span>
                   <span className="font-extrabold uppercase">{receipt.civilStatus}</span>
                 </div>
 
-                <div className="md:col-span-2 border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">Residence Address</span>
+                <div className="md:col-span-2 border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">Residence Address</span>
                   <span className="font-extrabold uppercase">{receipt.address}, {BARANGAYS.find(b => b.slug === receipt.barangay)?.name || receipt.barangay}, Talibon, Bohol</span>
                 </div>
-                <div className="border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">Date of Birth</span>
+                <div className="border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">Date of Birth</span>
                   <span className="font-extrabold">{receipt.birthDate}</span>
                 </div>
-                <div className="border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">TIN Number</span>
+                <div className="border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">TIN Number</span>
                   <span className="font-extrabold">{receipt.tin || "NOT SPECIFIED"}</span>
                 </div>
 
-                <div className="border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">Occupation</span>
+                <div className="border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">Occupation</span>
                   <span className="font-extrabold uppercase">{receipt.occupation}</span>
                 </div>
-                <div className="md:col-span-2 border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">Employer Name</span>
+                <div className="md:col-span-2 border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">Employer Name</span>
                   <span className="font-extrabold uppercase">{receipt.employer || "N/A"}</span>
                 </div>
-                <div className="border-b border-amber-600/10 pb-2">
-                  <span className="text-[8px] text-amber-800/80 uppercase block">Purpose of CTC</span>
+                <div className="border-b border-sky-600/10 pb-2">
+                  <span className="text-[8px] text-sky-800/80 uppercase block">Purpose of CTC</span>
                   <span className="font-extrabold uppercase">{receipt.purpose}</span>
                 </div>
               </div>
 
               {/* Cedula Tax Assessment details */}
-              <div className="bg-amber-100/60 p-6 rounded-2xl border border-amber-600/10 space-y-3">
-                <div className="text-[10px] font-black text-amber-900 uppercase tracking-widest flex items-center gap-1.5 border-b border-amber-600/10 pb-2">
+              <div className="bg-sky-100/60 p-6 rounded-2xl border border-sky-600/10 space-y-3">
+                <div className="text-[10px] font-black text-sky-900 uppercase tracking-widest flex items-center gap-1.5 border-b border-sky-600/10 pb-2">
                   <Calculator size={14} />
                   <span>Certified Tax Breakdown</span>
                 </div>
 
-                <div className="text-xs font-bold uppercase text-amber-950 space-y-1.5">
+                <div className="text-xs font-bold uppercase text-sky-950 space-y-1.5">
                   <div className="flex justify-between">
                     <span>Basic Community Tax (Individual)</span>
                     <span>₱{receipt.basicTax.toFixed(2)}</span>
@@ -845,7 +845,7 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
                     <span>Additional Community Tax (0.1% Gross Income)</span>
                     <span>₱{receipt.additionalTax.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-amber-600/10 text-sm font-black text-amber-900">
+                  <div className="flex justify-between pt-2 border-t border-sky-600/10 text-sm font-black text-sky-900">
                     <span>Total Tax Assessed & Paid</span>
                     <span>₱{receipt.totalTax.toFixed(2)}</span>
                   </div>
@@ -853,16 +853,16 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
               </div>
 
               {/* Print buttons / Reset */}
-              <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4 border-t border-amber-600/20">
+              <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4 border-t border-sky-600/20">
                 <button
                   onClick={() => window.print()}
-                  className="px-8 py-4 bg-amber-600 text-white font-extrabold text-xs tracking-widest rounded-2xl hover:bg-amber-700 active:scale-95 transition-all uppercase flex items-center justify-center gap-2 shadow-sm"
+                  className="px-8 py-4 bg-[#3A8FC2] text-white font-extrabold text-xs tracking-widest rounded-2xl hover:bg-[#2B82B8] active:scale-95 transition-all uppercase flex items-center justify-center gap-2 shadow-sm"
                 >
                   <Printer size={16} /> Print Official Slip
                 </button>
                 <button
                   onClick={resetForm}
-                  className="px-8 py-4 border border-amber-600/50 text-amber-800 font-extrabold text-xs tracking-widest rounded-2xl hover:bg-amber-600 hover:text-white active:scale-95 transition-all uppercase flex items-center justify-center gap-2"
+                  className="px-8 py-4 border border-sky-600/50 text-sky-800 font-extrabold text-xs tracking-widest rounded-2xl hover:bg-[#3A8FC2] hover:text-white active:scale-95 transition-all uppercase flex items-center justify-center gap-2"
                 >
                   <RefreshCw size={16} /> File Another Request
                 </button>

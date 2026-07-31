@@ -60,10 +60,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, label, classNa
         };
       case "pending":
         return {
-          bg: "bg-amber-50 text-amber-700 border-amber-200/60 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50",
+          bg: "bg-sky-50 text-sky-700 border-sky-200/60 dark:bg-sky-950/20 dark:text-sky-400 dark:border-sky-900/50",
           text: label || "Pending",
           icon: Clock,
-          dotColor: "bg-amber-500 animate-pulse"
+          dotColor: "bg-sky-500 animate-pulse"
         };
       case "processing":
         return {

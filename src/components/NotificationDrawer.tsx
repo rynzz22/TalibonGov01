@@ -129,7 +129,7 @@ export default function NotificationDrawer({
         case "Staff Verification":
           return {
             icon: ShieldCheck,
-            color: "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400",
+            color: "bg-sky-50 text-sky-600 border-sky-100 dark:bg-sky-950/20 dark:text-sky-400",
             label: "Staff Registry"
           };
         case "News Approval":

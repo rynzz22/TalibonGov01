@@ -32,8 +32,8 @@ export default function EmergencyHotlines() {
       label: "Bureau of Fire Protection - Talibon",
       numbers: ["0945-862-7931"],
       icon: Flame,
-      color: "text-orange-500",
-      bgColor: "bg-orange-500/5"
+      color: "text-sky-500",
+      bgColor: "bg-sky-500/5"
     }
   ];
 

@@ -1,11 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, EventItem } from "./cmsService";
 import { isMockAllowed } from "../lib/mode";
-import { apiCache } from "../lib/apiCache";
-import { logServiceEvent } from "../lib/logger";
-
-const CACHE_KEY = "events:list";
-const CACHE_TTL_MS = 1000 * 60 * 3; // 3 minutes TTL for events
 
 const INITIAL_EVENTS: EventItem[] = [
   {
@@ -34,40 +29,29 @@ function setStorageEvents(data: EventItem[]): void {
 
 export const eventService = {
   async getEvents(): Promise<EventItem[]> {
-    const cached = apiCache.get<EventItem[]>(CACHE_KEY);
-    if (cached) return cached.data;
-
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
           .from("events")
-          .select("id, title, description, date, time, venue, banner_image, created_at")
-          .order("date", { ascending: true })
-          .limit(100);
+          .select("*")
+          .order("date", { ascending: true });
         if (error) throw error;
-        if (data) {
-          const result = data as EventItem[];
-          apiCache.set(CACHE_KEY, result, CACHE_TTL_MS, ["events"]);
-          return result;
-        }
+        if (data) return data as EventItem[];
       } catch (e: any) {
-        logServiceEvent("EventService", "getEvents", "error", "Fetch failed", { error: e.message });
         if (!isMockAllowed()) {
           throw new Error(`[EventService] Failed to load events: ${e.message}`);
         }
+        console.error("[EventService] Supabase Events fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 
     if (!isMockAllowed()) {
       throw new Error("[EventService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
-    const fallback = getStorageEvents();
-    apiCache.set(CACHE_KEY, fallback, CACHE_TTL_MS, ["events"], "FALLBACK");
-    return fallback;
+    return getStorageEvents();
   },
 
   async createEvent(item: Omit<EventItem, "id">, userEmail: string): Promise<EventItem> {
-    apiCache.invalidateTag("events");
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
@@ -78,11 +62,10 @@ export const eventService = {
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "events", data.id);
-          logServiceEvent("EventService", "createEvent", "info", "Created event", { id: data.id });
           return data as EventItem;
         }
       } catch (e: any) {
-        logServiceEvent("EventService", "createEvent", "error", "Insert failed", { error: e.message });
+        console.error("[EventService] Supabase Events insert failed:", e.message || e);
         throw e;
       }
     }
@@ -101,7 +84,6 @@ export const eventService = {
   },
 
   async updateEvent(id: string, item: Partial<EventItem>, userEmail: string): Promise<EventItem> {
-    apiCache.invalidateTag("events");
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
@@ -113,11 +95,10 @@ export const eventService = {
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "events", id);
-          logServiceEvent("EventService", "updateEvent", "info", "Updated event", { id });
           return data as EventItem;
         }
       } catch (e: any) {
-        logServiceEvent("EventService", "updateEvent", "error", "Update failed", { id, error: e.message });
+        console.error("[EventService] Supabase Events update failed:", e.message || e);
         throw e;
       }
     }
@@ -138,7 +119,6 @@ export const eventService = {
   },
 
   async deleteEvent(id: string, userEmail: string): Promise<boolean> {
-    apiCache.invalidateTag("events");
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase
@@ -147,10 +127,9 @@ export const eventService = {
           .eq("id", id);
         if (error) throw error;
         await logCmsAction(userEmail, "DELETE", "events", id);
-        logServiceEvent("EventService", "deleteEvent", "info", "Deleted event", { id });
         return true;
       } catch (e: any) {
-        logServiceEvent("EventService", "deleteEvent", "error", "Delete failed", { id, error: e.message });
+        console.error("[EventService] Supabase Events delete failed:", e.message || e);
         throw e;
       }
     }
@@ -166,4 +145,3 @@ export const eventService = {
     return true;
   }
 };
-

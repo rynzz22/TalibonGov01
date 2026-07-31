@@ -16,7 +16,7 @@ export default function PopularServices() {
     { name: "ePermits (Business Permits)", to: "/e-services?type=Business Permit Clearance", color: "bg-emerald-50 text-emerald-800 border-emerald-200 hover:border-emerald-500", status: "Active" },
     { name: "eClearance (Barangay Clearance)", to: "/e-services?type=Barangay Clearance", color: "bg-blue-50 text-blue-800 border-blue-200 hover:border-blue-500", status: "Active" },
     { name: "eCedula (Community Tax)", to: "/e-services?type=Community Tax Certificate", color: "bg-purple-50 text-purple-800 border-purple-200 hover:border-purple-500", status: "Active" },
-    { name: "eCertificate (Indigency)", to: "/e-services", color: "bg-amber-50 text-amber-800 border-amber-200 hover:border-amber-500", status: "Active" },
+    { name: "eCertificate (Indigency)", to: "/e-services", color: "bg-sky-50 text-sky-800 border-sky-200 hover:border-sky-500", status: "Active" },
     { name: "eBuilding Permit", to: "/e-services", color: "bg-teal-50 text-teal-800 border-teal-200 hover:border-teal-500", status: "Active" },
     { name: "Real Property Tax Assessment", to: "/e-services", color: "bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-500", status: "Information Only" },
   ];
@@ -51,11 +51,11 @@ export default function PopularServices() {
             href="https://www.filipizen.com/" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="shrink-0 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 border border-emerald-300"
+            className="shrink-0 font-extrabold text-xs sm:text-sm uppercase tracking-widest text-emerald-400 hover:text-emerald-300 underline underline-offset-4 flex items-center gap-2 transition-colors py-1"
           >
-            <Globe size={18} />
+            <Globe size={16} />
             <span>Access FiliPizen</span>
-            <ExternalLink size={16} />
+            <ExternalLink size={14} />
           </a>
         </div>
         
@@ -82,7 +82,7 @@ export default function PopularServices() {
                       <CheckCircle2 size={10} /> Active
                     </span>
                   ) : (
-                    <span className="px-2.5 py-1 bg-amber-500/20 text-amber-800 text-[9px] font-black rounded-full flex items-center gap-1 border border-amber-300">
+                    <span className="px-2.5 py-1 bg-sky-500/20 text-sky-800 text-[9px] font-black rounded-full flex items-center gap-1 border border-sky-300">
                       <Clock size={10} /> Info Only
                     </span>
                   )}

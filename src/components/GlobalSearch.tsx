@@ -233,7 +233,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
                         <div
                           className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110 ${
                             result.type === "news"
-                              ? "bg-orange-50 text-orange-600"
+                              ? "bg-sky-50 text-sky-600"
                               : result.type === "ordinance"
                               ? "bg-blue-50 text-blue-600"
                               : "bg-green-50 text-green-600"

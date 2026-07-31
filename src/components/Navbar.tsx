@@ -20,6 +20,13 @@ export default function Navbar() {
   const [dynamicNavLinks, setDynamicNavLinks] = useState<any[]>([]);
   const location = useLocation();
   
+  const handleHomeClick = (e: React.MouseEvent) => {
+    if (location.pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+  
   const isScrolled = useIsScrolled(80);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -159,11 +166,11 @@ export default function Navbar() {
       <div className="absolute inset-0 bg-brand-bg/92 backdrop-blur-[1.5px] -z-10" />
 
       {/* Tier 1: Utility Navigation */}
-      <div className="bg-brand-bg/50 border-b border-brand-border backdrop-blur-md relative z-20">
+      <div className="bg-brand-bg/50 border-b border-brand-border backdrop-blur-md relative z-30">
         <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 h-7 sm:h-8 flex justify-between items-center text-[9px] sm:text-[11px]">
           <div className="flex items-center gap-2 sm:gap-4 divide-x divide-brand-border/60">
             <div className="flex items-center gap-2 sm:gap-3">
-              <Link to="/" className="font-extrabold text-brand-text hover:text-brand-primary transition-colors tracking-tight text-[10px] sm:text-xs">GOVPH</Link>
+              <Link to="/" onClick={handleHomeClick} className="font-extrabold text-brand-text hover:text-brand-primary transition-colors tracking-tight text-[10px] sm:text-xs">GOVPH</Link>
               <a 
                 href="mailto:official@talibon.gov.ph" 
                 className="hidden sm:flex items-center gap-1 text-brand-text hover:text-brand-primary font-semibold transition-colors text-[9px] sm:text-[11px]"
@@ -197,10 +204,11 @@ export default function Navbar() {
                       <AnimatePresence>
                         {activeDropdown === link.name && (
                           <motion.div
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
-                            className="absolute top-full left-0 w-52 bg-brand-surface shadow-2xl border border-brand-border py-1.5 z-[70]"
+                            initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-full left-0 w-56 bg-white shadow-2xl border border-brand-border/80 py-2 z-[100] rounded-xl overflow-hidden mt-0.5"
                           >
                             {link.subLinks.map((sub) => (
                               <Link
@@ -230,7 +238,7 @@ export default function Navbar() {
                       {link.name}
                     </HashLink>
                   ) : (
-                    <Link to={link.href} className="text-brand-text hover:text-brand-primary font-semibold transition-colors text-[9px] sm:text-[11px]">
+                    <Link to={link.href} onClick={link.href === "/" ? handleHomeClick : undefined} className="text-brand-text hover:text-brand-primary font-semibold transition-colors text-[9px] sm:text-[11px]">
                       {link.name}
                     </Link>
                   )}
@@ -294,7 +302,7 @@ export default function Navbar() {
       </div>
 
       {/* Tier 2: Branding Header */}
-      <div className={`bg-transparent border-b border-gray-100/50 relative z-10 transition-all duration-300 ease-in-out overflow-hidden ${
+      <div className={`bg-transparent relative z-10 transition-all duration-300 ease-in-out overflow-hidden ${
         isScrolled 
           ? "h-0 py-0 opacity-0 pointer-events-none border-none" 
           : "py-1.5 sm:py-2"
@@ -302,7 +310,7 @@ export default function Navbar() {
         <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 flex items-center justify-between">
           {/* Left Section: Logos */}
           <div className="flex items-center gap-2 sm:gap-3 w-1/4">
-            <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
+            <Link to="/" onClick={handleHomeClick} className="flex items-center gap-2 sm:gap-3 group">
               <div className="p-1 bg-white rounded-full shadow-md border border-brand-primary/20 group-hover:border-brand-primary transition-all duration-300">
                 <img 
                   src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
@@ -321,21 +329,21 @@ export default function Navbar() {
           </div>
 
           {/* Middle Section: Centered Text */}
-          <Link to="/" className="flex-1 flex flex-col items-center text-center px-2 transition-transform hover:scale-[1.01]">
+          <Link to="/" onClick={handleHomeClick} className="flex-1 flex flex-col items-center text-center px-2 transition-transform hover:scale-[1.01]">
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <div className="px-2.5 py-0.5 bg-brand-primary text-white text-[8px] font-black rounded-full animate-pulse tracking-widest shadow-2xs">#TALIBOOM</div>
+                <div className="px-2.5 py-0.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-yellow-100 text-slate-950 text-[8px] font-black rounded-full tracking-widest shadow-2xs">#TALIBOOM</div>
               </div>
-              <h1 className="font-display font-black text-brand-primary tracking-tighter leading-none mb-0.5 drop-shadow-2xs text-base sm:text-xl lg:text-[26px]">MUNICIPALITY OF TALIBON</h1>
+              <h1 className="font-display font-black text-yellow-400 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tighter leading-none mb-0.5 text-base sm:text-xl lg:text-[26px]">MUNICIPALITY OF TALIBON</h1>
               <div className="flex items-center gap-1.5">
-                <p className="text-brand-secondary font-black tracking-[0.2em] uppercase opacity-90 text-[8px] sm:text-[10px] lg:text-[11px] leading-none">BOHOL'S SEAFOOD CAPITAL 🦀</p>
+                <p className="text-yellow-400 font-black tracking-[0.2em] uppercase text-[8px] sm:text-[10px] lg:text-[11px] leading-none filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">BOHOL'S SEAFOOD CAPITAL 🦀</p>
               </div>
             </div>
           </Link>
 
           {/* Right Section: Province of Bohol Seal & Carlos P. Garcia Portrait */}
           <div className="flex items-center justify-end gap-2 sm:gap-3 w-1/4">
-            <Link to="/" className="flex items-center justify-end gap-2 sm:gap-3 group">
+            <Link to="/" onClick={handleHomeClick} className="flex items-center justify-end gap-2 sm:gap-3 group">
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Bohol_Province_Seal.png/500px-Bohol_Province_Seal.png" 
                 alt="Province of Bohol Official Seal" 
@@ -353,8 +361,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Tier 3: Secondary Navigation (Vibrant Bar) */}
-      <div className={`bg-gradient-to-r from-orange-600/90 to-amber-500/90 backdrop-blur-md border-t border-white/10 transition-all duration-300 ${
+      {/* Tier 3: Secondary Navigation (Blue -> Light Blue -> White Gradient Bar) */}
+      <div className={`bg-[linear-gradient(90deg,#0284C7_0%,#38BDF8_50%,#FFFFFF_100%)] backdrop-blur-md border-none relative z-20 transition-all duration-300 ${
         isScrolled ? "shadow-md" : ""
       }`}>
         <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 flex items-center justify-between relative transition-all duration-300">
@@ -368,17 +376,23 @@ export default function Navbar() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center gap-1.5 py-1"
                 >
-                  <img 
-                    src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
-                    alt="Talibon Seal" 
-                    className="w-6 h-6 object-contain rounded-full bg-white p-0.5 shadow-xs" 
-                    referrerPolicy="no-referrer"
-                  />
-                  <span className="text-white text-[10px] font-black tracking-widest uppercase font-display hidden sm:inline-block">
-                    TALIBON
-                  </span>
+                  <Link 
+                    to="/" 
+                    onClick={handleHomeClick} 
+                    className="flex items-center gap-1.5 py-1 hover:opacity-85 transition-opacity cursor-pointer group"
+                    title="Back to top"
+                  >
+                    <img 
+                      src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" 
+                      alt="Talibon Seal" 
+                      className="w-6 h-6 object-contain rounded-full bg-white p-0.5 shadow-xs group-hover:scale-105 transition-transform" 
+                      referrerPolicy="no-referrer"
+                    />
+                    <span className="text-white text-[10px] font-black tracking-widest uppercase font-display hidden sm:inline-block">
+                      TALIBON
+                    </span>
+                  </Link>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -398,7 +412,7 @@ export default function Navbar() {
                     <div className="flex items-center">
                       <Link 
                         to={link.href} 
-                        className={`pl-2.5 sm:pl-3 ${link.href === '#' ? 'pointer-events-none' : ''} py-1 sm:py-1.5 text-white text-[9px] sm:text-[10px] font-bold tracking-wider hover:bg-white/10 transition-all duration-300`}
+                        className={`pl-2.5 sm:pl-3 ${link.href === '#' ? 'pointer-events-none' : ''} py-1 sm:py-1.5 text-slate-950 font-black text-[9px] sm:text-[10px] tracking-wider hover:bg-slate-900/10 transition-all duration-300 drop-shadow-2xs`}
                       >
                         {link.name}
                       </Link>
@@ -407,7 +421,7 @@ export default function Navbar() {
                           e.stopPropagation();
                           setActiveDropdown(activeDropdown === link.name ? null : link.name);
                         }}
-                        className="pr-2.5 sm:pr-3 py-1 sm:py-1.5 text-white hover:bg-white/10 transition-all duration-300"
+                        className="pr-2.5 sm:pr-3 py-1 sm:py-1.5 text-slate-950 hover:bg-slate-900/10 transition-all duration-300"
                       >
                         <ChevronDown size={12} className={activeDropdown === link.name ? 'rotate-180' : ''} />
                       </button>
@@ -416,7 +430,8 @@ export default function Navbar() {
                     <Link 
                       to={link.href} 
                       target={link.isExternal ? "_blank" : undefined}
-                      className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-white text-[9px] sm:text-[10px] font-bold tracking-wider hover:bg-white/10 transition-all duration-300 block"
+                      onClick={link.href === "/" ? handleHomeClick : undefined}
+                      className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-slate-950 font-black text-[9px] sm:text-[10px] tracking-wider hover:bg-slate-900/10 transition-all duration-300 block drop-shadow-2xs"
                     >
                       {link.name}
                     </Link>
@@ -425,10 +440,11 @@ export default function Navbar() {
                   <AnimatePresence>
                     {activeDropdown === link.name && link.subLinks && (
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                        initial={{ opacity: 0, scale: 0.98, y: 4 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                        className="absolute top-full left-1/2 -translate-x-1/2 w-56 bg-brand-surface shadow-2xl border border-brand-border py-2 z-[70] rounded-b-xl overflow-hidden"
+                        exit={{ opacity: 0, scale: 0.98, y: 4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full left-1/2 -translate-x-1/2 w-56 bg-white shadow-2xl border border-brand-border/80 py-2 z-[100] rounded-xl overflow-hidden mt-0.5"
                       >
                         {link.subLinks.map((sub) => (
                           <Link
@@ -451,14 +467,14 @@ export default function Navbar() {
           <div className="flex items-center gap-1.5 justify-end min-w-[100px] lg:min-w-[140px]">
             <button 
               onClick={() => setIsSearchOpen(true)}
-              className="hover:bg-white/15 rounded-full text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-transparent hover:border-white/20 p-1 sm:p-1.5"
+              className="hover:bg-slate-900/10 rounded-full text-slate-950 transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-slate-900/10 p-1 sm:p-1.5"
               title="Search"
             >
               <Search size={14} className="stroke-[2.5]" />
             </button>
             <button 
               onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden hover:bg-white/15 rounded-full text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-transparent hover:border-white/20 p-1 sm:p-1.5"
+              className="lg:hidden hover:bg-slate-900/10 rounded-full text-slate-950 transition-all hover:scale-110 active:scale-95 flex items-center justify-center border border-slate-900/10 p-1 sm:p-1.5"
               title="Menu"
             >
               {isOpen ? <X size={18} className="stroke-[2.5]" /> : <Menu size={18} className="stroke-[2.5]" />}
@@ -479,7 +495,9 @@ export default function Navbar() {
           >
             <div className="p-6 h-full flex flex-col">
               <div className="flex justify-between items-center mb-8">
-                <img src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" alt="Seal" className="h-16" />
+                <Link to="/" onClick={(e) => { setIsOpen(false); handleHomeClick(e); }}>
+                  <img src="http://talibon.gov.ph/wp-content/uploads/2025/09/Talibon-Official-Seal-v4-2003-to-2023-.png" alt="Seal" className="h-16" />
+                </Link>
                 <button onClick={() => setIsOpen(false)} className="p-2 border border-brand-primary rounded-xl text-brand-primary"><X size={24} /></button>
               </div>
 
@@ -519,7 +537,10 @@ export default function Navbar() {
                     ) : (
                       <Link 
                         to={link.href} 
-                        onClick={() => setIsOpen(false)} 
+                        onClick={(e) => { 
+                          setIsOpen(false); 
+                          if (link.href === "/") handleHomeClick(e); 
+                        }} 
                         className="block py-2 text-lg font-black text-brand-text"
                       >
                         {link.name}
@@ -548,7 +569,16 @@ export default function Navbar() {
                         )}
                       </div>
                     ) : (
-                      <Link to={link.href} onClick={() => setIsOpen(false)} className="block py-2 text-lg font-black text-brand-primary">{link.name}</Link>
+                      <Link 
+                        to={link.href} 
+                        onClick={(e) => { 
+                          setIsOpen(false); 
+                          if (link.href === "/") handleHomeClick(e); 
+                        }} 
+                        className="block py-2 text-lg font-black text-brand-primary"
+                      >
+                        {link.name}
+                      </Link>
                     )}
                   </div>
                 ))}

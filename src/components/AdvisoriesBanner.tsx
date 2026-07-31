@@ -48,7 +48,7 @@ export default function AdvisoriesBanner() {
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-red-950 via-amber-950 to-slate-900 border-2 border-amber-500/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-white"
+            className="bg-gradient-to-r from-red-950 via-sky-950 to-slate-900 border-2 border-sky-500/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-white"
           >
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
               <div className="space-y-2 flex-1">
@@ -65,7 +65,7 @@ export default function AdvisoriesBanner() {
                   {advisories[0].summary || advisories[0].content}
                 </p>
 
-                <div className="flex items-center gap-4 text-[10px] text-amber-300 font-bold uppercase tracking-wider pt-1">
+                <div className="flex items-center gap-4 text-[10px] text-sky-300 font-bold uppercase tracking-wider pt-1">
                   <span>Updated: {new Date(advisories[0].date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
                   {advisories[0].author && <span>• Issued by: {advisories[0].author}</span>}
                 </div>
@@ -74,7 +74,7 @@ export default function AdvisoriesBanner() {
               <div className="shrink-0 flex items-center gap-3 w-full lg:w-auto">
                 <Link
                   to={`/news/view/${advisories[0].id}`}
-                  className="w-full lg:w-auto px-6 py-3.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 border border-amber-200"
+                  className="w-full lg:w-auto px-6 py-3.5 bg-[#3A8FC2] hover:bg-[#4FA8D8] text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 border border-sky-300"
                 >
                   <span>Read Full Advisory</span>
                   <ArrowRight size={16} />

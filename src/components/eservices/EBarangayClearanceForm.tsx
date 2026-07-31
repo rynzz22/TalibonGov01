@@ -289,7 +289,7 @@ export default function EBarangayClearanceForm({ onSuccess }: EBarangayClearance
                 onChange={handleChange}
                 className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
               />
-              <p className="text-[9px] text-brand-muted font-medium">Optional mobile backup for SMS reminders.</p>
+              <p className="text-[9px] text-brand-muted font-medium">Mobile contact for email/notification tracking (SMS Notifications - Coming Soon).</p>
             </div>
           </div>
         </div>

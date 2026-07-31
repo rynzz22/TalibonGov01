@@ -1,11 +1,6 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, TourismSpotItem } from "./cmsService";
 import { isMockAllowed } from "../lib/mode";
-import { apiCache } from "../lib/apiCache";
-import { logServiceEvent } from "../lib/logger";
-
-const CACHE_KEY = "tourism_spots:list";
-const CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutes for static tourism content
 
 const INITIAL_TOURISM: TourismSpotItem[] = [
   {
@@ -45,40 +40,31 @@ function setStorageTourism(data: TourismSpotItem[]): void {
 
 export const tourismService = {
   async getTourismSpots(): Promise<TourismSpotItem[]> {
-    const cached = apiCache.get<TourismSpotItem[]>(CACHE_KEY);
-    if (cached) return cached.data;
-
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
           .from("tourism_spots")
-          .select("id, name, description, gallery_images, location, google_maps_link, opening_hours, contact_details, featured_image, created_at")
-          .order("name", { ascending: true })
-          .limit(100);
+          .select("*")
+          .order("name", { ascending: true });
         if (error) throw error;
-        if (data) {
-          const result = data as TourismSpotItem[];
-          apiCache.set(CACHE_KEY, result, CACHE_TTL_MS, ["tourism"]);
-          return result;
-        }
+        if (data) return data as TourismSpotItem[];
       } catch (e: any) {
-        logServiceEvent("TourismService", "getTourismSpots", "error", "Fetch failed", { error: e.message });
         if (!isMockAllowed()) {
           throw new Error(`[TourismService] Failed to load tourism spots: ${e.message}`);
         }
+        console.error("[TourismService] Supabase Tourism spots fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 
     if (!isMockAllowed()) {
       throw new Error("[TourismService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
-    const fallback = getStorageTourism();
-    apiCache.set(CACHE_KEY, fallback, CACHE_TTL_MS, ["tourism"], "FALLBACK");
-    return fallback;
+    return getStorageTourism();
   },
 
   async getDelicacies(): Promise<TourismSpotItem[]> {
     const spots = await this.getTourismSpots();
+    // Filter items that represent food/delicacies or return all spots if none explicitly flagged
     const delicacies = spots.filter(s =>
       (s.description && (s.description.toLowerCase().includes("delicacy") || s.description.toLowerCase().includes("food") || s.description.toLowerCase().includes("calamay") || s.description.toLowerCase().includes("seafood"))) ||
       (s.name && (s.name.toLowerCase().includes("delicacy") || s.name.toLowerCase().includes("calamay") || s.name.toLowerCase().includes("seafood") || s.name.toLowerCase().includes("crab")))
@@ -87,7 +73,6 @@ export const tourismService = {
   },
 
   async createTourismSpot(item: Omit<TourismSpotItem, "id">, userEmail: string): Promise<TourismSpotItem> {
-    apiCache.invalidateTag("tourism");
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
@@ -98,11 +83,10 @@ export const tourismService = {
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "tourism_spots", data.id);
-          logServiceEvent("TourismService", "createTourismSpot", "info", "Created tourism spot", { id: data.id });
           return data as TourismSpotItem;
         }
       } catch (e: any) {
-        logServiceEvent("TourismService", "createTourismSpot", "error", "Insert failed", { error: e.message });
+        console.error("[TourismService] Supabase Tourism insert failed:", e.message || e);
         throw e;
       }
     }
@@ -121,7 +105,6 @@ export const tourismService = {
   },
 
   async updateTourismSpot(id: string, item: Partial<TourismSpotItem>, userEmail: string): Promise<TourismSpotItem> {
-    apiCache.invalidateTag("tourism");
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
@@ -133,11 +116,10 @@ export const tourismService = {
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "UPDATE", "tourism_spots", id);
-          logServiceEvent("TourismService", "updateTourismSpot", "info", "Updated tourism spot", { id });
           return data as TourismSpotItem;
         }
       } catch (e: any) {
-        logServiceEvent("TourismService", "updateTourismSpot", "error", "Update failed", { id, error: e.message });
+        console.error("[TourismService] Supabase Tourism update failed:", e.message || e);
         throw e;
       }
     }
@@ -158,7 +140,6 @@ export const tourismService = {
   },
 
   async deleteTourismSpot(id: string, userEmail: string): Promise<boolean> {
-    apiCache.invalidateTag("tourism");
     if (isSupabaseConfigured) {
       try {
         const { error } = await supabase
@@ -167,10 +148,9 @@ export const tourismService = {
           .eq("id", id);
         if (error) throw error;
         await logCmsAction(userEmail, "DELETE", "tourism_spots", id);
-        logServiceEvent("TourismService", "deleteTourismSpot", "info", "Deleted tourism spot", { id });
         return true;
       } catch (e: any) {
-        logServiceEvent("TourismService", "deleteTourismSpot", "error", "Delete failed", { id, error: e.message });
+        console.error("[TourismService] Supabase Tourism delete failed:", e.message || e);
         throw e;
       }
     }
@@ -186,4 +166,3 @@ export const tourismService = {
     return true;
   }
 };
-

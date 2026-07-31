@@ -47,6 +47,10 @@ export const API_ENDPOINTS = {
 };
 
 // UI Constants
+export const OFFICIAL_FACEBOOK_URLS = {
+  PIO: "https://www.facebook.com/TalibonLGU",
+};
+
 export const LOADING_TIMEOUT = 5000; // 5 seconds
 export const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
 
@@ -62,10 +66,4 @@ export const PLACEHOLDER_IMAGES = {
   NEWS: "https://picsum.photos/seed/news",
   SPOT: "https://picsum.photos/seed/spot",
   DEPARTMENT: "https://via.placeholder.com/200",
-};
-
-// Official Social Media URLs
-export const OFFICIAL_FACEBOOK_URLS = {
-  PIO: "https://www.facebook.com/PioTalibon",
-  MAIN: "https://www.facebook.com/TalibonOfficialPage",
 };

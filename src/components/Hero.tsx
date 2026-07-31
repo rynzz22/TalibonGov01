@@ -15,7 +15,7 @@ const Hero: React.FC<HeroProps> = ({ overrideTitle, overrideSubtitle }) => {
 
   return (
     <section id="home" className="relative min-h-screen w-full overflow-hidden flex flex-col items-start justify-center pt-[160px] lg:pt-[240px] pb-24 sm:pb-32 lg:pb-36 px-0">
-      {/* Background Image / Video Overlay */}
+      {/* Background Image / Video Stream */}
       <div className="absolute inset-0 z-0">
         <video
           autoPlay
@@ -29,8 +29,9 @@ const Hero: React.FC<HeroProps> = ({ overrideTitle, overrideSubtitle }) => {
             type="video/mp4" 
           />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/75 to-black/40 lg:to-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/50" />
+        {/* Subtle, localized gradient shadow on the left side to guarantee text contrast while keeping video 4K clear */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 z-10" />
       </div>
 
       {/* Content */}
@@ -43,22 +44,22 @@ const Hero: React.FC<HeroProps> = ({ overrideTitle, overrideSubtitle }) => {
             className="lg:col-span-12 flex flex-col items-start"
           >
             {/* Tagline */}
-            <div className="inline-flex items-center gap-2.5 text-white/90 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-4 sm:mb-6">
-              <Globe size={16} className="text-amber-400 shrink-0" />
+            <div className="inline-flex items-center gap-2.5 text-white text-xs sm:text-sm font-semibold uppercase tracking-widest mb-4 sm:mb-6 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+              <Globe size={16} className="text-[#4FA8D8] shrink-0 filter drop-shadow" />
               <span>Home of the Most Illustrious Son of Bohol</span>
             </div>
 
             {/* Main Title */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-black text-white tracking-tighter leading-none mb-3 sm:mb-4 uppercase">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-black text-white tracking-tighter leading-none mb-3 sm:mb-4 uppercase drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
               #TALIBOOM!
             </h2>
             
             {/* Primary Hero Headline */}
-            <h1 className="text-5xl sm:text-6xl md:text-[4.25rem] lg:text-[5.5rem] xl:text-[6.5rem] font-display font-black text-white leading-[0.95] tracking-tighter mb-6 sm:mb-8 uppercase">
+            <h1 className="text-5xl sm:text-6xl md:text-[4.25rem] lg:text-[5.5rem] xl:text-[6.5rem] font-display font-black text-white leading-[0.95] tracking-tighter mb-6 sm:mb-8 uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.95)]">
               {overrideTitle || (
                 <>
                   Seafood Terminal <br />
-                  <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-white via-yellow-200 to-amber-400 bg-clip-text text-transparent filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
                     & Eco-Agri Hub.
                   </span>
                 </>
@@ -66,7 +67,7 @@ const Hero: React.FC<HeroProps> = ({ overrideTitle, overrideSubtitle }) => {
             </h1>
             
             {/* Description Paragraph */}
-            <p className="text-white/85 text-base sm:text-lg lg:text-xl font-normal leading-relaxed sm:leading-8 max-w-2xl mb-8 sm:mb-10">
+            <p className="text-white text-base sm:text-lg lg:text-xl font-medium leading-relaxed sm:leading-8 max-w-2xl mb-8 sm:mb-10 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
               {overrideSubtitle || (
                 "Talibon stands as Bohol's premier center for seafood & fisheries, eco-agricultural development, and vibrant municipal tourism — committed to innovation, environmental stewardship, and citizen service."
               )}

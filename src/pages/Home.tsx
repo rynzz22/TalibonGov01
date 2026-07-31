@@ -1,4 +1,5 @@
 import Hero from "../components/Hero";
+import AdvisoriesBanner from "../components/AdvisoriesBanner";
 import About from "../components/About";
 import Services from "../components/Services";
 import Tourism from "../components/Tourism";
@@ -22,11 +23,8 @@ export default function Home() {
   return (
     <main>
       <Hero />
-      <section className="py-12 bg-brand-bg relative z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <WeatherWidget />
-        </div>
-      </section>
+      <AdvisoriesBanner />
+      <WeatherWidget />
       <QuickAccess />
       <NewsTodaySection />
       <LguEventsSection />

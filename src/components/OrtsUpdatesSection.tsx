@@ -47,7 +47,7 @@ export default function OrtsUpdatesSection() {
 
           <Link
             to="/news/updates"
-            className="px-3.5 py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all inline-flex items-center gap-1.5 self-start md:self-auto shadow-2xs"
+            className="px-3.5 py-1.5 bg-[#3A8FC2] text-white hover:bg-[#2B82B8] rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all inline-flex items-center gap-1.5 self-start md:self-auto shadow-2xs"
           >
             <span>View All Updates</span>
             <ArrowRight size={13} />
@@ -62,10 +62,10 @@ export default function OrtsUpdatesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
-              className="bg-brand-bg rounded-xl sm:rounded-2xl border border-brand-border p-3.5 sm:p-4 shadow-2xs flex flex-col justify-between space-y-2.5 sm:space-y-3 hover:border-emerald-500/50 transition-all group"
+              className="bg-brand-bg rounded-xl sm:rounded-2xl border border-brand-border p-3.5 sm:p-4 shadow-2xs flex flex-col justify-between space-y-2.5 sm:space-y-3 hover:border-sky-500/50 transition-all group"
             >
               <div className="space-y-2 sm:space-y-2.5">
-                <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-emerald-600">
+                <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-sky-600">
                   <span className="flex items-center gap-1">
                     <Tag size={10} />
                     {item.category || "ORTS Update"}
@@ -76,7 +76,7 @@ export default function OrtsUpdatesSection() {
                   </span>
                 </div>
 
-                <h3 className="text-xs sm:text-sm font-bold text-brand-text font-display tracking-tight leading-snug group-hover:text-emerald-600 transition-colors">
+                <h3 className="text-xs sm:text-sm font-bold text-brand-text font-display tracking-tight leading-snug group-hover:text-sky-600 transition-colors">
                   {item.title}
                 </h3>
 
@@ -87,7 +87,7 @@ export default function OrtsUpdatesSection() {
 
               <Link
                 to={`/news/view/${item.id}`}
-                className="pt-2 border-t border-brand-border/60 text-[10px] sm:text-[11px] font-black text-emerald-600 hover:text-emerald-700 uppercase tracking-widest inline-flex items-center gap-1.5 transition-all group-hover:gap-2.5"
+                className="pt-2 border-t border-brand-border/60 text-[10px] sm:text-[11px] font-black text-sky-600 hover:text-sky-700 uppercase tracking-widest inline-flex items-center gap-1.5 transition-all group-hover:gap-2.5"
               >
                 <span>Read Full Update</span>
                 <ArrowRight size={12} />

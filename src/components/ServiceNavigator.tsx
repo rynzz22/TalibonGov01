@@ -50,14 +50,14 @@ export default function ServiceNavigator() {
                 className="minimal-card p-5 sm:p-6 group cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-11 h-11 rounded-xl bg-brand-primary/5 dark:bg-white/5 flex items-center justify-center text-brand-primary dark:text-brand-secondary group-hover:bg-brand-primary group-hover:text-white transition-all duration-300">
-                    <service.icon size={22} />
+                  <div className="w-11 h-11 rounded-xl bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center text-brand-primary dark:text-brand-secondary group-hover:bg-brand-primary group-hover:text-white transition-all duration-300 shadow-xs">
+                    <service.icon size={22} className="text-brand-primary dark:text-brand-secondary group-hover:text-white" />
                   </div>
                   <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest">{service.category}</span>
                 </div>
                 <h3 className="text-base sm:text-lg font-black text-brand-text dark:text-dark-text mb-1.5 font-display">{service.name}</h3>
                 <p className="text-xs sm:text-sm text-brand-muted dark:text-dark-muted font-medium mb-4 line-clamp-2">{service.description}</p>
-                <div className="flex items-center gap-2 text-brand-primary dark:text-brand-secondary font-bold text-[10px] uppercase tracking-[0.2em]">
+                <div className="flex items-center gap-2 text-brand-primary dark:text-brand-secondary font-extrabold text-[10px] uppercase tracking-[0.2em] group-hover:text-brand-primary transition-colors">
                   View Details <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </motion.div>
@@ -85,8 +85,8 @@ export default function ServiceNavigator() {
                 <div className="p-10">
                   <div className="flex justify-between items-start mb-10">
                     <div className="flex items-center gap-6">
-                      <div className="w-20 h-20 rounded-3xl bg-brand-primary text-white flex items-center justify-center">
-                        <selectedService.icon size={40} />
+                      <div className="w-20 h-20 rounded-3xl bg-brand-primary text-white flex items-center justify-center shadow-lg">
+                        <selectedService.icon size={40} className="text-white" />
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-brand-primary dark:text-brand-secondary uppercase tracking-[0.4em] mb-2 block">{selectedService.category}</span>
