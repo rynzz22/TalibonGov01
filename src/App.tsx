@@ -34,7 +34,7 @@ import TourismMapPage from "./pages/TourismMapPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import Footer from "./components/Footer";
-import MunicipalChatbot from "./components/MunicipalChatbot";
+import GeminiAssistant from "./components/GeminiAssistant";
 import ScrollToTop from "./components/ScrollToTop";
 import { aboutApi, executiveApi, legislativeApi, transparencyApi, tourismApi, formsApi } from "./services/api";
 import { AuthProvider, useAuth } from "./contexts/SupabaseAuthContext";
@@ -365,7 +365,7 @@ function AppLayout() {
         </Routes>
           </div>
           <Footer />
-          <MunicipalChatbot />
+          <GeminiAssistant />
         </div>
       </div>
   );

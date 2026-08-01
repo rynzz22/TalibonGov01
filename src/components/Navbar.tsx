@@ -568,16 +568,6 @@ export default function Navbar() {
                           </div>
                         )}
                       </div>
-                    ) : link.isExternal ? (
-                      <a 
-                        href={link.href} 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => setIsOpen(false)} 
-                        className="block py-2 text-lg font-black text-brand-primary"
-                      >
-                        {link.name}
-                      </a>
                     ) : (
                       <Link 
                         to={link.href} 

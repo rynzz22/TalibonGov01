@@ -34,7 +34,6 @@ import {
   AuditLogItem,
   UserProfileItem
 } from '../services/cmsService';
-import { newsService, normalizeNewsCategory } from '../services/newsService';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell
 } from 'recharts';
@@ -584,7 +583,7 @@ const AdminDashboard: React.FC = () => {
     if (tab === 'news') {
       setNewsForm({
         title: item.title, slug: item.slug, summary: item.summary, content: item.content,
-        category: normalizeNewsCategory(item.category), image_url: item.image_url || '', file_url: item.file_url || '',
+        category: item.category, image_url: item.image_url || '', file_url: item.file_url || '',
         date: item.date, status: item.status || 'published', author: item.author || 'Municipal Admin',
         barangay_id: item.barangay_id || null
       });
@@ -862,7 +861,6 @@ const AdminDashboard: React.FC = () => {
         const slug = newsForm.slug || newsForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         const payload = { 
           ...newsForm, 
-          category: normalizeNewsCategory(newsForm.category),
           slug,
           barangay_id: profile?.role === 'barangay_admin' ? profile.barangay_id : newsForm.barangay_id || null
         };
@@ -1290,9 +1288,11 @@ const AdminDashboard: React.FC = () => {
                     activeTab === 'news'
                       ? [
                           { value: 'ALL', label: 'All Categories' },
-                          { value: 'ARTICLE', label: 'Article / News Today' },
-                          { value: 'UPDATE', label: 'Update / ORTS Updates' },
-                          { value: 'ANNOUNCEMENT', label: 'Announcement / Advisories' }
+                          { value: 'ARTICLE', label: 'Article' },
+                          { value: 'ADVISORY', label: 'Advisory' },
+                          { value: 'UPDATE', label: 'Update' },
+                          { value: 'COMMUNITY', label: 'Community' },
+                          { value: 'NOTICE', label: 'Notice' }
                         ]
                       : activeTab === 'downloadables'
                       ? [
@@ -1782,7 +1782,7 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'news' && (() => {
                 const filteredNews = news.filter(n => {
                   const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) || n.summary.toLowerCase().includes(searchTerm.toLowerCase());
-                  const matchesFilter = categoryFilter === 'ALL' || normalizeNewsCategory(n.category) === categoryFilter;
+                  const matchesFilter = categoryFilter === 'ALL' || n.category === categoryFilter;
                   return matchesSearch && matchesFilter;
                 });
                 const paginatedNews = filteredNews.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -2894,11 +2894,13 @@ const AdminDashboard: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="news-cat">Category *</label>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="news-cat">Category</label>
                         <select id="news-cat" value={newsForm.category} onChange={(e) => setNewsForm({ ...newsForm, category: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs">
-                          <option value="ARTICLE">Article / Press Release (News Today)</option>
-                          <option value="UPDATE">Update / Progress (ORTS Updates)</option>
-                          <option value="ANNOUNCEMENT">Announcement / Public Advisory (Advisories)</option>
+                          <option value="ARTICLE">Article</option>
+                          <option value="ADVISORY">Advisory</option>
+                          <option value="UPDATE">Update</option>
+                          <option value="COMMUNITY">Community</option>
+                          <option value="NOTICE">Notice</option>
                         </select>
                       </div>
                       <div className="space-y-2">
@@ -3853,7 +3855,7 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-[10px] font-black uppercase text-gray-400 tracking-wide">
                           Notify via SMS
                         </p>
-                        <p className="text-[8px] font-bold text-amber-600 uppercase tracking-widest font-black">SMS Notifications - Coming Soon</p>
+                        <p className="text-[8px] font-bold text-amber-600/80 uppercase tracking-widest font-black">Offline (Not Configured)</p>
                       </div>
                     </label>
                   </div>

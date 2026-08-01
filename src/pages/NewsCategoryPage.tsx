@@ -86,15 +86,15 @@ const NewsCategoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categoryMap: Record<string, string[]> = {
-    'articles': ['ARTICLE'],
-    'advisories': ['ANNOUNCEMENT', 'ADVISORY'],
-    'disaster': ['ANNOUNCEMENT', 'DISASTER'],
-    'updates': ['UPDATE'],
-    'gallery': ['ARTICLE', 'GALLERY'],
-    'community': ['UPDATE', 'COMMUNITY', 'ARTICLE'],
-    'notices': ['ANNOUNCEMENT', 'NOTICE'],
-    'forms': ['ARTICLE', 'FORM']
+  const categoryMap: Record<string, string> = {
+    'articles': 'ARTICLE',
+    'advisories': 'ADVISORY',
+    'disaster': 'DISASTER',
+    'updates': 'UPDATE',
+    'gallery': 'GALLERY',
+    'community': 'COMMUNITY',
+    'notices': 'NOTICE',
+    'forms': 'FORM'
   };
 
   const displayTitle: Record<string, string> = {
@@ -109,12 +109,10 @@ const NewsCategoryPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const targetCategories = categoryMap[category || ''] || [category?.toUpperCase().replace(/-/g, ' ') || 'ARTICLE'];
-    const primaryCategory = targetCategories[0];
+    const firestoreCategory = categoryMap[category || ''] || (category?.toUpperCase().replace(/-/g, ' ') || 'ARTICLE');
 
     if (!isSupabaseConfigured) {
-      const mockItems = targetCategories.flatMap(cat => MOCK_NEWS_CATEGORY[cat] || []);
-      setNews(mockItems);
+      setNews(MOCK_NEWS_CATEGORY[firestoreCategory] || []);
       setLoading(false);
       return;
     }
@@ -125,19 +123,19 @@ const NewsCategoryPage: React.FC = () => {
         const { data, error } = await supabase
           .from('news')
           .select('*')
-          .in('category', targetCategories)
+          .eq('category', firestoreCategory)
           .is('barangay_id', null) // Main site only shows municipal news
           .order('date', { ascending: false });
 
         if (error) {
           console.warn("Error fetching news:", error);
-          setNews(MOCK_NEWS_CATEGORY[primaryCategory] || []);
+          setNews(MOCK_NEWS_CATEGORY[firestoreCategory] || []);
         } else {
           setNews(data as NewsItem[]);
         }
       } catch (err) {
         console.warn("Exception while fetching news from Supabase, falling back to Mock:", err);
-        setNews(MOCK_NEWS_CATEGORY[primaryCategory] || []);
+        setNews(MOCK_NEWS_CATEGORY[firestoreCategory] || []);
       } finally {
         setLoading(false);
       }

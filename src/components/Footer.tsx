@@ -40,19 +40,8 @@ export default function Footer() {
               The official digital gateway of the Municipality of Talibon. Committed to transparency, innovation, and service.
             </p>
             <div className="flex gap-4">
-              {[
-                { Icon: Facebook, href: "https://web.facebook.com/TalibonOfficialPage", name: "Facebook" },
-                { Icon: Twitter, href: "https://twitter.com", name: "Twitter" },
-                { Icon: Instagram, href: "https://instagram.com", name: "Instagram" }
-              ].map(({ Icon, href, name }, i) => (
-                <a 
-                  key={`social-icon-${i}`} 
-                  href={href} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  aria-label={`Visit Talibon ${name}`}
-                  className="w-10 h-10 rounded-full bg-brand-surface border border-brand-border flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all text-brand-primary"
-                >
+              {[Facebook, Twitter, Instagram].map((Icon, i) => (
+                <a key={`social-icon-${i}`} href="#" className="w-10 h-10 rounded-full bg-brand-surface border border-brand-border flex items-center justify-center hover:bg-brand-primary hover:text-white transition-all text-brand-primary">
                   <Icon size={18} />
                 </a>
               ))}

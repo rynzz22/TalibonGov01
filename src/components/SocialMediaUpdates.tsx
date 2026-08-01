@@ -38,9 +38,7 @@ export default function SocialMediaUpdates() {
               {channels.map((channel, idx) => (
                 <motion.a
                   key={channel.name}
-                  href="https://www.facebook.com/PioTalibon"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
                   initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
@@ -51,7 +49,6 @@ export default function SocialMediaUpdates() {
                     {React.cloneElement(getIcon(channel.name), { size: 14 })}
                   </div>
                   <span className="text-[9px] sm:text-[10px] font-bold text-brand-text uppercase tracking-widest">{channel.name}</span>
-                  <ArrowUpRight size={12} className="text-slate-400 group-hover:text-brand-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                 </motion.a>
               ))}
             </div>

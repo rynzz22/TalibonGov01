@@ -159,10 +159,10 @@ const BuildingPermitPage: React.FC = () => {
 
             <div className="flex-1 text-center md:text-left">
               <h3 className="text-2xl font-black text-brand-text uppercase tracking-tight mb-2 font-display">
-                Online Payment Coming Soon
+                Online Permit Fees
               </h3>
               <p className="text-brand-muted font-medium">
-                Online payments will be enabled in Phase 2. Submit building permit applications online and pay assessed fees at the Municipal Treasurer's Office upon verification.
+                Settle your building permit processing fees online for faster approval and processing.
               </p>
             </div>
 

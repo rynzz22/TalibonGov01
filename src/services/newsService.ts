@@ -2,45 +2,6 @@ import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { logCmsAction, NewsItem } from "./cmsService";
 import { isMockAllowed } from "../lib/mode";
 
-export function normalizeNewsCategory(category?: string | null): "ARTICLE" | "UPDATE" | "ANNOUNCEMENT" {
-  if (!category) return "ARTICLE";
-  const upper = category.trim().toUpperCase();
-  if (
-    upper === "ANNOUNCEMENT" ||
-    upper === "ADVISORY" ||
-    upper === "ADVISORIES" ||
-    upper === "NOTICE" ||
-    upper === "NOTICES" ||
-    upper === "WEATHER UPDATES" ||
-    upper === "WEATHER" ||
-    upper === "ALERT" ||
-    upper === "DISASTER"
-  ) {
-    return "ANNOUNCEMENT";
-  }
-  if (
-    upper === "UPDATE" ||
-    upper === "UPDATES" ||
-    upper === "ORTS UPDATES" ||
-    upper === "ORTS" ||
-    upper === "COMMUNITY" ||
-    upper === "WORKFLOW UPDATES"
-  ) {
-    return "UPDATE";
-  }
-  if (
-    upper === "ARTICLE" ||
-    upper === "NEWS TODAY" ||
-    upper === "NEWS" ||
-    upper === "PRESS" ||
-    upper === "OFFICIAL ARTICLE" ||
-    upper === "ARTICLES"
-  ) {
-    return "ARTICLE";
-  }
-  return "ARTICLE";
-}
-
 const INITIAL_NEWS: NewsItem[] = [
   {
     id: "news-1",
@@ -77,12 +38,7 @@ export const newsService = {
           .select("*")
           .order("date", { ascending: false });
         if (error) throw error;
-        if (data) {
-          return data.map((item) => ({
-            ...item,
-            category: normalizeNewsCategory(item.category),
-          })) as NewsItem[];
-        }
+        if (data) return data as NewsItem[];
       } catch (e: any) {
         if (!isMockAllowed()) {
           throw new Error(`[NewsService] Failed to load news items: ${e.message}`);
@@ -94,22 +50,14 @@ export const newsService = {
     if (!isMockAllowed()) {
       throw new Error("[NewsService] Supabase is unconfigured. Production Mode requires a live database connection.");
     }
-    return getStorageNews().map((item) => ({
-      ...item,
-      category: normalizeNewsCategory(item.category),
-    }));
+    return getStorageNews();
   },
 
   async createNews(item: Omit<NewsItem, "id">, userEmail: string): Promise<NewsItem> {
-    const canonicalCategory = normalizeNewsCategory(item.category);
     if (isSupabaseConfigured) {
       try {
         const initialStatus = item.status === "published" ? "draft" : item.status;
-        const insertPayload = {
-          ...item,
-          category: canonicalCategory,
-          status: initialStatus,
-        };
+        const insertPayload = { ...item, status: initialStatus };
 
         const { data, error } = await supabase
           .from("news")
@@ -123,12 +71,12 @@ export const newsService = {
           if (item.status === "published") {
             try {
               await this.publishNewsRpc(data.id, userEmail);
-              return { ...data, category: canonicalCategory, status: "published" } as NewsItem;
+              return { ...data, status: "published" } as NewsItem;
             } catch (pubErr) {
               console.error("[NewsService] RPC publish failed during create:", pubErr);
             }
           }
-          return { ...data, category: canonicalCategory } as NewsItem;
+          return data as NewsItem;
         }
       } catch (e: any) {
         console.error("[NewsService] Supabase News insert failed:", e.message || e);
@@ -141,7 +89,7 @@ export const newsService = {
     }
 
     const id = "mock-" + Math.random().toString(36).substring(2, 9);
-    const newItem = { ...item, category: canonicalCategory, id } as NewsItem;
+    const newItem = { ...item, id } as NewsItem;
     const list = getStorageNews();
     list.unshift(newItem);
     setStorageNews(list);
@@ -150,14 +98,10 @@ export const newsService = {
   },
 
   async updateNews(id: string, item: Partial<NewsItem>, userEmail: string): Promise<NewsItem> {
-    const updatePayload = { ...item };
-    if (updatePayload.category !== undefined) {
-      updatePayload.category = normalizeNewsCategory(updatePayload.category);
-    }
-
     if (isSupabaseConfigured) {
       try {
         const shouldPublishViaRpc = item.status === "published";
+        const updatePayload = { ...item };
         if (shouldPublishViaRpc) {
           delete updatePayload.status;
         }
@@ -186,7 +130,7 @@ export const newsService = {
 
         if (updatedData) {
           await logCmsAction(userEmail, "UPDATE", "news", id);
-          return { ...updatedData, category: normalizeNewsCategory(updatedData.category) } as NewsItem;
+          return updatedData as NewsItem;
         }
       } catch (e: any) {
         console.error("[NewsService] Supabase News update failed:", e.message || e);
@@ -201,7 +145,7 @@ export const newsService = {
     const list = getStorageNews();
     const index = list.findIndex(n => n.id === id);
     if (index !== -1) {
-      list[index] = { ...list[index], ...updatePayload };
+      list[index] = { ...list[index], ...item };
       setStorageNews(list);
       await logCmsAction(userEmail, "UPDATE", "news", id);
       return list[index];

@@ -89,7 +89,7 @@ export default function WeatherWidget() {
             </div>
 
             {/* Weather Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/30">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/30">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5 text-sky-200" style={textShadowStyle}>
                   <Wind size={15} className="text-amber-300" style={filterShadowStyle} />
@@ -104,14 +104,6 @@ export default function WeatherWidget() {
                   <span className="text-[10px] font-extrabold uppercase tracking-widest">Humidity</span>
                 </div>
                 <p className="text-sm sm:text-base font-black text-white" style={textShadowStyle}>78%</p>
-              </div>
-
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-sky-200" style={textShadowStyle}>
-                  <CloudRain size={15} className="text-amber-300" style={filterShadowStyle} />
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest">Rain Prob</span>
-                </div>
-                <p className="text-sm sm:text-base font-black text-white" style={textShadowStyle}>15%</p>
               </div>
 
               <div className="space-y-0.5">

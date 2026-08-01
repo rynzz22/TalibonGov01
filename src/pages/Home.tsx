@@ -1,5 +1,4 @@
 import Hero from "../components/Hero";
-import AdvisoriesBanner from "../components/AdvisoriesBanner";
 import About from "../components/About";
 import Services from "../components/Services";
 import Tourism from "../components/Tourism";
@@ -23,7 +22,6 @@ export default function Home() {
   return (
     <main>
       <Hero />
-      <AdvisoriesBanner />
       <WeatherWidget />
       <QuickAccess />
       <NewsTodaySection />

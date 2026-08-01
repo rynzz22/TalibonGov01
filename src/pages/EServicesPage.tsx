@@ -552,7 +552,7 @@ export default function EServicesPage() {
                             <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
                               <Briefcase size={20} />
                             </div>
-                            <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border border-blue-100 bg-blue-50 text-blue-700">Online Request</span>
+                            <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border border-blue-100 bg-blue-50 text-blue-700">Form & Payment</span>
                           </div>
                           <div>
                             <h3 className="text-sm font-black text-brand-text uppercase tracking-tight group-hover:text-brand-primary transition-colors font-display">Business Permit</h3>

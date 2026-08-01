@@ -85,10 +85,10 @@ const ZoningClearancePage: React.FC = () => {
 
               <div className="flex-1 text-center md:text-left">
                 <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-2">
-                  Online Payment Coming Soon
+                  Online Clearing Fee
                 </h3>
                 <p className="text-gray-500 font-medium">
-                  Submit zoning clearance requests online. Online payments will be available in Phase 2; fees can be paid at the Municipal Treasurer's Office upon pickup.
+                  Conveniently pay your zoning clearance fees online.
                 </p>
               </div>
 
