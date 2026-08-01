@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Sun, CloudRain, Wind, Waves, Thermometer, Navigation } from "lucide-react";
-import weatherBgImg from "../assets/images/weather_bg_clouds_1785371397706.jpg";
+
 
 export default function WeatherWidget() {
   const [time, setTime] = useState(new Date());
@@ -23,7 +23,7 @@ export default function WeatherWidget() {
   return (
     <section 
       className="relative w-full overflow-hidden bg-cover bg-center py-10 sm:py-14 text-white z-20"
-      style={{ backgroundImage: `url(${weatherBgImg})` }}
+      style={{ backgroundImage: `url('https://chat.google.com/api/get_attachment_url?url_type=FIFE_URL&content_type=image%2Fpng&attachment_token=AOo0EEU57q%2BXDS2TZnXb7Om2GuVprH5bVdshcD8aBm%2F816ltxr0caDnlBqKjsXZqhFRnBsHt41p0JpU7Qq8OSpB5FM%2F2EGifhCGPDwuVATfGJM3oL2euyIodye%2BmgOK3JXMWyiE%2BiR6GUX0T79SwY1VxBQFYlmvBMaAZrENqbvUTSIFNjBe7tOfSX4V0XZ6HYHspQ338b7ruNTB2Pv0EMkkO9RKmA2RkyqbMxdZAw1IpikQeM%2BI1xzroqOEe4V1BPO3hpHxTm3iBp%2Bl0wGgMq4nXh4P0aZuVWPWuMn5we4DMCjJOlCCz3uV1B56sfMCN2XhtHzDvklKAgBgatOL3PfWteadgRRDJ3aLrv9bPeU6nLVX46%2BXTg3uIqdMGbvp%2B%2BLLm3PWj5z2MaX8hvYuj5UPSXh%2FJXaIBL7aGYTXmZqU6x48zULipopJPVTUdU7WoeIznuVMWmuD0Z0Q0NvkwiFh2TK33HIPDYWfXAaHjJpXu7fhHzGqUtFIKKVH4jVQwy4rT04yuosnwhJirhN%2FByfYkSV6lO%2BwTx8FIBPdxkGpbz%2Bl9ywh2NKLaX4UW5nn1Pg06c2zzg4YSiBViNfzvORtMZgYE8NegYs%2BLfmuCRYjTymkk%2FJhhq%2BsUbQrXpPE3cgQi7mGocbMbEb0EWdTRQ0Y5&allow_caching=true&sz=w512')` }}
     >
       {/* Full-section gradient overlay */}
       <div 
