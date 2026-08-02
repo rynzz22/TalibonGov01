@@ -222,6 +222,20 @@ export interface LegislativeDocumentItem {
   updated_at?: string;
 }
 
+export interface TransparencyDocumentItem {
+  id: string;
+  title: string;
+  category: "full_disclosure" | "annual_investment_plan" | "financial" | "bac_bids" | "coa_report" | string;
+  department?: string;
+  fiscal_year?: number;
+  quarter?: string;
+  file_url?: string;
+  file_size?: string;
+  status: "draft" | "published" | "archived";
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface CategoryItem {
   id: string;
   name: string;
@@ -657,6 +671,57 @@ const INITIAL_LEGISLATIVE: LegislativeDocumentItem[] = [
     effective_date: "2026-02-01",
     status: "published",
     views_count: 150
+  }
+];
+
+const INITIAL_TRANSPARENCY: TransparencyDocumentItem[] = [
+  {
+    id: "trans-1",
+    title: "CY 2026 Annual Investment Plan (AIP)",
+    category: "annual_investment_plan",
+    department: "Municipal Planning & Development Office",
+    fiscal_year: 2026,
+    quarter: "Annual",
+    file_url: "http://talibon.gov.ph/wp-content/uploads/2026/01/AIP-2026.pdf",
+    file_size: "3.5 MB",
+    status: "published",
+    created_at: new Date().toISOString()
+  },
+  {
+    id: "trans-2",
+    title: "Q1 2026 Statement of Receipts and Expenditures (SRE)",
+    category: "financial",
+    department: "Municipal Treasury Office",
+    fiscal_year: 2026,
+    quarter: "Q1",
+    file_url: "http://talibon.gov.ph/wp-content/uploads/2026/04/SRE-Q1-2026.pdf",
+    file_size: "1.8 MB",
+    status: "published",
+    created_at: new Date().toISOString()
+  },
+  {
+    id: "trans-3",
+    title: "BAC Resolution & Invitation to Bid - Coastal Protection Project",
+    category: "bac_bids",
+    department: "Bids and Awards Committee",
+    fiscal_year: 2026,
+    quarter: "Q2",
+    file_url: "http://talibon.gov.ph/wp-content/uploads/2026/05/BAC-2026-004.pdf",
+    file_size: "2.2 MB",
+    status: "published",
+    created_at: new Date().toISOString()
+  },
+  {
+    id: "trans-4",
+    title: "COA Executive Summary Audit Report 2025",
+    category: "coa_report",
+    department: "Commission on Audit",
+    fiscal_year: 2025,
+    quarter: "Annual",
+    file_url: "http://talibon.gov.ph/wp-content/uploads/2026/03/COA-AUDIT-REPORT-2025.pdf",
+    file_size: "4.1 MB",
+    status: "published",
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -1725,6 +1790,84 @@ export const cmsService = {
     const list = getStorage<LegislativeDocumentItem>("legislative_documents", INITIAL_LEGISLATIVE);
     setStorage("legislative_documents", list.filter(l => l.id !== id));
     await logCmsAction(userEmail, "DELETE", "legislative_documents", id);
+    return true;
+  },
+
+  // Transparency Documents
+  async getTransparencyDocuments(category?: string): Promise<TransparencyDocumentItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        let query = supabase.from("transparency_documents").select("*").order("created_at", { ascending: false });
+        if (category) query = query.eq("category", category);
+        const { data, error } = await query;
+        if (!error && data) return data as TransparencyDocumentItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
+    if (category) return list.filter(t => t.category === category);
+    return list;
+  },
+
+  async createTransparencyDocument(item: Omit<TransparencyDocumentItem, "id">, userEmail: string): Promise<TransparencyDocumentItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("transparency_documents").insert([item]).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "CREATE", "transparency_documents", data.id);
+          return data as TransparencyDocumentItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
+    const newItem: TransparencyDocumentItem = { ...item, id: "trans-" + Date.now() };
+    list.unshift(newItem);
+    setStorage("transparency_documents", list);
+    await logCmsAction(userEmail, "CREATE", "transparency_documents", newItem.id);
+    return newItem;
+  },
+
+  async updateTransparencyDocument(id: string, item: Partial<TransparencyDocumentItem>, userEmail: string): Promise<TransparencyDocumentItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("transparency_documents").update(item).eq("id", id).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "UPDATE", "transparency_documents", id);
+          return data as TransparencyDocumentItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
+    const idx = list.findIndex(t => t.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...item };
+      setStorage("transparency_documents", list);
+      await logCmsAction(userEmail, "UPDATE", "transparency_documents", id);
+      return list[idx];
+    }
+    throw new Error("Document not found");
+  },
+
+  async deleteTransparencyDocument(id: string, userEmail: string): Promise<boolean> {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from("transparency_documents").delete().eq("id", id);
+        if (!error) {
+          await logCmsAction(userEmail, "DELETE", "transparency_documents", id);
+          return true;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
+    setStorage("transparency_documents", list.filter(t => t.id !== id));
+    await logCmsAction(userEmail, "DELETE", "transparency_documents", id);
     return true;
   },
 

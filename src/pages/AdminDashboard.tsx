@@ -41,6 +41,7 @@ import {
   EmergencyAdvisoryItem,
   InfrastructureProjectItem,
   LegislativeDocumentItem,
+  TransparencyDocumentItem,
   CategoryItem,
   TagItem,
   HomepageWidgetItem,
@@ -211,6 +212,7 @@ const AdminDashboard: React.FC = () => {
   const [advisories, setAdvisories] = useState<EmergencyAdvisoryItem[]>([]);
   const [infrastructureProjects, setInfrastructureProjects] = useState<InfrastructureProjectItem[]>([]);
   const [legislativeDocuments, setLegislativeDocuments] = useState<LegislativeDocumentItem[]>([]);
+  const [transparencyDocuments, setTransparencyDocuments] = useState<TransparencyDocumentItem[]>([]);
   const [categoriesList, setCategoriesList] = useState<CategoryItem[]>([]);
   const [tagsList, setTagsList] = useState<TagItem[]>([]);
   const [homepageWidgets, setHomepageWidgets] = useState<HomepageWidgetItem[]>([]);
@@ -293,6 +295,30 @@ const AdminDashboard: React.FC = () => {
 
   const [eventForm, setEventForm] = useState<Omit<EventItem, 'id'>>({
     title: '', description: '', date: new Date().toISOString().split('T')[0], time: '', venue: '', banner_image: ''
+  });
+
+  const [infraForm, setInfraForm] = useState({
+    title: '', category: 'Roads & Bridges', barangay_id: '', contractor: '',
+    budget: 0, start_date: new Date().toISOString().split('T')[0], expected_completion: '',
+    physical_progress_percent: 0, financial_progress_percent: 0, status: 'planning' as const,
+    description: '', image_url: ''
+  });
+
+  const [legislativeForm, setLegislativeForm] = useState({
+    document_type: 'ordinance' as const, document_number: '', title: '', year: new Date().getFullYear(),
+    category: 'General Governance', status: 'published' as const, publication_date: new Date().toISOString().split('T')[0],
+    summary: '', file_url: ''
+  });
+
+  const [transparencyForm, setTransparencyForm] = useState({
+    category: 'full_disclosure', title: '', fiscal_year: new Date().getFullYear(),
+    quarter: 'Q1', department: '', status: 'published' as const, file_url: '', file_size: '1.5 MB'
+  });
+
+  const [advisoriesForm, setAdvisoriesForm] = useState({
+    title: '', type: 'Weather / Typhoon', severity: 'warning' as 'info' | 'warning' | 'critical' | 'danger',
+    content: '', affected_barangays: [] as string[], is_pinned: false, is_popup: false, banner_color: 'amber',
+    status: 'published' as 'draft' | 'published' | 'archived'
   });
 
   // Dynamic Array Fields Input States (Temporary holder)
@@ -477,6 +503,9 @@ const AdminDashboard: React.FC = () => {
         const legData = await cmsService.getLegislativeDocuments();
         setLegislativeDocuments(legData);
 
+        const transData = await cmsService.getTransparencyDocuments();
+        setTransparencyDocuments(transData);
+
         const catData = await cmsService.getCategories();
         setCategoriesList(catData);
 
@@ -643,6 +672,26 @@ const AdminDashboard: React.FC = () => {
     setEventForm({
       title: '', description: '', date: new Date().toISOString().split('T')[0], time: '', venue: '', banner_image: ''
     });
+    setInfraForm({
+      title: '', category: 'Roads & Bridges', barangay_id: '', contractor: '',
+      budget: 0, start_date: new Date().toISOString().split('T')[0], expected_completion: '',
+      physical_progress_percent: 0, financial_progress_percent: 0, status: 'planning',
+      description: '', image_url: ''
+    });
+    setLegislativeForm({
+      document_type: 'ordinance', document_number: '', title: '', year: new Date().getFullYear(),
+      category: 'General Governance', status: 'published', publication_date: new Date().toISOString().split('T')[0],
+      summary: '', file_url: ''
+    });
+    setTransparencyForm({
+      category: 'full_disclosure', title: '', fiscal_year: new Date().getFullYear(),
+      quarter: 'Q1', department: '', status: 'published', file_url: '', file_size: '1.5 MB'
+    });
+    setAdvisoriesForm({
+      title: '', type: 'Weather / Typhoon', severity: 'warning', content: '',
+      affected_barangays: [], is_pinned: false, is_popup: false, banner_color: 'amber',
+      status: 'published'
+    });
 
     // Reset arrays
     setTempReqInput('');
@@ -716,6 +765,31 @@ const AdminDashboard: React.FC = () => {
       setEventForm({
         title: item.title, description: item.description, date: item.date,
         time: item.time, venue: item.venue, banner_image: item.banner_image || ''
+      });
+    } else if (tab === 'infra-projects' || tab === 'infra-updates' || tab === 'infra-media') {
+      setInfraForm({
+        title: item.title || '', category: item.category || 'Roads & Bridges', barangay_id: item.barangay || '', contractor: item.contractor || '',
+        budget: item.budget || 0, start_date: item.start_date || '', expected_completion: item.target_completion_date || '',
+        physical_progress_percent: item.progress_percentage || 0, financial_progress_percent: item.progress_percentage || 0,
+        status: item.status || 'planning', description: item.description || '', image_url: item.featured_image || ''
+      });
+    } else if (tab === 'leg-ordinances' || tab === 'leg-resolutions' || tab === 'leg-eos' || tab === 'leg-memos') {
+      setLegislativeForm({
+        document_type: item.document_type || 'ordinance', document_number: item.document_number || '', title: item.title || '',
+        year: item.publication_date ? new Date(item.publication_date).getFullYear() : new Date().getFullYear(),
+        category: item.category || 'General Governance', status: item.status || 'published', publication_date: item.publication_date || new Date().toISOString().split('T')[0],
+        summary: item.summary || '', file_url: item.file_url || ''
+      });
+    } else if (tab.startsWith('transparency') || tab === 'full-disclosure') {
+      setTransparencyForm({
+        category: item.category || 'full_disclosure', title: item.title || '', fiscal_year: item.fiscal_year || new Date().getFullYear(),
+        quarter: item.quarter || 'Q1', department: item.department || '', status: item.status || 'published', file_url: item.file_url || '', file_size: item.file_size || '1.5 MB'
+      });
+    } else if (tab === 'advisories') {
+      setAdvisoriesForm({
+        title: item.title || '', type: item.type || 'Weather / Typhoon', severity: item.severity || 'warning',
+        content: item.content || '', affected_barangays: item.affected_barangays || [], is_pinned: item.is_pinned || false,
+        is_popup: item.is_popup || false, banner_color: item.banner_color || 'amber', status: item.status || 'published'
       });
     }
   };
@@ -825,6 +899,10 @@ const AdminDashboard: React.FC = () => {
       else if (tab === 'services') success = await cmsService.deleteService(id, userEmail);
       else if (tab === 'charter') success = await cmsService.deleteCitizensCharter(id, userEmail);
       else if (tab === 'events') success = await cmsService.deleteEvent(id, userEmail);
+      else if (tab === 'infra-projects' || tab === 'infra-updates' || tab === 'infra-media') success = await cmsService.deleteInfrastructureProject(id, userEmail);
+      else if (tab === 'leg-ordinances' || tab === 'leg-resolutions' || tab === 'leg-eos' || tab === 'leg-memos') success = await cmsService.deleteLegislativeDocument(id, userEmail);
+      else if (tab.startsWith('transparency') || tab === 'full-disclosure') success = await cmsService.deleteTransparencyDocument(id, userEmail);
+      else if (tab === 'advisories') success = await cmsService.deleteEmergencyAdvisory(id, userEmail);
 
       if (success) {
         showSuccess("Item deleted successfully.");
@@ -932,6 +1010,30 @@ const AdminDashboard: React.FC = () => {
         showError("Validation Error: Description must be at least 10 characters.");
         return;
       }
+    } else if (activeTab === 'infra-projects' || activeTab === 'infra-updates' || activeTab === 'infra-media') {
+      if (infraForm.title.trim().length < 3) {
+        showError("Validation Error: Project Title must be at least 3 characters.");
+        return;
+      }
+    } else if (activeTab === 'leg-ordinances' || activeTab === 'leg-resolutions' || activeTab === 'leg-eos' || activeTab === 'leg-memos') {
+      if (legislativeForm.title.trim().length < 3) {
+        showError("Validation Error: Document Title must be at least 3 characters.");
+        return;
+      }
+      if (!legislativeForm.document_number.trim()) {
+        showError("Validation Error: Document Number is required.");
+        return;
+      }
+    } else if (activeTab.startsWith('transparency') || activeTab === 'full-disclosure') {
+      if (transparencyForm.title.trim().length < 3) {
+        showError("Validation Error: Document Title must be at least 3 characters.");
+        return;
+      }
+    } else if (activeTab === 'advisories') {
+      if (advisoriesForm.title.trim().length < 3) {
+        showError("Validation Error: Advisory Title must be at least 3 characters.");
+        return;
+      }
     }
 
     setIsActionLoading(true);
@@ -1016,6 +1118,86 @@ const AdminDashboard: React.FC = () => {
         } else {
           await cmsService.createEvent(eventForm, userEmail);
           showSuccess("Event published successfully!");
+        }
+      } else if (activeTab === 'infra-projects' || activeTab === 'infra-updates' || activeTab === 'infra-media') {
+        const payload = {
+          project_code: `INF-${Date.now().toString().slice(-4)}`,
+          title: infraForm.title,
+          category: infraForm.category,
+          description: infraForm.description,
+          status: infraForm.status,
+          budget: Number(infraForm.budget),
+          funding_source: 'LGU General Fund',
+          contractor: infraForm.contractor,
+          barangay: infraForm.barangay_id,
+          progress_percentage: Number(infraForm.physical_progress_percent),
+          start_date: infraForm.start_date,
+          target_completion_date: infraForm.expected_completion
+        };
+        if (editingId) {
+          await cmsService.updateInfrastructureProject(editingId, payload, userEmail);
+          showSuccess("Infrastructure project updated!");
+        } else {
+          await cmsService.createInfrastructureProject(payload, userEmail);
+          showSuccess("Infrastructure project registered!");
+        }
+      } else if (activeTab === 'leg-ordinances' || activeTab === 'leg-resolutions' || activeTab === 'leg-eos' || activeTab === 'leg-memos') {
+        let docType: "ordinance" | "resolution" | "executive_order" | "memorandum" = "ordinance";
+        if (activeTab === 'leg-resolutions') docType = "resolution";
+        else if (activeTab === 'leg-eos') docType = "executive_order";
+        else if (activeTab === 'leg-memos') docType = "memorandum";
+        else if (legislativeForm.document_type) docType = legislativeForm.document_type;
+
+        const payload = {
+          document_type: docType,
+          document_number: legislativeForm.document_number,
+          title: legislativeForm.title,
+          category: legislativeForm.category,
+          summary: legislativeForm.summary,
+          file_url: legislativeForm.file_url,
+          publication_date: legislativeForm.publication_date,
+          status: legislativeForm.status
+        };
+        if (editingId) {
+          await cmsService.updateLegislativeDocument(editingId, payload, userEmail);
+          showSuccess("Legislative document updated!");
+        } else {
+          await cmsService.createLegislativeDocument(payload, userEmail);
+          showSuccess("Legislative document published!");
+        }
+      } else if (activeTab.startsWith('transparency') || activeTab === 'full-disclosure') {
+        let cat = "full_disclosure";
+        if (activeTab === 'transparency-budget') cat = "annual_investment_plan";
+        else if (activeTab === 'transparency-financial') cat = "financial";
+        else if (activeTab === 'transparency-bac') cat = "bac_bids";
+        else if (activeTab === 'transparency-coa') cat = "coa_report";
+        else if (transparencyForm.category) cat = transparencyForm.category;
+
+        const payload = {
+          title: transparencyForm.title,
+          category: cat,
+          department: transparencyForm.department,
+          fiscal_year: Number(transparencyForm.fiscal_year),
+          quarter: transparencyForm.quarter,
+          file_url: transparencyForm.file_url,
+          file_size: transparencyForm.file_size || '1.5 MB',
+          status: transparencyForm.status
+        };
+        if (editingId) {
+          await cmsService.updateTransparencyDocument(editingId, payload, userEmail);
+          showSuccess("Transparency document updated!");
+        } else {
+          await cmsService.createTransparencyDocument(payload, userEmail);
+          showSuccess("Transparency document published!");
+        }
+      } else if (activeTab === 'advisories') {
+        const payload = { ...advisoriesForm };
+        if (editingId) {
+          await cmsService.updateEmergencyAdvisory(editingId, payload, userEmail);
+          showSuccess("Emergency advisory updated!");
+        } else {
+          await cmsService.createEmergencyAdvisory(payload, userEmail);
+          showSuccess("Emergency advisory dispatched!");
         }
       }
 
@@ -3126,7 +3308,7 @@ const AdminDashboard: React.FC = () => {
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Affected Barangay</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Issued Date</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -3147,15 +3329,22 @@ const AdminDashboard: React.FC = () => {
                               <StatusBadge status={adv.status === 'published' ? "APPROVED" : "DRAFT"} label={adv.status === 'published' ? "Active Bulletin" : "Archived"} />
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <button
-                                onClick={async () => {
-                                  await cmsService.updateEmergencyAdvisory(adv.id, { status: adv.status === 'published' ? 'draft' : 'published' }, profile?.email);
-                                  loadAllCmsData();
-                                }}
-                                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-[9px] uppercase tracking-wider rounded-lg transition-all cursor-pointer"
-                              >
-                                {adv.status === 'published' ? "Deactivate" : "Activate"}
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => openEditEntity('advisories', adv)}
+                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
+                                  title="Edit advisory"
+                                >
+                                  <Edit3 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmItem({ id: adv.id, tab: 'advisories', name: adv.title })}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                                  title="Delete advisory"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -3175,7 +3364,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     {canWriteTab('departments') && (
                       <button
-                        onClick={() => showSuccess("Infrastructure modal ready")}
+                        onClick={() => { resetAllForms(); setIsModalOpen(true); }}
                         className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
                       >
                         <Plus size={14} /> Register Project
@@ -3193,7 +3382,8 @@ const AdminDashboard: React.FC = () => {
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Contractor</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Approved Budget</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Progress</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Status</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -3220,8 +3410,26 @@ const AdminDashboard: React.FC = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-6 py-4">
                               <StatusBadge status={proj.status} />
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => openEditEntity('infra-projects', proj)}
+                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
+                                  title="Edit project"
+                                >
+                                  <Edit3 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmItem({ id: proj.id, tab: 'infra-projects', name: proj.title })}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                                  title="Delete project"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -3241,7 +3449,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     {canWriteTab('downloadables') && (
                       <button
-                        onClick={() => showSuccess("Legislative document modal ready")}
+                        onClick={() => { resetAllForms(); setIsModalOpen(true); }}
                         className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
                       >
                         <Plus size={14} /> Add Ordinance / Document
@@ -3258,7 +3466,7 @@ const AdminDashboard: React.FC = () => {
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Published</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">PDF File</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -3270,13 +3478,27 @@ const AdminDashboard: React.FC = () => {
                             <td className="px-6 py-4 text-gray-600 font-medium">{doc.category || "General"}</td>
                             <td className="px-6 py-4 text-gray-400 font-mono font-bold">{doc.publication_date ? new Date(doc.publication_date).getFullYear() : "2026"}</td>
                             <td className="px-6 py-4 text-right">
-                              {doc.file_url ? (
-                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-black text-[9px] uppercase tracking-wider rounded-lg inline-flex items-center gap-1 transition-all">
-                                  <ExternalLink size={12} /> View PDF
-                                </a>
-                              ) : (
-                                <span className="text-[10px] text-gray-300 font-bold uppercase">No PDF</span>
-                              )}
+                              <div className="flex items-center justify-end gap-2">
+                                {doc.file_url && (
+                                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="View PDF">
+                                    <ExternalLink size={14} />
+                                  </a>
+                                )}
+                                <button
+                                  onClick={() => openEditEntity('leg-ordinances', doc)}
+                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
+                                  title="Edit document"
+                                >
+                                  <Edit3 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmItem({ id: doc.id, tab: 'leg-ordinances', name: doc.title })}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                                  title="Delete document"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -3289,11 +3511,19 @@ const AdminDashboard: React.FC = () => {
               {/* TRANSPARENCY & FULL DISCLOSURE PANEL */}
               {(activeTab.startsWith('transparency') || activeTab === 'full-disclosure') && (
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                       <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Full Disclosure & Compliance Portal</h3>
                       <p className="text-gray-400 text-xs font-bold mt-1">DILG Full Disclosure Policy compliance documents, annual budgets, COA audit reports, and BAC procurement postings.</p>
                     </div>
+                    {canWriteTab('downloadables') && (
+                      <button
+                        onClick={() => { resetAllForms(); setIsModalOpen(true); }}
+                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
+                      >
+                        <Plus size={14} /> Upload Disclosure File
+                      </button>
+                    )}
                   </div>
 
                   <div className="p-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/20 border border-blue-100/50 rounded-[2.5rem] space-y-4">
@@ -3318,6 +3548,53 @@ const AdminDashboard: React.FC = () => {
                         <span className="text-lg font-black text-blue-600">24 Active Bids</span>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="overflow-x-auto border border-gray-100 rounded-[2rem] shadow-sm bg-white">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-100">
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Document Title</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Department</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Period / Year</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {transparencyDocuments.map((doc) => (
+                          <tr key={doc.id} className="hover:bg-gray-50/50">
+                            <td className="px-6 py-4 font-black text-gray-900 max-w-md">{doc.title}</td>
+                            <td className="px-6 py-4 text-gray-600 font-bold uppercase text-[10px]">{doc.category.replace('_', ' ')}</td>
+                            <td className="px-6 py-4 text-gray-500 font-medium">{doc.department || "LGU Municipal"}</td>
+                            <td className="px-6 py-4 text-gray-400 font-mono font-bold">{doc.quarter} {doc.fiscal_year}</td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {doc.file_url && (
+                                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="View Disclosure File">
+                                    <ExternalLink size={14} />
+                                  </a>
+                                )}
+                                <button
+                                  onClick={() => openEditEntity('transparency-docs', doc)}
+                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
+                                  title="Edit disclosure record"
+                                >
+                                  <Edit3 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmItem({ id: doc.id, tab: 'transparency-docs', name: doc.title })}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                                  title="Delete disclosure record"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -4080,6 +4357,216 @@ const AdminDashboard: React.FC = () => {
                     <FileUpload label="Event Banner Landscape Image" folder="event_banners" bucket="public-cms" currentValue={eventForm.banner_image} onUploadComplete={(url) => setEventForm({ ...eventForm, banner_image: url })} />
 
                     <SubmitBtn label={editingId ? "Update scheduled event" : "Publish scheduled event"} isLoading={isActionLoading} />
+                  </form>
+                )}
+
+                {/* 9. INFRASTRUCTURE PROJECTS FORM */}
+                {(activeTab === 'infra-projects' || activeTab === 'infra-updates' || activeTab === 'infra-media') && (
+                  <form onSubmit={handleSaveEntity} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-title">Project Title *</label>
+                      <input id="inf-title" type="text" required value={infraForm.title} onChange={(e) => setInfraForm({ ...infraForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-cat">Category</label>
+                        <select id="inf-cat" value={infraForm.category} onChange={(e) => setInfraForm({ ...infraForm, category: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
+                          <option value="Roads & Bridges">Roads & Bridges</option>
+                          <option value="Public Buildings">Public Buildings</option>
+                          <option value="Flood Control & Drainage">Flood Control & Drainage</option>
+                          <option value="Water Supply & Utilities">Water Supply & Utilities</option>
+                          <option value="Port & Marine Infrastructure">Port & Marine Infrastructure</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-brgy">Barangay Location</label>
+                        <select id="inf-brgy" value={infraForm.barangay_id} onChange={(e) => setInfraForm({ ...infraForm, barangay_id: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
+                          <option value="">-- All / Central --</option>
+                          {BARANGAYS.map((b) => (
+                            <option key={b.id} value={b.name}>{b.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-budget">Approved Budget (PHP) *</label>
+                        <input id="inf-budget" type="number" value={infraForm.budget} onChange={(e) => setInfraForm({ ...infraForm, budget: Number(e.target.value) })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-contractor">Contractor / Implementer</label>
+                        <input id="inf-contractor" type="text" value={infraForm.contractor} onChange={(e) => setInfraForm({ ...infraForm, contractor: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-start">Start Date</label>
+                        <input id="inf-start" type="date" value={infraForm.start_date} onChange={(e) => setInfraForm({ ...infraForm, start_date: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-end">Target Completion Date</label>
+                        <input id="inf-end" type="date" value={infraForm.expected_completion} onChange={(e) => setInfraForm({ ...infraForm, expected_completion: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-prog">Physical Progress (%)</label>
+                        <input id="inf-prog" type="number" min="0" max="100" value={infraForm.physical_progress_percent} onChange={(e) => setInfraForm({ ...infraForm, physical_progress_percent: Number(e.target.value) })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-status">Status</label>
+                        <select id="inf-status" value={infraForm.status} onChange={(e) => setInfraForm({ ...infraForm, status: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
+                          <option value="planning">Planning / Pre-bidding</option>
+                          <option value="ongoing">Ongoing Execution</option>
+                          <option value="completed">Completed & Turned Over</option>
+                          <option value="delayed">Delayed / Suspended</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-desc">Project Scope & Details</label>
+                      <textarea id="inf-desc" rows={3} value={infraForm.description} onChange={(e) => setInfraForm({ ...infraForm, description: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <SubmitBtn label={editingId ? "Update Infrastructure Project" : "Register Infrastructure Project"} isLoading={isActionLoading} />
+                  </form>
+                )}
+
+                {/* 10. LEGISLATIVE DOCUMENTS FORM */}
+                {(activeTab === 'leg-ordinances' || activeTab === 'leg-resolutions' || activeTab === 'leg-eos' || activeTab === 'leg-memos') && (
+                  <form onSubmit={handleSaveEntity} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-num">Document Number *</label>
+                        <input id="leg-num" type="text" required placeholder="e.g. Ord. No. 2026-04" value={legislativeForm.document_number} onChange={(e) => setLegislativeForm({ ...legislativeForm, document_number: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-type">Document Type</label>
+                        <select id="leg-type" value={legislativeForm.document_type} onChange={(e) => setLegislativeForm({ ...legislativeForm, document_type: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
+                          <option value="ordinance">Municipal Ordinance</option>
+                          <option value="resolution">Sangguniang Resolution</option>
+                          <option value="executive_order">Executive Order (EO)</option>
+                          <option value="memorandum">Administrative Memorandum</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-title">Title / Subject *</label>
+                      <input id="leg-title" type="text" required value={legislativeForm.title} onChange={(e) => setLegislativeForm({ ...legislativeForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-cat">Category / Sector</label>
+                        <input id="leg-cat" type="text" value={legislativeForm.category} onChange={(e) => setLegislativeForm({ ...legislativeForm, category: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-date">Publication Date</label>
+                        <input id="leg-date" type="date" value={legislativeForm.publication_date} onChange={(e) => setLegislativeForm({ ...legislativeForm, publication_date: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-sum">Executive Summary</label>
+                      <textarea id="leg-sum" rows={3} value={legislativeForm.summary} onChange={(e) => setLegislativeForm({ ...legislativeForm, summary: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <FileUpload label="Official Signed PDF Document Attachment" folder="legislative_documents" bucket="public-cms" currentValue={legislativeForm.file_url} onUploadComplete={(url) => setLegislativeForm({ ...legislativeForm, file_url: url })} />
+
+                    <SubmitBtn label={editingId ? "Update Legislative Record" : "Publish Legislative Record"} isLoading={isActionLoading} />
+                  </form>
+                )}
+
+                {/* 11. TRANSPARENCY & FULL DISCLOSURE FORM */}
+                {(activeTab.startsWith('transparency') || activeTab === 'full-disclosure') && (
+                  <form onSubmit={handleSaveEntity} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-title">Document Title *</label>
+                      <input id="trn-title" type="text" required value={transparencyForm.title} onChange={(e) => setTransparencyForm({ ...transparencyForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-cat">Portal Category</label>
+                        <select id="trn-cat" value={transparencyForm.category} onChange={(e) => setTransparencyForm({ ...transparencyForm, category: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
+                          <option value="full_disclosure">Full Disclosure Portal</option>
+                          <option value="annual_investment_plan">Annual Investment Plan (AIP)</option>
+                          <option value="financial">Financial Statements</option>
+                          <option value="bac_bids">BAC Procurement & Bids</option>
+                          <option value="coa_report">COA Audit Report</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-dept">Issuing Department</label>
+                        <input id="trn-dept" type="text" placeholder="e.g. Accounting / BAC Secretariat" value={transparencyForm.department} onChange={(e) => setTransparencyForm({ ...transparencyForm, department: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-yr">Fiscal Year</label>
+                        <input id="trn-yr" type="number" value={transparencyForm.fiscal_year} onChange={(e) => setTransparencyForm({ ...transparencyForm, fiscal_year: Number(e.target.value) })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-qtr">Quarter / Period</label>
+                        <select id="trn-qtr" value={transparencyForm.quarter} onChange={(e) => setTransparencyForm({ ...transparencyForm, quarter: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
+                          <option value="Q1">Q1 (1st Quarter)</option>
+                          <option value="Q2">Q2 (2nd Quarter)</option>
+                          <option value="Q3">Q3 (3rd Quarter)</option>
+                          <option value="Q4">Q4 (4th Quarter)</option>
+                          <option value="Annual">Annual Report</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <FileUpload label="Disclosure PDF Document Attachment" folder="transparency_documents" bucket="public-cms" currentValue={transparencyForm.file_url} onUploadComplete={(url) => setTransparencyForm({ ...transparencyForm, file_url: url })} />
+
+                    <SubmitBtn label={editingId ? "Update Disclosure File" : "Publish Disclosure File"} isLoading={isActionLoading} />
+                  </form>
+                )}
+
+                {/* 12. EMERGENCY ADVISORIES FORM */}
+                {activeTab === 'advisories' && (
+                  <form onSubmit={handleSaveEntity} className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="adv-title">Advisory Headline *</label>
+                      <input id="adv-title" type="text" required value={advisoriesForm.title} onChange={(e) => setAdvisoriesForm({ ...advisoriesForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="adv-type">Category</label>
+                        <select id="adv-type" value={advisoriesForm.type} onChange={(e) => setAdvisoriesForm({ ...advisoriesForm, type: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
+                          <option value="Weather / Typhoon">Weather / Typhoon</option>
+                          <option value="Public Health / Epidemic">Public Health / Epidemic</option>
+                          <option value="Power & Water Advisory">Power & Water Advisory</option>
+                          <option value="Road Closure & Traffic">Road Closure & Traffic</option>
+                          <option value="General Safety Bulletin">General Safety Bulletin</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="adv-sev">Severity Level</label>
+                        <select id="adv-sev" value={advisoriesForm.severity} onChange={(e) => setAdvisoriesForm({ ...advisoriesForm, severity: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
+                          <option value="info">Info Bulletin</option>
+                          <option value="warning">Warning / Advisory</option>
+                          <option value="critical">Critical Urgency</option>
+                          <option value="danger">Emergency / Danger</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="adv-content">Full Advisory Text *</label>
+                      <textarea id="adv-content" required rows={4} value={advisoriesForm.content} onChange={(e) => setAdvisoriesForm({ ...advisoriesForm, content: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
+                    </div>
+
+                    <SubmitBtn label={editingId ? "Update Emergency Advisory" : "Dispatch Emergency Advisory"} isLoading={isActionLoading} />
                   </form>
                 )}
 
