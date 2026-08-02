@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+export { isSupabaseConfigured };
 import { newsService } from "./newsService";
 import { eventService } from "./eventService";
 import { tourismService } from "./tourismService";
@@ -149,6 +150,193 @@ export interface UserProfileItem {
   barangay_id?: string | null;
   department_id?: string | null;
   is_verified: boolean;
+  created_at?: string;
+}
+
+export interface EmergencyAdvisoryItem {
+  id: string;
+  title: string;
+  type: string;
+  severity: "info" | "warning" | "critical" | "danger";
+  content: string;
+  affected_barangays: string[];
+  is_pinned: boolean;
+  is_popup: boolean;
+  banner_color: string;
+  status: "draft" | "published" | "archived";
+  start_date?: string;
+  expiry_date?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface InfrastructureProjectItem {
+  id: string;
+  project_code: string;
+  title: string;
+  category: string;
+  description: string;
+  status: "planning" | "procurement" | "ongoing" | "delayed" | "completed";
+  budget: number;
+  funding_source: string;
+  contractor?: string;
+  project_engineer?: string;
+  barangay: string;
+  latitude?: number;
+  longitude?: number;
+  progress_percentage: number;
+  start_date?: string;
+  target_completion_date?: string;
+  actual_completion_date?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface InfrastructureUpdateItem {
+  id: string;
+  project_id: string;
+  update_title: string;
+  update_description?: string;
+  progress_percentage?: number;
+  milestone_reached?: string;
+  updated_by?: string;
+  created_at?: string;
+}
+
+export interface LegislativeDocumentItem {
+  id: string;
+  document_type: "ordinance" | "resolution" | "executive_order" | "memorandum";
+  document_number: string;
+  title: string;
+  category: string;
+  summary?: string;
+  full_text?: string;
+  file_url?: string;
+  publication_date?: string;
+  effective_date?: string;
+  status: "draft" | "published" | "archived";
+  views_count?: number;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  slug: string;
+  module: string;
+  description?: string;
+  color?: string;
+  created_at?: string;
+}
+
+export interface TagItem {
+  id: string;
+  name: string;
+  slug: string;
+  created_at?: string;
+}
+
+export interface HomepageWidgetItem {
+  id: string;
+  widget_type: string;
+  title: string;
+  subtitle?: string;
+  config?: any;
+  is_enabled: boolean;
+  widget_order: number;
+  start_date?: string;
+  end_date?: string;
+  updated_at?: string;
+}
+
+export interface HomepageSlideItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  image_url: string;
+  cta_label?: string;
+  cta_url?: string;
+  slide_order: number;
+  is_enabled: boolean;
+  created_at?: string;
+}
+
+export interface PageContentItem {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle?: string;
+  status: "draft" | "published" | "archived";
+  meta_title?: string;
+  meta_description?: string;
+  updated_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PageBlockItem {
+  id: string;
+  page_id: string;
+  block_type: string;
+  content: any;
+  block_order: number;
+  is_enabled: boolean;
+  created_at?: string;
+}
+
+export interface MediaAssetItem {
+  id: string;
+  folder_id?: string | null;
+  filename: string;
+  original_name: string;
+  mime_type: string;
+  file_size: number;
+  storage_path: string;
+  public_url: string;
+  alt_text?: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+  usage_count?: number;
+  created_at?: string;
+}
+
+export interface MediaFolderItem {
+  id: string;
+  name: string;
+  parent_id?: string | null;
+  path: string;
+  created_at?: string;
+}
+
+export interface ModulePermissionItem {
+  id: string;
+  role: string;
+  module: string;
+  can_read: boolean;
+  can_create: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_publish: boolean;
+  updated_at?: string;
+}
+
+export interface TransparencyDocumentItem {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  department?: string;
+  fiscal_year: number;
+  quarter?: string;
+  file_url: string;
+  file_size?: string;
+  downloads_count?: number;
+  status: "draft" | "published";
   created_at?: string;
 }
 
@@ -368,6 +556,205 @@ const INITIAL_EVENTS: EventItem[] = [
     time: "8:00 AM - 11:00 PM",
     venue: "Talibon Town Plaza & Cultural Center",
     banner_image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&q=80&w=800"
+  }
+];
+
+const INITIAL_ADVISORIES: EmergencyAdvisoryItem[] = [
+  {
+    id: "adv-1",
+    title: "Gale Warning & Coastal Surge Advisory #03",
+    type: "WEATHER",
+    severity: "warning",
+    content: "All small seacrafts and fishing vessels departing from Talibon Port and Calituban Island are advised to suspend voyage due to heavy sea swells.",
+    affected_barangays: ["Calituban", "Suba", "San Pedro", "Guindacpan"],
+    is_pinned: true,
+    is_popup: true,
+    banner_color: "amber",
+    status: "published",
+    start_date: new Date().toISOString()
+  },
+  {
+    id: "adv-2",
+    title: "Scheduled Water Main System Maintenance in Poblacion",
+    type: "UTILITY",
+    severity: "info",
+    content: "Talibon Water District will perform valve replacements along San Jose St. Water pressure interruption expected between 1:00 PM and 5:00 PM.",
+    affected_barangays: ["Poblacion", "San Jose"],
+    is_pinned: false,
+    is_popup: false,
+    banner_color: "blue",
+    status: "published",
+    start_date: new Date().toISOString()
+  }
+];
+
+const INITIAL_PROJECTS: InfrastructureProjectItem[] = [
+  {
+    id: "proj-1",
+    project_code: "INFRA-2026-001",
+    title: "Danajon Bank Ecotourism Boardwalk & Research Hub",
+    category: "Eco-Tourism",
+    description: "Construction of a elevated mangrove boardwalk with marine sanctuary monitoring outpost and solar lighting.",
+    status: "ongoing",
+    budget: 12500000.00,
+    funding_source: "LGU Development Fund 2026",
+    contractor: "Visayas Coastal Marine Builders Corp.",
+    project_engineer: "Engr. Ricardo Mendoza",
+    barangay: "San Pedro",
+    latitude: 10.153,
+    longitude: 124.322,
+    progress_percentage: 75,
+    start_date: "2026-01-15",
+    target_completion_date: "2026-09-30"
+  },
+  {
+    id: "proj-2",
+    project_code: "INFRA-2026-002",
+    title: "Talibon Municipal Health Center Modernization Phase II",
+    category: "Public Health",
+    description: "Two-story extension including digital X-Ray room, diagnostic laboratory, and emergency triage unit.",
+    status: "completed",
+    budget: 8200000.00,
+    funding_source: "DOH Health Facilities Enhancement Program (HFEP)",
+    contractor: "Bohol Apex Builders",
+    project_engineer: "Engr. Maria Santos",
+    barangay: "Poblacion",
+    progress_percentage: 100,
+    start_date: "2025-06-01",
+    actual_completion_date: "2026-02-10"
+  }
+];
+
+const INITIAL_LEGISLATIVE: LegislativeDocumentItem[] = [
+  {
+    id: "leg-1",
+    document_type: "ordinance",
+    document_number: "Ordinance No. 2026-04",
+    title: "Comprehensive Environmental Protection & Marine Sanctuary Ordinance of Talibon",
+    category: "Environment",
+    summary: "Enacting strict penal clauses for illegal fishing and establishing protected marine zones across Danajon Bank.",
+    publication_date: "2026-03-15",
+    effective_date: "2026-04-01",
+    status: "published",
+    views_count: 420
+  },
+  {
+    id: "leg-2",
+    document_type: "resolution",
+    document_number: "Resolution No. 2026-18",
+    title: "Resolution Approving the Municipal Annual Investment Plan (AIP) for FY 2026",
+    category: "Finance & Budget",
+    summary: "Formally adopting the multi-sectoral development budget allocations for social services and infrastructure.",
+    publication_date: "2026-01-20",
+    effective_date: "2026-01-20",
+    status: "published",
+    views_count: 310
+  },
+  {
+    id: "leg-3",
+    document_type: "executive_order",
+    document_number: "EO No. 2026-01",
+    title: "Reconstitution of the Municipal Disaster Risk Reduction and Management Council (MDRRMC)",
+    category: "Governance & Safety",
+    summary: "Re-organizing team assignments, emergency task forces, and command protocols for climate resiliency.",
+    publication_date: "2026-01-05",
+    effective_date: "2026-01-05",
+    status: "published",
+    views_count: 185
+  },
+  {
+    id: "leg-4",
+    document_type: "memorandum",
+    document_number: "MC No. 2026-02",
+    title: "Strict Compliance with Civil Service Hours and Digital Attendance Systems",
+    category: "Administration",
+    summary: "Mandating all municipal personnel to log attendance using the biometric and digital personnel portal.",
+    publication_date: "2026-02-01",
+    effective_date: "2026-02-01",
+    status: "published",
+    views_count: 150
+  }
+];
+
+const INITIAL_CATEGORIES: CategoryItem[] = [
+  { id: "cat-1", name: "Public Health", slug: "public-health", module: "news", description: "Health alerts and medical missions", color: "#16a34a" },
+  { id: "cat-2", name: "Environment", slug: "environment", module: "news", description: "Marine sanctuary and cleanups", color: "#0284c7" },
+  { id: "cat-3", name: "Finance & Budget", slug: "finance", module: "transparency", description: "Financial reports and AIPs", color: "#2563eb" },
+  { id: "cat-4", name: "Infrastructure", slug: "infrastructure", module: "projects", description: "Public works and engineering", color: "#d97706" }
+];
+
+const INITIAL_TAGS: TagItem[] = [
+  { id: "tag-1", name: "#DanajonBank", slug: "danajon-bank" },
+  { id: "tag-2", name: "#Talibon2026", slug: "talibon-2026" },
+  { id: "tag-3", name: "#FullDisclosure", slug: "full-disclosure" },
+  { id: "tag-4", name: "#PublicSafety", slug: "public-safety" }
+];
+
+const INITIAL_WIDGETS: HomepageWidgetItem[] = [
+  { id: "wid-1", widget_type: "hero_banner", title: "Welcome Banner", subtitle: "Main visual banner on homepage", is_enabled: true, widget_order: 1 },
+  { id: "wid-2", widget_type: "advisory_alert", title: "Emergency Ticker", subtitle: "Top alert banner for critical notices", is_enabled: true, widget_order: 2 },
+  { id: "wid-3", widget_type: "news_slider", title: "Latest News Grid", subtitle: "Highlighted municipal announcements", is_enabled: true, widget_order: 3 },
+  { id: "wid-4", widget_type: "projects_highlight", title: "Infrastructure Showcase", subtitle: "Live project progress tracker", is_enabled: true, widget_order: 4 }
+];
+
+const INITIAL_SLIDES: HomepageSlideItem[] = [
+  { id: "sld-1", title: "Welcome to Municipality of Talibon", subtitle: "Progressive, Inclusive, and Resilient Coastal Community", image_url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=1200", cta_label: "Explore Services", cta_url: "/services", slide_order: 1, is_enabled: true },
+  { id: "sld-2", title: "Home of Danajon Bank Double Barrier Reef", subtitle: "Protecting Our Unique Global Marine Heritage", image_url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200", cta_label: "Learn More", cta_url: "/tourism", slide_order: 2, is_enabled: true }
+];
+
+const INITIAL_PAGES: PageContentItem[] = [
+  { id: "pg-1", slug: "about", title: "About Municipality of Talibon", subtitle: "History, vision, mission, and municipal profile", status: "published", meta_title: "About Talibon | LGU Portal", meta_description: "Discover the history and governance of Talibon, Bohol." },
+  { id: "pg-2", slug: "danajon-sanctuary", title: "Danajon Bank Sanctuary", subtitle: "Ecological treasure and conservation guidelines", status: "published", meta_title: "Danajon Bank | Talibon Tourism", meta_description: "Explore the double barrier reef of Talibon." }
+];
+
+const INITIAL_PERMISSIONS: ModulePermissionItem[] = [
+  { id: "perm-1", role: "admin", module: "content", can_read: true, can_create: true, can_edit: true, can_delete: true, can_publish: true },
+  { id: "perm-2", role: "editor", module: "content", can_read: true, can_create: true, can_edit: true, can_delete: false, can_publish: true },
+  { id: "perm-3", role: "municipal_admin", module: "government", can_read: true, can_create: true, can_edit: true, can_delete: false, can_publish: true },
+  { id: "perm-4", role: "barangay_admin", module: "barangays", can_read: true, can_create: false, can_edit: true, can_delete: false, can_publish: false }
+];
+
+const INITIAL_TRANSPARENCY: TransparencyDocumentItem[] = [
+  {
+    id: "transp-1",
+    title: "Annual Investment Plan (AIP) FY 2026",
+    description: "Comprehensive municipal development investment allocation breakdown across local sectors.",
+    category: "Annual Investment Plan",
+    department: "Municipal Planning and Development Office",
+    fiscal_year: 2026,
+    quarter: "Annual",
+    file_url: "http://talibon.gov.ph/wp-content/uploads/2026/AIP-2026.pdf",
+    file_size: "3.5 MB",
+    downloads_count: 142,
+    status: "published"
+  },
+  {
+    id: "transp-2",
+    title: "Quarterly Statement of Receipts and Expenditures Q1 2026",
+    description: "First Quarter Financial Execution and Revenue Collection Report.",
+    category: "Financial Statement",
+    department: "Municipal Treasurer's Office",
+    fiscal_year: 2026,
+    quarter: "Q1",
+    file_url: "http://talibon.gov.ph/wp-content/uploads/2026/SRE-Q1-2026.pdf",
+    file_size: "1.8 MB",
+    downloads_count: 89,
+    status: "published"
+  }
+];
+
+const INITIAL_MEDIA: MediaAssetItem[] = [
+  {
+    id: "med-1",
+    filename: "danajon_reef_hero.jpg",
+    original_name: "Danajon Reef Sanctuary.jpg",
+    mime_type: "image/jpeg",
+    file_size: 1048576,
+    storage_path: "uploads/danajon_reef_hero.jpg",
+    public_url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=800",
+    alt_text: "Danajon Reef aerial view",
+    caption: "Danajon Bank Double Barrier Reef",
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -1173,5 +1560,474 @@ export const cmsService = {
       return list[index];
     }
     throw new Error("User not found");
+  },
+
+  // Emergency Advisories
+  async getEmergencyAdvisories(): Promise<EmergencyAdvisoryItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("emergency_advisories").select("*").order("start_date", { ascending: false });
+        if (!error && data) return data as EmergencyAdvisoryItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<EmergencyAdvisoryItem>("emergency_advisories", INITIAL_ADVISORIES);
+  },
+
+  async createEmergencyAdvisory(item: Omit<EmergencyAdvisoryItem, "id">, userEmail: string): Promise<EmergencyAdvisoryItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("emergency_advisories").insert([item]).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "CREATE", "emergency_advisories", data.id);
+          return data as EmergencyAdvisoryItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<EmergencyAdvisoryItem>("emergency_advisories", INITIAL_ADVISORIES);
+    const newItem: EmergencyAdvisoryItem = { ...item, id: "adv-" + Date.now() };
+    list.unshift(newItem);
+    setStorage("emergency_advisories", list);
+    await logCmsAction(userEmail, "CREATE", "emergency_advisories", newItem.id);
+    return newItem;
+  },
+
+  async updateEmergencyAdvisory(id: string, item: Partial<EmergencyAdvisoryItem>, userEmail: string): Promise<EmergencyAdvisoryItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("emergency_advisories").update(item).eq("id", id).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "UPDATE", "emergency_advisories", id);
+          return data as EmergencyAdvisoryItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<EmergencyAdvisoryItem>("emergency_advisories", INITIAL_ADVISORIES);
+    const idx = list.findIndex(a => a.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...item };
+      setStorage("emergency_advisories", list);
+      await logCmsAction(userEmail, "UPDATE", "emergency_advisories", id);
+      return list[idx];
+    }
+    throw new Error("Advisory not found");
+  },
+
+  async deleteEmergencyAdvisory(id: string, userEmail: string): Promise<boolean> {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from("emergency_advisories").delete().eq("id", id);
+        if (!error) {
+          await logCmsAction(userEmail, "DELETE", "emergency_advisories", id);
+          return true;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<EmergencyAdvisoryItem>("emergency_advisories", INITIAL_ADVISORIES);
+    setStorage("emergency_advisories", list.filter(a => a.id !== id));
+    await logCmsAction(userEmail, "DELETE", "emergency_advisories", id);
+    return true;
+  },
+
+  // Infrastructure Projects
+  async getInfrastructureProjects(): Promise<InfrastructureProjectItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("infrastructure_projects").select("*").order("created_at", { ascending: false });
+        if (!error && data) return data as InfrastructureProjectItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<InfrastructureProjectItem>("infrastructure_projects", INITIAL_PROJECTS);
+  },
+
+  async createInfrastructureProject(item: Omit<InfrastructureProjectItem, "id">, userEmail: string): Promise<InfrastructureProjectItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("infrastructure_projects").insert([item]).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "CREATE", "infrastructure_projects", data.id);
+          return data as InfrastructureProjectItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<InfrastructureProjectItem>("infrastructure_projects", INITIAL_PROJECTS);
+    const newItem: InfrastructureProjectItem = { ...item, id: "proj-" + Date.now() };
+    list.unshift(newItem);
+    setStorage("infrastructure_projects", list);
+    await logCmsAction(userEmail, "CREATE", "infrastructure_projects", newItem.id);
+    return newItem;
+  },
+
+  async updateInfrastructureProject(id: string, item: Partial<InfrastructureProjectItem>, userEmail: string): Promise<InfrastructureProjectItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("infrastructure_projects").update(item).eq("id", id).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "UPDATE", "infrastructure_projects", id);
+          return data as InfrastructureProjectItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<InfrastructureProjectItem>("infrastructure_projects", INITIAL_PROJECTS);
+    const idx = list.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...item };
+      setStorage("infrastructure_projects", list);
+      await logCmsAction(userEmail, "UPDATE", "infrastructure_projects", id);
+      return list[idx];
+    }
+    throw new Error("Project not found");
+  },
+
+  async deleteInfrastructureProject(id: string, userEmail: string): Promise<boolean> {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from("infrastructure_projects").delete().eq("id", id);
+        if (!error) {
+          await logCmsAction(userEmail, "DELETE", "infrastructure_projects", id);
+          return true;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<InfrastructureProjectItem>("infrastructure_projects", INITIAL_PROJECTS);
+    setStorage("infrastructure_projects", list.filter(p => p.id !== id));
+    await logCmsAction(userEmail, "DELETE", "infrastructure_projects", id);
+    return true;
+  },
+
+  // Legislative Documents
+  async getLegislativeDocuments(docType?: string): Promise<LegislativeDocumentItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        let query = supabase.from("legislative_documents").select("*").order("publication_date", { ascending: false });
+        if (docType) query = query.eq("document_type", docType);
+        const { data, error } = await query;
+        if (!error && data) return data as LegislativeDocumentItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<LegislativeDocumentItem>("legislative_documents", INITIAL_LEGISLATIVE);
+    if (docType) return list.filter(l => l.document_type === docType);
+    return list;
+  },
+
+  async createLegislativeDocument(item: Omit<LegislativeDocumentItem, "id">, userEmail: string): Promise<LegislativeDocumentItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("legislative_documents").insert([item]).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "CREATE", "legislative_documents", data.id);
+          return data as LegislativeDocumentItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<LegislativeDocumentItem>("legislative_documents", INITIAL_LEGISLATIVE);
+    const newItem: LegislativeDocumentItem = { ...item, id: "leg-" + Date.now() };
+    list.unshift(newItem);
+    setStorage("legislative_documents", list);
+    await logCmsAction(userEmail, "CREATE", "legislative_documents", newItem.id);
+    return newItem;
+  },
+
+  async updateLegislativeDocument(id: string, item: Partial<LegislativeDocumentItem>, userEmail: string): Promise<LegislativeDocumentItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("legislative_documents").update(item).eq("id", id).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "UPDATE", "legislative_documents", id);
+          return data as LegislativeDocumentItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<LegislativeDocumentItem>("legislative_documents", INITIAL_LEGISLATIVE);
+    const idx = list.findIndex(l => l.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...item };
+      setStorage("legislative_documents", list);
+      await logCmsAction(userEmail, "UPDATE", "legislative_documents", id);
+      return list[idx];
+    }
+    throw new Error("Document not found");
+  },
+
+  async deleteLegislativeDocument(id: string, userEmail: string): Promise<boolean> {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from("legislative_documents").delete().eq("id", id);
+        if (!error) {
+          await logCmsAction(userEmail, "DELETE", "legislative_documents", id);
+          return true;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<LegislativeDocumentItem>("legislative_documents", INITIAL_LEGISLATIVE);
+    setStorage("legislative_documents", list.filter(l => l.id !== id));
+    await logCmsAction(userEmail, "DELETE", "legislative_documents", id);
+    return true;
+  },
+
+  // Categories & Tags
+  async getCategories(): Promise<CategoryItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("categories").select("*").order("name", { ascending: true });
+        if (!error && data) return data as CategoryItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<CategoryItem>("categories", INITIAL_CATEGORIES);
+  },
+
+  async getTags(): Promise<TagItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("tags").select("*").order("name", { ascending: true });
+        if (!error && data) return data as TagItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<TagItem>("tags", INITIAL_TAGS);
+  },
+
+  // Homepage Widgets & Slides
+  async getHomepageWidgets(): Promise<HomepageWidgetItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("homepage_widgets").select("*").order("widget_order", { ascending: true });
+        if (!error && data) return data as HomepageWidgetItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<HomepageWidgetItem>("homepage_widgets", INITIAL_WIDGETS);
+  },
+
+  async updateHomepageWidget(id: string, item: Partial<HomepageWidgetItem>): Promise<HomepageWidgetItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("homepage_widgets").update(item).eq("id", id).select().maybeSingle();
+        if (!error && data) return data as HomepageWidgetItem;
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<HomepageWidgetItem>("homepage_widgets", INITIAL_WIDGETS);
+    const idx = list.findIndex(w => w.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...item };
+      setStorage("homepage_widgets", list);
+      return list[idx];
+    }
+    throw new Error("Widget not found");
+  },
+
+  async getHomepageSlides(): Promise<HomepageSlideItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("homepage_slides").select("*").order("slide_order", { ascending: true });
+        if (!error && data) return data as HomepageSlideItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<HomepageSlideItem>("homepage_slides", INITIAL_SLIDES);
+  },
+
+  // Pages
+  async getPageContents(): Promise<PageContentItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("page_contents").select("*").order("title", { ascending: true });
+        if (!error && data) return data as PageContentItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<PageContentItem>("page_contents", INITIAL_PAGES);
+  },
+
+  // Permissions Matrix
+  async getModulePermissions(): Promise<ModulePermissionItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("module_permissions").select("*");
+        if (!error && data) return data as ModulePermissionItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<ModulePermissionItem>("module_permissions", INITIAL_PERMISSIONS);
+  },
+
+  async updateModulePermission(id: string, item: Partial<ModulePermissionItem>, userEmail: string): Promise<ModulePermissionItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("module_permissions").update(item).eq("id", id).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "UPDATE_PERMISSION", "module_permissions", id);
+          return data as ModulePermissionItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<ModulePermissionItem>("module_permissions", INITIAL_PERMISSIONS);
+    const idx = list.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...item };
+      setStorage("module_permissions", list);
+      await logCmsAction(userEmail, "UPDATE_PERMISSION", "module_permissions", id);
+      return list[idx];
+    }
+    throw new Error("Permission not found");
+  },
+
+  // Transparency Documents
+  async getTransparencyDocuments(): Promise<TransparencyDocumentItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("transparency_documents").select("*").order("fiscal_year", { ascending: false });
+        if (!error && data) return data as TransparencyDocumentItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
+  },
+
+  async createTransparencyDocument(item: Omit<TransparencyDocumentItem, "id">, userEmail: string): Promise<TransparencyDocumentItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("transparency_documents").insert([item]).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "CREATE", "transparency_documents", data.id);
+          return data as TransparencyDocumentItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
+    const newItem: TransparencyDocumentItem = { ...item, id: "transp-" + Date.now() };
+    list.unshift(newItem);
+    setStorage("transparency_documents", list);
+    await logCmsAction(userEmail, "CREATE", "transparency_documents", newItem.id);
+    return newItem;
+  },
+
+  async updateTransparencyDocument(id: string, item: Partial<TransparencyDocumentItem>, userEmail: string): Promise<TransparencyDocumentItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("transparency_documents").update(item).eq("id", id).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "UPDATE", "transparency_documents", id);
+          return data as TransparencyDocumentItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
+    const idx = list.findIndex(t => t.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...item };
+      setStorage("transparency_documents", list);
+      await logCmsAction(userEmail, "UPDATE", "transparency_documents", id);
+      return list[idx];
+    }
+    throw new Error("Document not found");
+  },
+
+  async deleteTransparencyDocument(id: string, userEmail: string): Promise<boolean> {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from("transparency_documents").delete().eq("id", id);
+        if (!error) {
+          await logCmsAction(userEmail, "DELETE", "transparency_documents", id);
+          return true;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
+    setStorage("transparency_documents", list.filter(t => t.id !== id));
+    await logCmsAction(userEmail, "DELETE", "transparency_documents", id);
+    return true;
+  },
+
+  // Media Assets
+  async getMediaAssets(): Promise<MediaAssetItem[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("media_assets").select("*").order("created_at", { ascending: false });
+        if (!error && data) return data as MediaAssetItem[];
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    return getStorage<MediaAssetItem>("media_assets", INITIAL_MEDIA);
+  },
+
+  async createMediaAsset(item: Omit<MediaAssetItem, "id">, userEmail: string): Promise<MediaAssetItem> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from("media_assets").insert([item]).select().maybeSingle();
+        if (!error && data) {
+          await logCmsAction(userEmail, "CREATE", "media_assets", data.id);
+          return data as MediaAssetItem;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<MediaAssetItem>("media_assets", INITIAL_MEDIA);
+    const newItem: MediaAssetItem = { ...item, id: "media-" + Date.now() };
+    list.unshift(newItem);
+    setStorage("media_assets", list);
+    await logCmsAction(userEmail, "CREATE", "media_assets", newItem.id);
+    return newItem;
+  },
+
+  async deleteMediaAsset(id: string, userEmail: string): Promise<boolean> {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from("media_assets").delete().eq("id", id);
+        if (!error) {
+          await logCmsAction(userEmail, "DELETE", "media_assets", id);
+          return true;
+        }
+      } catch (e: any) {
+        if (!isMockAllowed()) throw e;
+      }
+    }
+    const list = getStorage<MediaAssetItem>("media_assets", INITIAL_MEDIA);
+    setStorage("media_assets", list.filter(m => m.id !== id));
+    await logCmsAction(userEmail, "DELETE", "media_assets", id);
+    return true;
   }
 };
