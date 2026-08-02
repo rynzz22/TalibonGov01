@@ -1,5 +1,4 @@
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
-export { isSupabaseConfigured };
 import { newsService } from "./newsService";
 import { eventService } from "./eventService";
 import { tourismService } from "./tourismService";
@@ -323,21 +322,6 @@ export interface ModulePermissionItem {
   can_delete: boolean;
   can_publish: boolean;
   updated_at?: string;
-}
-
-export interface TransparencyDocumentItem {
-  id: string;
-  title: string;
-  description?: string;
-  category: string;
-  department?: string;
-  fiscal_year: number;
-  quarter?: string;
-  file_url: string;
-  file_size?: string;
-  downloads_count?: number;
-  status: "draft" | "published";
-  created_at?: string;
 }
 
 // Initial Data helpers for LocalStorage fallback
@@ -712,50 +696,6 @@ const INITIAL_PERMISSIONS: ModulePermissionItem[] = [
   { id: "perm-2", role: "editor", module: "content", can_read: true, can_create: true, can_edit: true, can_delete: false, can_publish: true },
   { id: "perm-3", role: "municipal_admin", module: "government", can_read: true, can_create: true, can_edit: true, can_delete: false, can_publish: true },
   { id: "perm-4", role: "barangay_admin", module: "barangays", can_read: true, can_create: false, can_edit: true, can_delete: false, can_publish: false }
-];
-
-const INITIAL_TRANSPARENCY: TransparencyDocumentItem[] = [
-  {
-    id: "transp-1",
-    title: "Annual Investment Plan (AIP) FY 2026",
-    description: "Comprehensive municipal development investment allocation breakdown across local sectors.",
-    category: "Annual Investment Plan",
-    department: "Municipal Planning and Development Office",
-    fiscal_year: 2026,
-    quarter: "Annual",
-    file_url: "http://talibon.gov.ph/wp-content/uploads/2026/AIP-2026.pdf",
-    file_size: "3.5 MB",
-    downloads_count: 142,
-    status: "published"
-  },
-  {
-    id: "transp-2",
-    title: "Quarterly Statement of Receipts and Expenditures Q1 2026",
-    description: "First Quarter Financial Execution and Revenue Collection Report.",
-    category: "Financial Statement",
-    department: "Municipal Treasurer's Office",
-    fiscal_year: 2026,
-    quarter: "Q1",
-    file_url: "http://talibon.gov.ph/wp-content/uploads/2026/SRE-Q1-2026.pdf",
-    file_size: "1.8 MB",
-    downloads_count: 89,
-    status: "published"
-  }
-];
-
-const INITIAL_MEDIA: MediaAssetItem[] = [
-  {
-    id: "med-1",
-    filename: "danajon_reef_hero.jpg",
-    original_name: "Danajon Reef Sanctuary.jpg",
-    mime_type: "image/jpeg",
-    file_size: 1048576,
-    storage_path: "uploads/danajon_reef_hero.jpg",
-    public_url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=800",
-    alt_text: "Danajon Reef aerial view",
-    caption: "Danajon Bank Double Barrier Reef",
-    created_at: new Date().toISOString()
-  }
 ];
 
 const INITIAL_LOGS: AuditLogItem[] = [
@@ -1881,153 +1821,5 @@ export const cmsService = {
       }
     }
     return getStorage<ModulePermissionItem>("module_permissions", INITIAL_PERMISSIONS);
-  },
-
-  async updateModulePermission(id: string, item: Partial<ModulePermissionItem>, userEmail: string): Promise<ModulePermissionItem> {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from("module_permissions").update(item).eq("id", id).select().maybeSingle();
-        if (!error && data) {
-          await logCmsAction(userEmail, "UPDATE_PERMISSION", "module_permissions", id);
-          return data as ModulePermissionItem;
-        }
-      } catch (e: any) {
-        if (!isMockAllowed()) throw e;
-      }
-    }
-    const list = getStorage<ModulePermissionItem>("module_permissions", INITIAL_PERMISSIONS);
-    const idx = list.findIndex(p => p.id === id);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...item };
-      setStorage("module_permissions", list);
-      await logCmsAction(userEmail, "UPDATE_PERMISSION", "module_permissions", id);
-      return list[idx];
-    }
-    throw new Error("Permission not found");
-  },
-
-  // Transparency Documents
-  async getTransparencyDocuments(): Promise<TransparencyDocumentItem[]> {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from("transparency_documents").select("*").order("fiscal_year", { ascending: false });
-        if (!error && data) return data as TransparencyDocumentItem[];
-      } catch (e: any) {
-        if (!isMockAllowed()) throw e;
-      }
-    }
-    return getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
-  },
-
-  async createTransparencyDocument(item: Omit<TransparencyDocumentItem, "id">, userEmail: string): Promise<TransparencyDocumentItem> {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from("transparency_documents").insert([item]).select().maybeSingle();
-        if (!error && data) {
-          await logCmsAction(userEmail, "CREATE", "transparency_documents", data.id);
-          return data as TransparencyDocumentItem;
-        }
-      } catch (e: any) {
-        if (!isMockAllowed()) throw e;
-      }
-    }
-    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
-    const newItem: TransparencyDocumentItem = { ...item, id: "transp-" + Date.now() };
-    list.unshift(newItem);
-    setStorage("transparency_documents", list);
-    await logCmsAction(userEmail, "CREATE", "transparency_documents", newItem.id);
-    return newItem;
-  },
-
-  async updateTransparencyDocument(id: string, item: Partial<TransparencyDocumentItem>, userEmail: string): Promise<TransparencyDocumentItem> {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from("transparency_documents").update(item).eq("id", id).select().maybeSingle();
-        if (!error && data) {
-          await logCmsAction(userEmail, "UPDATE", "transparency_documents", id);
-          return data as TransparencyDocumentItem;
-        }
-      } catch (e: any) {
-        if (!isMockAllowed()) throw e;
-      }
-    }
-    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
-    const idx = list.findIndex(t => t.id === id);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...item };
-      setStorage("transparency_documents", list);
-      await logCmsAction(userEmail, "UPDATE", "transparency_documents", id);
-      return list[idx];
-    }
-    throw new Error("Document not found");
-  },
-
-  async deleteTransparencyDocument(id: string, userEmail: string): Promise<boolean> {
-    if (isSupabaseConfigured) {
-      try {
-        const { error } = await supabase.from("transparency_documents").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "transparency_documents", id);
-          return true;
-        }
-      } catch (e: any) {
-        if (!isMockAllowed()) throw e;
-      }
-    }
-    const list = getStorage<TransparencyDocumentItem>("transparency_documents", INITIAL_TRANSPARENCY);
-    setStorage("transparency_documents", list.filter(t => t.id !== id));
-    await logCmsAction(userEmail, "DELETE", "transparency_documents", id);
-    return true;
-  },
-
-  // Media Assets
-  async getMediaAssets(): Promise<MediaAssetItem[]> {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from("media_assets").select("*").order("created_at", { ascending: false });
-        if (!error && data) return data as MediaAssetItem[];
-      } catch (e: any) {
-        if (!isMockAllowed()) throw e;
-      }
-    }
-    return getStorage<MediaAssetItem>("media_assets", INITIAL_MEDIA);
-  },
-
-  async createMediaAsset(item: Omit<MediaAssetItem, "id">, userEmail: string): Promise<MediaAssetItem> {
-    if (isSupabaseConfigured) {
-      try {
-        const { data, error } = await supabase.from("media_assets").insert([item]).select().maybeSingle();
-        if (!error && data) {
-          await logCmsAction(userEmail, "CREATE", "media_assets", data.id);
-          return data as MediaAssetItem;
-        }
-      } catch (e: any) {
-        if (!isMockAllowed()) throw e;
-      }
-    }
-    const list = getStorage<MediaAssetItem>("media_assets", INITIAL_MEDIA);
-    const newItem: MediaAssetItem = { ...item, id: "media-" + Date.now() };
-    list.unshift(newItem);
-    setStorage("media_assets", list);
-    await logCmsAction(userEmail, "CREATE", "media_assets", newItem.id);
-    return newItem;
-  },
-
-  async deleteMediaAsset(id: string, userEmail: string): Promise<boolean> {
-    if (isSupabaseConfigured) {
-      try {
-        const { error } = await supabase.from("media_assets").delete().eq("id", id);
-        if (!error) {
-          await logCmsAction(userEmail, "DELETE", "media_assets", id);
-          return true;
-        }
-      } catch (e: any) {
-        if (!isMockAllowed()) throw e;
-      }
-    }
-    const list = getStorage<MediaAssetItem>("media_assets", INITIAL_MEDIA);
-    setStorage("media_assets", list.filter(m => m.id !== id));
-    await logCmsAction(userEmail, "DELETE", "media_assets", id);
-    return true;
   }
 };
