@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { MapPin, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-react";
-import { certificateService } from "../../services/certificateService";
+import { certificateService, saveLocalRequest } from "../../services/certificateService";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
 import { isMockAllowed } from "../../lib/mode";
@@ -98,7 +98,7 @@ export default function EZoningClearanceForm({ onSuccess }: EZoningClearanceForm
       if (!isMockAllowed()) {
         throw error;
       }
-      console.error("[ZoningClearanceForm] Submit failed, using fallback", error);
+      console.info("[ZoningClearanceForm] Submit using offline local storage fallback");
       
       // Client-side fallback
       const generatedId = `TAL-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 8999) + 1000)}`;
@@ -123,6 +123,8 @@ export default function EZoningClearanceForm({ onSuccess }: EZoningClearanceForm
         submittedAt: new Date().toISOString(),
         status: "Submitted"
       };
+
+      saveLocalRequest(fallbackRequest);
 
       // Add to local state of citizen requests
       try {

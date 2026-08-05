@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Facebook, Info, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
 const UpdatesPage: React.FC = () => {
   const [activeFeed, setActiveFeed] = React.useState<'pio' | 'main'>('pio');
@@ -20,14 +20,14 @@ const UpdatesPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 pb-12 px-4">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-brand-primary text-white p-4 sm:p-5 rounded-xl sm:rounded-2xl shadow-md relative overflow-hidden">
-        <div className="relative z-10 space-y-1">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight leading-none font-display uppercase">Municipal News Feed</h1>
-          <p className="text-white/80 font-medium text-xs max-w-md">
-            The official digital bulletin board for the Municipality of Talibon.
-          </p>
-        </div>
-        <Facebook size={90} className="absolute -right-6 -bottom-6 opacity-10 rotate-12" />
+      <div className="mb-6">
+        <span className="section-label">Official Bulletin</span>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-brand-text uppercase tracking-tight leading-none font-display mt-1">
+          Municipal News Feed
+        </h1>
+        <p className="text-xs sm:text-sm text-brand-muted font-normal mt-2">
+          The official digital bulletin board for the Municipality of Talibon.
+        </p>
       </div>
 
       {/* Feed Selector */}
@@ -71,11 +71,11 @@ const UpdatesPage: React.FC = () => {
           </motion.div>
         </div>
 
-        <div className="space-y-4 sm:space-y-5">
-          <div className="p-4 sm:p-5 bg-brand-surface rounded-xl sm:rounded-2xl border border-brand-border space-y-3">
+        <div className="space-y-6">
+          <div className="space-y-3">
             <h3 className="text-[10px] font-black text-brand-primary uppercase tracking-[0.25em]">Source Info</h3>
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-primary text-xs font-black shadow-2xs border border-brand-border shrink-0">
+               <div className="w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center text-brand-primary text-xs font-black shrink-0">
                  {activeFeed === 'pio' ? 'PIO' : 'LGU'}
                </div>
                <div>
@@ -89,12 +89,12 @@ const UpdatesPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-4 sm:p-5 bg-orange-50/80 rounded-xl sm:rounded-2xl border border-orange-100 space-y-2">
+          <div className="space-y-2 pt-2 border-t border-brand-border/60">
             <div className="flex items-center gap-2 text-orange-600">
-              <ShieldAlert size={18} />
+              <ShieldAlert size={16} />
               <h3 className="text-[10px] font-black uppercase tracking-widest">Anti-Fake News</h3>
             </div>
-            <p className="text-[11px] text-orange-700 leading-normal font-normal">
+            <p className="text-[11px] text-brand-muted leading-normal font-normal">
               Only trust information from our official Facebook pages. Do not share unverified reports during disasters or emergencies.
             </p>
           </div>

@@ -106,7 +106,7 @@ const NewsDetailPage: React.FC = () => {
     };
 
     fetchItem();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   }, [id]);
 
   const handleShare = () => {
@@ -156,7 +156,7 @@ const NewsDetailPage: React.FC = () => {
   const paragraphs = item.content ? item.content.split(/\n+/).filter(p => p.trim().length > 0) : [];
 
   return (
-    <div className="py-6 sm:py-8 bg-brand-bg min-h-screen">
+    <div className="py-3 sm:py-5 bg-brand-bg min-h-screen">
       <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 md:px-10 lg:px-12 xl:px-16">
         
         {/* Navigation Breadcrumb & Badges */}
@@ -169,7 +169,7 @@ const NewsDetailPage: React.FC = () => {
             <span>Back to News & Updates</span>
           </button>
 
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-brand-muted uppercase tracking-widest bg-white px-3 py-1.5 rounded-lg border border-brand-border">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-brand-muted uppercase tracking-widest">
             <ShieldCheck size={13} className="text-emerald-600" />
             <span>Official LGU Public Update</span>
           </div>

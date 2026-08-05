@@ -4,7 +4,7 @@ import {
   FileText, User, MapPin, Briefcase, Calculator, Mail, Phone, 
   CheckCircle2, ArrowRight, ShieldCheck, Printer, RefreshCw, Copy, AlertCircle 
 } from "lucide-react";
-import { certificateService } from "../../../services/certificateService";
+import { certificateService, saveLocalRequest } from "../../../services/certificateService";
 import { notificationService } from "../../../services/notificationService";
 import { isMockAllowed } from "../../../lib/mode";
 import { ECedulaApplication, ECedulaSubmissionReceipt } from "./types";
@@ -185,6 +185,25 @@ export default function ECedulaForm({ onSuccess }: ECedulaFormProps) {
       
       // Standalone/offline fallback
       const ticketId = `CTC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 899999) + 100000)}`;
+      const fullName = `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`;
+      
+      const fallbackRequest = {
+        ticketId,
+        documentType: "Cedula",
+        barangay: formData.barangay,
+        fullName,
+        email: formData.email,
+        mobileNumber: formData.mobileNumber,
+        purpose: JSON.stringify({
+          purposeText: formData.purpose,
+          form_data: formData
+        }),
+        attachments: [],
+        submittedAt: new Date().toISOString(),
+        status: "Submitted"
+      };
+      saveLocalRequest(fallbackRequest);
+
       const newReceipt: ECedulaSubmissionReceipt = {
         ...formData,
         ticketId,

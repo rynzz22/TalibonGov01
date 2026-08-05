@@ -15,9 +15,9 @@ const BarangaySelector: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6 sm:mb-8">
           <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-primary/10 border border-brand-primary/20 rounded-full mb-2">
-              <Compass size={13} className="text-brand-primary" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary">
+            <div className="flex items-center gap-2 mb-2">
+              <Compass size={15} className="text-brand-primary" />
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-brand-primary">
                 LOCAL GOVERNMENT UNITS
               </span>
             </div>

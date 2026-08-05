@@ -9,12 +9,7 @@ import {
   Newspaper, Users, Gavel, LayoutDashboard,
   Edit3, Save, Globe, Building2, Mic, Eye,
   Folder, Image, Clock, Landmark, Calendar,
-  Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock, Workflow,
-  BarChart3, Bell, AlertTriangle, Tag, Hash, MapPin, HardHat, Scroll, FileCheck,
-  Award, DollarSign, PieChart as PieChartIcon, Briefcase, ShieldAlert, Layout,
-  Layers, FileCode, Box, Compass, FolderKanban, FileImage, FolderPlus, Database,
-  UserCheck, ListFilter, GitCommit, Settings, Palette, Server, Webhook, Cpu,
-  ChevronRight, ChevronDown, Check, ExternalLink, Filter, AlertOctagon, Info
+  Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock, Workflow
 } from 'lucide-react';
 import { notificationService, AppNotification } from '../services/notificationService';
 import { certificateService } from '../services/certificateService';
@@ -37,17 +32,7 @@ import {
   CitizensCharterCmsItem,
   EventItem,
   AuditLogItem,
-  UserProfileItem,
-  EmergencyAdvisoryItem,
-  InfrastructureProjectItem,
-  LegislativeDocumentItem,
-  TransparencyDocumentItem,
-  CategoryItem,
-  TagItem,
-  HomepageWidgetItem,
-  HomepageSlideItem,
-  PageContentItem,
-  ModulePermissionItem
+  UserProfileItem
 } from '../services/cmsService';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell
@@ -59,40 +44,18 @@ const AdminDashboard: React.FC = () => {
   // Tabs & Navigation
   const [activeTab, setActiveTab] = useState<
     | 'overview'
-    | 'analytics'
-    | 'activity'
-    | 'notifications'
     | 'news'
-    | 'advisories'
-    | 'events'
+    | 'downloadables'
     | 'tourism'
-    | 'categories'
-    | 'tags'
     | 'officials'
     | 'departments'
     | 'barangays'
     | 'services'
     | 'charter'
-    | 'infra-projects'
-    | 'infra-updates'
-    | 'infra-media'
-    | 'leg-ordinances'
-    | 'leg-resolutions'
-    | 'leg-eos'
-    | 'leg-memos'
-    | 'transparency-docs'
-    | 'full-disclosure'
-    | 'transparency-budget'
-    | 'transparency-financial'
-    | 'transparency-bac'
-    | 'transparency-coa'
+    | 'events'
     | 'media'
     | 'users'
-    | 'roles'
-    | 'permissions'
     | 'logs'
-    | 'revisions'
-    | 'downloadables'
     | 'meeting-assistant'
     | 'workflows'
   >('overview');
@@ -208,25 +171,12 @@ const AdminDashboard: React.FC = () => {
   const [usersList, setUsersList] = useState<UserProfileItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
 
-  // Enterprise V3 Database Modules State
-  const [advisories, setAdvisories] = useState<EmergencyAdvisoryItem[]>([]);
-  const [infrastructureProjects, setInfrastructureProjects] = useState<InfrastructureProjectItem[]>([]);
-  const [legislativeDocuments, setLegislativeDocuments] = useState<LegislativeDocumentItem[]>([]);
-  const [transparencyDocuments, setTransparencyDocuments] = useState<TransparencyDocumentItem[]>([]);
-  const [categoriesList, setCategoriesList] = useState<CategoryItem[]>([]);
-  const [tagsList, setTagsList] = useState<TagItem[]>([]);
-  const [homepageWidgets, setHomepageWidgets] = useState<HomepageWidgetItem[]>([]);
-  const [homepageSlides, setHomepageSlides] = useState<HomepageSlideItem[]>([]);
-  const [pageContents, setPageContents] = useState<PageContentItem[]>([]);
-  const [modulePermissions, setModulePermissions] = useState<ModulePermissionItem[]>([]);
-
   // Database-backed citizen workflow requests state
   const [citizenRequests, setCitizenRequests] = useState<any[]>([]);
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
-  const [sidebarFilter, setSidebarFilter] = useState('');
 
   // Pagination, Detailed View, and Custom Delete Confirmation states
   const [currentPage, setCurrentPage] = useState(1);
@@ -295,30 +245,6 @@ const AdminDashboard: React.FC = () => {
 
   const [eventForm, setEventForm] = useState<Omit<EventItem, 'id'>>({
     title: '', description: '', date: new Date().toISOString().split('T')[0], time: '', venue: '', banner_image: ''
-  });
-
-  const [infraForm, setInfraForm] = useState({
-    title: '', category: 'Roads & Bridges', barangay_id: '', contractor: '',
-    budget: 0, start_date: new Date().toISOString().split('T')[0], expected_completion: '',
-    physical_progress_percent: 0, financial_progress_percent: 0, status: 'planning' as const,
-    description: '', image_url: ''
-  });
-
-  const [legislativeForm, setLegislativeForm] = useState({
-    document_type: 'ordinance' as const, document_number: '', title: '', year: new Date().getFullYear(),
-    category: 'General Governance', status: 'published' as const, publication_date: new Date().toISOString().split('T')[0],
-    summary: '', file_url: ''
-  });
-
-  const [transparencyForm, setTransparencyForm] = useState({
-    category: 'full_disclosure', title: '', fiscal_year: new Date().getFullYear(),
-    quarter: 'Q1', department: '', status: 'published' as const, file_url: '', file_size: '1.5 MB'
-  });
-
-  const [advisoriesForm, setAdvisoriesForm] = useState({
-    title: '', type: 'Weather / Typhoon', severity: 'warning' as 'info' | 'warning' | 'critical' | 'danger',
-    content: '', affected_barangays: [] as string[], is_pinned: false, is_popup: false, banner_color: 'amber',
-    status: 'published' as 'draft' | 'published' | 'archived'
   });
 
   // Dynamic Array Fields Input States (Temporary holder)
@@ -492,41 +418,6 @@ const AdminDashboard: React.FC = () => {
       const logsData = await cmsService.getAuditLogs();
       setAuditLogs(logsData);
 
-      // Enterprise V3 modules fetch
-      try {
-        const advData = await cmsService.getEmergencyAdvisories();
-        setAdvisories(advData);
-
-        const infraData = await cmsService.getInfrastructureProjects();
-        setInfrastructureProjects(infraData);
-
-        const legData = await cmsService.getLegislativeDocuments();
-        setLegislativeDocuments(legData);
-
-        const transData = await cmsService.getTransparencyDocuments();
-        setTransparencyDocuments(transData);
-
-        const catData = await cmsService.getCategories();
-        setCategoriesList(catData);
-
-        const tagData = await cmsService.getTags();
-        setTagsList(tagData);
-
-        const widData = await cmsService.getHomepageWidgets();
-        setHomepageWidgets(widData);
-
-        const sldData = await cmsService.getHomepageSlides();
-        setHomepageSlides(sldData);
-
-        const pgData = await cmsService.getPageContents();
-        setPageContents(pgData);
-
-        const permData = await cmsService.getModulePermissions();
-        setModulePermissions(permData);
-      } catch (e) {
-        console.warn("Error fetching enterprise V3 module extensions:", e);
-      }
-
       // Load real certificate requests from Supabase
       try {
         const getDepartmentForDocumentType = (docType: string): string | null => {
@@ -672,26 +563,6 @@ const AdminDashboard: React.FC = () => {
     setEventForm({
       title: '', description: '', date: new Date().toISOString().split('T')[0], time: '', venue: '', banner_image: ''
     });
-    setInfraForm({
-      title: '', category: 'Roads & Bridges', barangay_id: '', contractor: '',
-      budget: 0, start_date: new Date().toISOString().split('T')[0], expected_completion: '',
-      physical_progress_percent: 0, financial_progress_percent: 0, status: 'planning',
-      description: '', image_url: ''
-    });
-    setLegislativeForm({
-      document_type: 'ordinance', document_number: '', title: '', year: new Date().getFullYear(),
-      category: 'General Governance', status: 'published', publication_date: new Date().toISOString().split('T')[0],
-      summary: '', file_url: ''
-    });
-    setTransparencyForm({
-      category: 'full_disclosure', title: '', fiscal_year: new Date().getFullYear(),
-      quarter: 'Q1', department: '', status: 'published', file_url: '', file_size: '1.5 MB'
-    });
-    setAdvisoriesForm({
-      title: '', type: 'Weather / Typhoon', severity: 'warning', content: '',
-      affected_barangays: [], is_pinned: false, is_popup: false, banner_color: 'amber',
-      status: 'published'
-    });
 
     // Reset arrays
     setTempReqInput('');
@@ -765,31 +636,6 @@ const AdminDashboard: React.FC = () => {
       setEventForm({
         title: item.title, description: item.description, date: item.date,
         time: item.time, venue: item.venue, banner_image: item.banner_image || ''
-      });
-    } else if (tab === 'infra-projects' || tab === 'infra-updates' || tab === 'infra-media') {
-      setInfraForm({
-        title: item.title || '', category: item.category || 'Roads & Bridges', barangay_id: item.barangay || '', contractor: item.contractor || '',
-        budget: item.budget || 0, start_date: item.start_date || '', expected_completion: item.target_completion_date || '',
-        physical_progress_percent: item.progress_percentage || 0, financial_progress_percent: item.progress_percentage || 0,
-        status: item.status || 'planning', description: item.description || '', image_url: item.featured_image || ''
-      });
-    } else if (tab === 'leg-ordinances' || tab === 'leg-resolutions' || tab === 'leg-eos' || tab === 'leg-memos') {
-      setLegislativeForm({
-        document_type: item.document_type || 'ordinance', document_number: item.document_number || '', title: item.title || '',
-        year: item.publication_date ? new Date(item.publication_date).getFullYear() : new Date().getFullYear(),
-        category: item.category || 'General Governance', status: item.status || 'published', publication_date: item.publication_date || new Date().toISOString().split('T')[0],
-        summary: item.summary || '', file_url: item.file_url || ''
-      });
-    } else if (tab.startsWith('transparency') || tab === 'full-disclosure') {
-      setTransparencyForm({
-        category: item.category || 'full_disclosure', title: item.title || '', fiscal_year: item.fiscal_year || new Date().getFullYear(),
-        quarter: item.quarter || 'Q1', department: item.department || '', status: item.status || 'published', file_url: item.file_url || '', file_size: item.file_size || '1.5 MB'
-      });
-    } else if (tab === 'advisories') {
-      setAdvisoriesForm({
-        title: item.title || '', type: item.type || 'Weather / Typhoon', severity: item.severity || 'warning',
-        content: item.content || '', affected_barangays: item.affected_barangays || [], is_pinned: item.is_pinned || false,
-        is_popup: item.is_popup || false, banner_color: item.banner_color || 'amber', status: item.status || 'published'
       });
     }
   };
@@ -899,10 +745,6 @@ const AdminDashboard: React.FC = () => {
       else if (tab === 'services') success = await cmsService.deleteService(id, userEmail);
       else if (tab === 'charter') success = await cmsService.deleteCitizensCharter(id, userEmail);
       else if (tab === 'events') success = await cmsService.deleteEvent(id, userEmail);
-      else if (tab === 'infra-projects' || tab === 'infra-updates' || tab === 'infra-media') success = await cmsService.deleteInfrastructureProject(id, userEmail);
-      else if (tab === 'leg-ordinances' || tab === 'leg-resolutions' || tab === 'leg-eos' || tab === 'leg-memos') success = await cmsService.deleteLegislativeDocument(id, userEmail);
-      else if (tab.startsWith('transparency') || tab === 'full-disclosure') success = await cmsService.deleteTransparencyDocument(id, userEmail);
-      else if (tab === 'advisories') success = await cmsService.deleteEmergencyAdvisory(id, userEmail);
 
       if (success) {
         showSuccess("Item deleted successfully.");
@@ -1010,30 +852,6 @@ const AdminDashboard: React.FC = () => {
         showError("Validation Error: Description must be at least 10 characters.");
         return;
       }
-    } else if (activeTab === 'infra-projects' || activeTab === 'infra-updates' || activeTab === 'infra-media') {
-      if (infraForm.title.trim().length < 3) {
-        showError("Validation Error: Project Title must be at least 3 characters.");
-        return;
-      }
-    } else if (activeTab === 'leg-ordinances' || activeTab === 'leg-resolutions' || activeTab === 'leg-eos' || activeTab === 'leg-memos') {
-      if (legislativeForm.title.trim().length < 3) {
-        showError("Validation Error: Document Title must be at least 3 characters.");
-        return;
-      }
-      if (!legislativeForm.document_number.trim()) {
-        showError("Validation Error: Document Number is required.");
-        return;
-      }
-    } else if (activeTab.startsWith('transparency') || activeTab === 'full-disclosure') {
-      if (transparencyForm.title.trim().length < 3) {
-        showError("Validation Error: Document Title must be at least 3 characters.");
-        return;
-      }
-    } else if (activeTab === 'advisories') {
-      if (advisoriesForm.title.trim().length < 3) {
-        showError("Validation Error: Advisory Title must be at least 3 characters.");
-        return;
-      }
     }
 
     setIsActionLoading(true);
@@ -1118,86 +936,6 @@ const AdminDashboard: React.FC = () => {
         } else {
           await cmsService.createEvent(eventForm, userEmail);
           showSuccess("Event published successfully!");
-        }
-      } else if (activeTab === 'infra-projects' || activeTab === 'infra-updates' || activeTab === 'infra-media') {
-        const payload = {
-          project_code: `INF-${Date.now().toString().slice(-4)}`,
-          title: infraForm.title,
-          category: infraForm.category,
-          description: infraForm.description,
-          status: infraForm.status,
-          budget: Number(infraForm.budget),
-          funding_source: 'LGU General Fund',
-          contractor: infraForm.contractor,
-          barangay: infraForm.barangay_id,
-          progress_percentage: Number(infraForm.physical_progress_percent),
-          start_date: infraForm.start_date,
-          target_completion_date: infraForm.expected_completion
-        };
-        if (editingId) {
-          await cmsService.updateInfrastructureProject(editingId, payload, userEmail);
-          showSuccess("Infrastructure project updated!");
-        } else {
-          await cmsService.createInfrastructureProject(payload, userEmail);
-          showSuccess("Infrastructure project registered!");
-        }
-      } else if (activeTab === 'leg-ordinances' || activeTab === 'leg-resolutions' || activeTab === 'leg-eos' || activeTab === 'leg-memos') {
-        let docType: "ordinance" | "resolution" | "executive_order" | "memorandum" = "ordinance";
-        if (activeTab === 'leg-resolutions') docType = "resolution";
-        else if (activeTab === 'leg-eos') docType = "executive_order";
-        else if (activeTab === 'leg-memos') docType = "memorandum";
-        else if (legislativeForm.document_type) docType = legislativeForm.document_type;
-
-        const payload = {
-          document_type: docType,
-          document_number: legislativeForm.document_number,
-          title: legislativeForm.title,
-          category: legislativeForm.category,
-          summary: legislativeForm.summary,
-          file_url: legislativeForm.file_url,
-          publication_date: legislativeForm.publication_date,
-          status: legislativeForm.status
-        };
-        if (editingId) {
-          await cmsService.updateLegislativeDocument(editingId, payload, userEmail);
-          showSuccess("Legislative document updated!");
-        } else {
-          await cmsService.createLegislativeDocument(payload, userEmail);
-          showSuccess("Legislative document published!");
-        }
-      } else if (activeTab.startsWith('transparency') || activeTab === 'full-disclosure') {
-        let cat = "full_disclosure";
-        if (activeTab === 'transparency-budget') cat = "annual_investment_plan";
-        else if (activeTab === 'transparency-financial') cat = "financial";
-        else if (activeTab === 'transparency-bac') cat = "bac_bids";
-        else if (activeTab === 'transparency-coa') cat = "coa_report";
-        else if (transparencyForm.category) cat = transparencyForm.category;
-
-        const payload = {
-          title: transparencyForm.title,
-          category: cat,
-          department: transparencyForm.department,
-          fiscal_year: Number(transparencyForm.fiscal_year),
-          quarter: transparencyForm.quarter,
-          file_url: transparencyForm.file_url,
-          file_size: transparencyForm.file_size || '1.5 MB',
-          status: transparencyForm.status
-        };
-        if (editingId) {
-          await cmsService.updateTransparencyDocument(editingId, payload, userEmail);
-          showSuccess("Transparency document updated!");
-        } else {
-          await cmsService.createTransparencyDocument(payload, userEmail);
-          showSuccess("Transparency document published!");
-        }
-      } else if (activeTab === 'advisories') {
-        const payload = { ...advisoriesForm };
-        if (editingId) {
-          await cmsService.updateEmergencyAdvisory(editingId, payload, userEmail);
-          showSuccess("Emergency advisory updated!");
-        } else {
-          await cmsService.createEmergencyAdvisory(payload, userEmail);
-          showSuccess("Emergency advisory dispatched!");
         }
       }
 
@@ -1421,14 +1159,14 @@ const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 items-start">
           {/* NAVIGATION SIDEBAR */}
           <div className={`transition-all duration-300 lg:sticky lg:top-6 self-start ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} w-full space-y-4`}>
-            <div className="bg-white border border-gray-100 rounded-[2.5rem] p-4 shadow-sm space-y-3">
+            <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between px-2 py-1">
                 {!isSidebarCollapsed && (
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Enterprise OS</span>
+                  <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">Nav Modules</span>
                 )}
                 <button
                   onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  className="p-1.5 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center shrink-0 ml-auto cursor-pointer"
+                  className="p-1.5 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-gray-800 transition-all flex items-center justify-center shrink-0 ml-auto"
                   title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                   aria-label={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
@@ -1436,151 +1174,68 @@ const AdminDashboard: React.FC = () => {
                 </button>
               </div>
 
-              {!isSidebarCollapsed && (
-                <div className="px-1">
-                  <div className="relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      value={sidebarFilter}
-                      onChange={(e) => setSidebarFilter(e.target.value)}
-                      placeholder="Filter modules..."
-                      className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
-                    />
-                  </div>
-                </div>
-              )}
-
               {profile?.department_id ? (
-                <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100/40">
+                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/30">
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-black uppercase tracking-widest rounded-md">Office Assigned</span>
                   {!isSidebarCollapsed && (
-                    <p className="text-xs font-black text-blue-900 mt-1.5 leading-snug">
+                    <p className="text-xs font-black text-blue-900 mt-2 leading-relaxed">
                       {departments.find(d => d.id === profile.department_id)?.name || "Department Staff"}
                     </p>
                   )}
                 </div>
               ) : profile?.barangay_id ? (
-                <div className="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-100/40">
+                <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/30">
                   <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-widest rounded-md">Barangay Active</span>
                   {!isSidebarCollapsed && (
-                    <p className="text-xs font-black text-amber-900 mt-1.5 leading-snug">
+                    <p className="text-xs font-black text-amber-900 mt-2 leading-relaxed">
                       {BARANGAYS.find(b => b.id === profile.barangay_id)?.name || "Barangay Admin"}
                     </p>
                   )}
                 </div>
               ) : null}
 
-              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 custom-scrollbar">
-                {[
-                  {
-                    title: "Dashboard",
-                    items: [
-                      { id: "overview", label: "Executive Overview", icon: LayoutDashboard },
-                      { id: "workflows", label: "Citizen Workflows", icon: Workflow },
-                      { id: "analytics", label: "Analytics & Traffic", icon: BarChart3 },
-                      { id: "activity", label: "Activity Stream", icon: Activity },
-                      { id: "notifications", label: "Alert Dispatch", icon: Bell },
-                    ]
-                  },
-                  {
-                    title: "Content",
-                    items: [
-                      { id: "news", label: "News & Articles", icon: Newspaper },
-                      { id: "advisories", label: "Emergency Advisories", icon: AlertTriangle },
-                      { id: "events", label: "Public Events", icon: Calendar },
-                      { id: "tourism", label: "Eco-Tourism Spots", icon: MapPin },
-                      { id: "categories", label: "Categories", icon: Tag },
-                      { id: "tags", label: "Content Tags", icon: Hash },
-                    ]
-                  },
-                  {
-                    title: "Government",
-                    items: [
-                      { id: "officials", label: "Officials Directory", icon: Users },
-                      { id: "departments", label: "Municipal Offices", icon: Landmark },
-                      { id: "barangays", label: "Barangay Profiles", icon: Globe },
-                      { id: "services", label: "Municipal Services", icon: Building2 },
-                      { id: "charter", label: "Citizen's Charter", icon: Gavel },
-                    ]
-                  },
-                  {
-                    title: "Infrastructure",
-                    items: [
-                      { id: "infra-projects", label: "Capital Projects", icon: HardHat },
-                      { id: "infra-updates", label: "Milestone Logs", icon: Clock },
-                      { id: "infra-media", label: "Inspection Media", icon: Image },
-                    ]
-                  },
-                  {
-                    title: "Legislation",
-                    items: [
-                      { id: "leg-ordinances", label: "Municipal Ordinances", icon: Scroll },
-                      { id: "leg-resolutions", label: "Council Resolutions", icon: FileCheck },
-                      { id: "leg-eos", label: "Executive Orders", icon: Award },
-                      { id: "leg-memos", label: "Memorandums", icon: FileText },
-                    ]
-                  },
-                  {
-                    title: "Transparency",
-                    items: [
-                      { id: "transparency-docs", label: "Document Archive", icon: Folder },
-                      { id: "full-disclosure", label: "Full Disclosure Portal", icon: Eye },
-                      { id: "transparency-budget", label: "Annual Investment Plan", icon: DollarSign },
-                      { id: "transparency-financial", label: "Financial Statements", icon: PieChartIcon },
-                      { id: "transparency-bac", label: "BAC & Procurement", icon: Briefcase },
-                      { id: "transparency-coa", label: "COA Audit Reports", icon: ShieldAlert },
-                    ]
-                  },
-                  {
-                    title: "Media Center",
-                    items: [
-                      { id: "media", label: "Media Library", icon: FolderKanban },
-                    ]
-                  },
-                  {
-                    title: "Administration",
-                    items: [
-                      { id: "users", label: "User Access", icon: UserCheck },
-                      { id: "roles", label: "Roles & RBAC", icon: Shield },
-                      { id: "permissions", label: "Permissions Matrix", icon: Lock },
-                      { id: "logs", label: "Audit Logs", icon: ListFilter },
-                      { id: "revisions", label: "Revision History", icon: GitCommit },
-                      { id: "meeting-assistant", label: "AI Scribe Assistant", icon: Mic },
-                    ]
-                  }
-                ].map((group) => {
-                  const filteredItems = group.items.filter(item =>
-                    (!sidebarFilter || item.label.toLowerCase().includes(sidebarFilter.toLowerCase()) || item.id.toLowerCase().includes(sidebarFilter.toLowerCase()))
-                  );
-
-                  if (filteredItems.length === 0) return null;
-
-                  return (
-                    <div key={group.title} className="space-y-1">
-                      {!isSidebarCollapsed ? (
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] pl-3 mb-1 mt-3">
-                          {group.title}
-                        </p>
-                      ) : (
-                        <div className="border-t border-gray-100 my-2" />
-                      )}
-                      {filteredItems.map(item => (
-                        <SidebarBtn
-                          key={item.id}
-                          id={item.id}
-                          label={item.label}
-                          icon={item.icon}
-                          active={activeTab}
-                          onClick={setActiveTab}
-                          visible={isTabVisible(item.id)}
-                          collapsed={isSidebarCollapsed}
-                        />
-                      ))}
-                    </div>
-                  );
-                })}
+              <div className="space-y-1">
+                {!isSidebarCollapsed ? (
+                  <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-2">Core Modules</p>
+                ) : (
+                  <div className="border-t border-gray-50 my-2" />
+                )}
+                <SidebarBtn id="overview" label="Dashboard Stats" icon={LayoutDashboard} active={activeTab} onClick={setActiveTab} visible={isTabVisible('overview')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="workflows" label="Citizen Workflows" icon={Workflow} active={activeTab} onClick={setActiveTab} visible={isTabVisible('workflows')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="news" label="News & Advisory" icon={Newspaper} active={activeTab} onClick={setActiveTab} visible={isTabVisible('news')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="downloadables" label="Document Library" icon={Folder} active={activeTab} onClick={setActiveTab} visible={isTabVisible('downloadables')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="tourism" label="Tourism Spots" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('tourism')} collapsed={isSidebarCollapsed} />
+                <SidebarBtn id="events" label="Public Events" icon={Calendar} active={activeTab} onClick={setActiveTab} visible={isTabVisible('events')} collapsed={isSidebarCollapsed} />
               </div>
+
+              {(isTabVisible('officials') || isTabVisible('departments') || isTabVisible('barangays') || isTabVisible('services') || isTabVisible('charter')) && (
+                <div className="space-y-1 pt-2">
+                  {!isSidebarCollapsed ? (
+                    <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-4">Structure</p>
+                  ) : (
+                    <div className="border-t border-gray-50 my-2" />
+                  )}
+                  <SidebarBtn id="officials" label="Officials Directory" icon={Users} active={activeTab} onClick={setActiveTab} visible={isTabVisible('officials')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="departments" label="Departments" icon={Landmark} active={activeTab} onClick={setActiveTab} visible={isTabVisible('departments')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="barangays" label="Barangays" icon={Globe} active={activeTab} onClick={setActiveTab} visible={isTabVisible('barangays')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="services" label="Municipal Services" icon={Building2} active={activeTab} onClick={setActiveTab} visible={isTabVisible('services')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="charter" label="Citizen's Charter" icon={Gavel} active={activeTab} onClick={setActiveTab} visible={isTabVisible('charter')} collapsed={isSidebarCollapsed} />
+                </div>
+              )}
+
+              {(isTabVisible('media') || isTabVisible('users') || isTabVisible('logs') || isTabVisible('meeting-assistant')) && (
+                <div className="space-y-1 pt-2">
+                  {!isSidebarCollapsed ? (
+                    <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-4">Utilities</p>
+                  ) : (
+                    <div className="border-t border-gray-50 my-2" />
+                  )}
+                  <SidebarBtn id="media" label="Media Library" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('media')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="users" label="User Permissions" icon={Key} active={activeTab} onClick={setActiveTab} visible={isTabVisible('users')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="logs" label="Administrative Logs" icon={Activity} active={activeTab} onClick={setActiveTab} visible={isTabVisible('logs')} collapsed={isSidebarCollapsed} />
+                  <SidebarBtn id="meeting-assistant" label="AI Meeting Scribe" icon={Mic} active={activeTab} onClick={setActiveTab} visible={isTabVisible('meeting-assistant')} collapsed={isSidebarCollapsed} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -3204,403 +2859,6 @@ const AdminDashboard: React.FC = () => {
                 </div>
               )}
 
-              {/* ANALYTICS DASHBOARD PANEL */}
-              {activeTab === 'analytics' && (
-                <div className="space-y-8">
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-1">Municipal Portal Analytics & Traffic</h3>
-                    <p className="text-gray-400 text-xs font-bold">Real-time performance metrics, citizen engagement logs, and E-Services requests volume.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100/40 space-y-1">
-                      <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Monthly Visitors</span>
-                      <p className="text-3xl font-black text-blue-950 font-display">48,290</p>
-                      <span className="text-[10px] text-emerald-600 font-bold">▲ 14.2% vs last month</span>
-                    </div>
-                    <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100/40 space-y-1">
-                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Completed E-Services</span>
-                      <p className="text-3xl font-black text-emerald-950 font-display">1,842</p>
-                      <span className="text-[10px] text-emerald-600 font-bold">99.4% SLA resolution rate</span>
-                    </div>
-                    <div className="bg-purple-50/50 p-6 rounded-3xl border border-purple-100/40 space-y-1">
-                      <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Document Downloads</span>
-                      <p className="text-3xl font-black text-purple-950 font-display">12,410</p>
-                      <span className="text-[10px] text-purple-600 font-bold">Ordinances & PDF forms</span>
-                    </div>
-                    <div className="bg-amber-50/50 p-6 rounded-3xl border border-amber-100/40 space-y-1">
-                      <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Avg Session Time</span>
-                      <p className="text-3xl font-black text-amber-950 font-display">4m 12s</p>
-                      <span className="text-[10px] text-gray-400 font-bold">Mobile device dominant (78%)</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white border border-gray-100 p-6 rounded-[2.5rem] shadow-sm space-y-4">
-                      <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">E-Services Monthly Volume</h4>
-                      <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={monthlyStats.length > 0 ? monthlyStats : [
-                            { document_type: 'Business Permit', total_requests: 420 },
-                            { document_type: 'CTC / Cedula', total_requests: 890 },
-                            { document_type: 'Building Permit', total_requests: 150 },
-                            { document_type: 'Zoning Cert', total_requests: 210 },
-                            { document_type: 'Barangay Cert', total_requests: 640 },
-                          ]}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                            <XAxis dataKey="document_type" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ background: '#fff', borderRadius: '12px', border: '1px solid #f3f4f6' }} />
-                            <Bar dataKey="total_requests" fill="#2563eb" radius={[6, 6, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    <div className="bg-white border border-gray-100 p-6 rounded-[2.5rem] shadow-sm space-y-4">
-                      <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider">GAD Sectoral Beneficiaries</h4>
-                      <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={gadStats.length > 0 ? gadStats : [
-                            { civil_status: 'Single Mothers', count: 320 },
-                            { civil_status: 'Senior Citizens', count: 750 },
-                            { civil_status: 'PWD Residents', count: 210 },
-                            { civil_status: 'Youth (15-24)', count: 940 },
-                            { civil_status: 'Indigent Families', count: 620 },
-                          ]}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                            <XAxis dataKey="civil_status" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ background: '#fff', borderRadius: '12px', border: '1px solid #f3f4f6' }} />
-                            <Bar dataKey="count" fill="#10b981" radius={[6, 6, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* EMERGENCY ADVISORIES PANEL */}
-              {activeTab === 'advisories' && (
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Emergency Advisories</h3>
-                      <p className="text-gray-400 text-xs font-bold mt-1">High-priority alerts dispatched across municipal channels and citizen SMS feeds.</p>
-                    </div>
-                    {canWriteTab('news') && (
-                      <button
-                        onClick={() => { resetAllForms(); setIsModalOpen(true); }}
-                        className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-md shadow-rose-500/20 cursor-pointer"
-                      >
-                        <Plus size={14} /> New Advisory
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="overflow-x-auto border border-gray-100 rounded-[2rem] shadow-sm bg-white">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Urgency</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Advisory Title</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Affected Barangay</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Issued Date</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {advisories.map((adv) => (
-                          <tr key={adv.id} className="hover:bg-gray-50/50">
-                            <td className="px-6 py-4 font-black">
-                              <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                                adv.severity === 'critical' || adv.severity === 'danger' ? 'bg-rose-100 text-rose-700' :
-                                adv.severity === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                              }`}>
-                                {adv.severity}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 font-black text-gray-900 max-w-xs truncate">{adv.title}</td>
-                            <td className="px-6 py-4 text-gray-500 font-bold">{Array.isArray(adv.affected_barangays) ? adv.affected_barangays.join(", ") : "All Barangays"}</td>
-                            <td className="px-6 py-4 text-gray-400 font-medium">{adv.created_at ? new Date(adv.created_at).toLocaleDateString() : "N/A"}</td>
-                            <td className="px-6 py-4">
-                              <StatusBadge status={adv.status === 'published' ? "APPROVED" : "DRAFT"} label={adv.status === 'published' ? "Active Bulletin" : "Archived"} />
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => openEditEntity('advisories', adv)}
-                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
-                                  title="Edit advisory"
-                                >
-                                  <Edit3 size={14} />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirmItem({ id: adv.id, tab: 'advisories', name: adv.title })}
-                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
-                                  title="Delete advisory"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* CAPITAL INFRASTRUCTURE PROJECTS PANEL */}
-              {(activeTab === 'infra-projects' || activeTab === 'infra-updates' || activeTab === 'infra-media') && (
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Capital Infrastructure Projects</h3>
-                      <p className="text-gray-400 text-xs font-bold mt-1">LGU public works, contractor performance, progress metrics, and budget execution.</p>
-                    </div>
-                    {canWriteTab('departments') && (
-                      <button
-                        onClick={() => { resetAllForms(); setIsModalOpen(true); }}
-                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
-                      >
-                        <Plus size={14} /> Register Project
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="overflow-x-auto border border-gray-100 rounded-[2rem] shadow-sm bg-white">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Code</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Project Name</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Barangay</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Contractor</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Approved Budget</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Progress</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {infrastructureProjects.map((proj) => (
-                          <tr key={proj.id} className="hover:bg-gray-50/50">
-                            <td className="px-6 py-4 font-mono font-black text-blue-600">{proj.project_code}</td>
-                            <td className="px-6 py-4 font-black text-gray-900">
-                              {proj.title}
-                              <span className="block text-[10px] font-normal text-gray-400">{proj.category}</span>
-                            </td>
-                            <td className="px-6 py-4 text-gray-600 font-bold">{proj.barangay}</td>
-                            <td className="px-6 py-4 text-gray-500 font-medium">{proj.contractor || "LGU Eng. Office"}</td>
-                            <td className="px-6 py-4 font-black text-gray-900 font-mono">
-                              ₱{proj.budget ? proj.budget.toLocaleString() : "0.00"}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="space-y-1 w-28">
-                                <div className="flex justify-between text-[10px] font-black text-gray-700">
-                                  <span>Completion</span>
-                                  <span>{proj.progress_percentage}%</span>
-                                </div>
-                                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                                  <div className="bg-blue-600 h-full rounded-full" style={{ width: `${proj.progress_percentage}%` }} />
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <StatusBadge status={proj.status} />
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => openEditEntity('infra-projects', proj)}
-                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
-                                  title="Edit project"
-                                >
-                                  <Edit3 size={14} />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirmItem({ id: proj.id, tab: 'infra-projects', name: proj.title })}
-                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
-                                  title="Delete project"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* LEGISLATIVE DOCUMENTS PANEL */}
-              {(activeTab === 'leg-ordinances' || activeTab === 'leg-resolutions' || activeTab === 'leg-eos' || activeTab === 'leg-memos') && (
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Municipal Legislative Archive</h3>
-                      <p className="text-gray-400 text-xs font-bold mt-1">Sangguniang Bayan ordinances, resolutions, executive orders, and administrative circulars.</p>
-                    </div>
-                    {canWriteTab('downloadables') && (
-                      <button
-                        onClick={() => { resetAllForms(); setIsModalOpen(true); }}
-                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
-                      >
-                        <Plus size={14} /> Add Ordinance / Document
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="overflow-x-auto border border-gray-100 rounded-[2rem] shadow-sm bg-white">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Document No.</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Title & Subject</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Published</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {legislativeDocuments.map((doc) => (
-                          <tr key={doc.id} className="hover:bg-gray-50/50">
-                            <td className="px-6 py-4 font-mono font-black text-blue-600">{doc.document_number}</td>
-                            <td className="px-6 py-4 font-black text-gray-900 max-w-md">{doc.title}</td>
-                            <td className="px-6 py-4 text-gray-500 font-bold uppercase text-[10px]">{doc.document_type}</td>
-                            <td className="px-6 py-4 text-gray-600 font-medium">{doc.category || "General"}</td>
-                            <td className="px-6 py-4 text-gray-400 font-mono font-bold">{doc.publication_date ? new Date(doc.publication_date).getFullYear() : "2026"}</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                {doc.file_url && (
-                                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="View PDF">
-                                    <ExternalLink size={14} />
-                                  </a>
-                                )}
-                                <button
-                                  onClick={() => openEditEntity('leg-ordinances', doc)}
-                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
-                                  title="Edit document"
-                                >
-                                  <Edit3 size={14} />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirmItem({ id: doc.id, tab: 'leg-ordinances', name: doc.title })}
-                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
-                                  title="Delete document"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* TRANSPARENCY & FULL DISCLOSURE PANEL */}
-              {(activeTab.startsWith('transparency') || activeTab === 'full-disclosure') && (
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Full Disclosure & Compliance Portal</h3>
-                      <p className="text-gray-400 text-xs font-bold mt-1">DILG Full Disclosure Policy compliance documents, annual budgets, COA audit reports, and BAC procurement postings.</p>
-                    </div>
-                    {canWriteTab('downloadables') && (
-                      <button
-                        onClick={() => { resetAllForms(); setIsModalOpen(true); }}
-                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black tracking-widest uppercase flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
-                      >
-                        <Plus size={14} /> Upload Disclosure File
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="p-8 bg-gradient-to-br from-blue-50/50 to-indigo-50/20 border border-blue-100/50 rounded-[2.5rem] space-y-4">
-                    <div className="flex items-center gap-3">
-                      <ShieldCheck className="text-blue-600" size={24} />
-                      <div>
-                        <h4 className="font-black text-blue-900 uppercase text-xs tracking-wider">DILG Seal of Good Local Governance Compliance</h4>
-                        <p className="text-gray-500 font-medium text-xs">All financial postings are aligned with the 2026 Municipal Public Disclosure Standards.</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold pt-2">
-                      <div className="bg-white p-4 rounded-2xl border border-blue-100/30">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-black">2026 Budget Total</span>
-                        <span className="text-lg font-black text-gray-900 font-mono">₱348,500,000.00</span>
-                      </div>
-                      <div className="bg-white p-4 rounded-2xl border border-blue-100/30">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-black">Quarterly COA Reports</span>
-                        <span className="text-lg font-black text-emerald-600">100% Unqualified Opinion</span>
-                      </div>
-                      <div className="bg-white p-4 rounded-2xl border border-blue-100/30">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-black">BAC Solicitations Published</span>
-                        <span className="text-lg font-black text-blue-600">24 Active Bids</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto border border-gray-100 rounded-[2rem] shadow-sm bg-white">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100">
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Document Title</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Department</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Period / Year</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {transparencyDocuments.map((doc) => (
-                          <tr key={doc.id} className="hover:bg-gray-50/50">
-                            <td className="px-6 py-4 font-black text-gray-900 max-w-md">{doc.title}</td>
-                            <td className="px-6 py-4 text-gray-600 font-bold uppercase text-[10px]">{doc.category.replace('_', ' ')}</td>
-                            <td className="px-6 py-4 text-gray-500 font-medium">{doc.department || "LGU Municipal"}</td>
-                            <td className="px-6 py-4 text-gray-400 font-mono font-bold">{doc.quarter} {doc.fiscal_year}</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                {doc.file_url && (
-                                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="View Disclosure File">
-                                    <ExternalLink size={14} />
-                                  </a>
-                                )}
-                                <button
-                                  onClick={() => openEditEntity('transparency-docs', doc)}
-                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all cursor-pointer"
-                                  title="Edit disclosure record"
-                                >
-                                  <Edit3 size={14} />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirmItem({ id: doc.id, tab: 'transparency-docs', name: doc.title })}
-                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
-                                  title="Delete disclosure record"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* TRANSPARENCY & FULL DISCLOSURE PANEL */}
-
             </div>
           </div>
         </div>
@@ -4357,216 +3615,6 @@ const AdminDashboard: React.FC = () => {
                     <FileUpload label="Event Banner Landscape Image" folder="event_banners" bucket="public-cms" currentValue={eventForm.banner_image} onUploadComplete={(url) => setEventForm({ ...eventForm, banner_image: url })} />
 
                     <SubmitBtn label={editingId ? "Update scheduled event" : "Publish scheduled event"} isLoading={isActionLoading} />
-                  </form>
-                )}
-
-                {/* 9. INFRASTRUCTURE PROJECTS FORM */}
-                {(activeTab === 'infra-projects' || activeTab === 'infra-updates' || activeTab === 'infra-media') && (
-                  <form onSubmit={handleSaveEntity} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-title">Project Title *</label>
-                      <input id="inf-title" type="text" required value={infraForm.title} onChange={(e) => setInfraForm({ ...infraForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-cat">Category</label>
-                        <select id="inf-cat" value={infraForm.category} onChange={(e) => setInfraForm({ ...infraForm, category: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
-                          <option value="Roads & Bridges">Roads & Bridges</option>
-                          <option value="Public Buildings">Public Buildings</option>
-                          <option value="Flood Control & Drainage">Flood Control & Drainage</option>
-                          <option value="Water Supply & Utilities">Water Supply & Utilities</option>
-                          <option value="Port & Marine Infrastructure">Port & Marine Infrastructure</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-brgy">Barangay Location</label>
-                        <select id="inf-brgy" value={infraForm.barangay_id} onChange={(e) => setInfraForm({ ...infraForm, barangay_id: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
-                          <option value="">-- All / Central --</option>
-                          {BARANGAYS.map((b) => (
-                            <option key={b.id} value={b.name}>{b.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-budget">Approved Budget (PHP) *</label>
-                        <input id="inf-budget" type="number" value={infraForm.budget} onChange={(e) => setInfraForm({ ...infraForm, budget: Number(e.target.value) })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-contractor">Contractor / Implementer</label>
-                        <input id="inf-contractor" type="text" value={infraForm.contractor} onChange={(e) => setInfraForm({ ...infraForm, contractor: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-start">Start Date</label>
-                        <input id="inf-start" type="date" value={infraForm.start_date} onChange={(e) => setInfraForm({ ...infraForm, start_date: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-end">Target Completion Date</label>
-                        <input id="inf-end" type="date" value={infraForm.expected_completion} onChange={(e) => setInfraForm({ ...infraForm, expected_completion: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-prog">Physical Progress (%)</label>
-                        <input id="inf-prog" type="number" min="0" max="100" value={infraForm.physical_progress_percent} onChange={(e) => setInfraForm({ ...infraForm, physical_progress_percent: Number(e.target.value) })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-status">Status</label>
-                        <select id="inf-status" value={infraForm.status} onChange={(e) => setInfraForm({ ...infraForm, status: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
-                          <option value="planning">Planning / Pre-bidding</option>
-                          <option value="ongoing">Ongoing Execution</option>
-                          <option value="completed">Completed & Turned Over</option>
-                          <option value="delayed">Delayed / Suspended</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="inf-desc">Project Scope & Details</label>
-                      <textarea id="inf-desc" rows={3} value={infraForm.description} onChange={(e) => setInfraForm({ ...infraForm, description: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <SubmitBtn label={editingId ? "Update Infrastructure Project" : "Register Infrastructure Project"} isLoading={isActionLoading} />
-                  </form>
-                )}
-
-                {/* 10. LEGISLATIVE DOCUMENTS FORM */}
-                {(activeTab === 'leg-ordinances' || activeTab === 'leg-resolutions' || activeTab === 'leg-eos' || activeTab === 'leg-memos') && (
-                  <form onSubmit={handleSaveEntity} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-num">Document Number *</label>
-                        <input id="leg-num" type="text" required placeholder="e.g. Ord. No. 2026-04" value={legislativeForm.document_number} onChange={(e) => setLegislativeForm({ ...legislativeForm, document_number: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-type">Document Type</label>
-                        <select id="leg-type" value={legislativeForm.document_type} onChange={(e) => setLegislativeForm({ ...legislativeForm, document_type: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
-                          <option value="ordinance">Municipal Ordinance</option>
-                          <option value="resolution">Sangguniang Resolution</option>
-                          <option value="executive_order">Executive Order (EO)</option>
-                          <option value="memorandum">Administrative Memorandum</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-title">Title / Subject *</label>
-                      <input id="leg-title" type="text" required value={legislativeForm.title} onChange={(e) => setLegislativeForm({ ...legislativeForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-cat">Category / Sector</label>
-                        <input id="leg-cat" type="text" value={legislativeForm.category} onChange={(e) => setLegislativeForm({ ...legislativeForm, category: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-date">Publication Date</label>
-                        <input id="leg-date" type="date" value={legislativeForm.publication_date} onChange={(e) => setLegislativeForm({ ...legislativeForm, publication_date: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="leg-sum">Executive Summary</label>
-                      <textarea id="leg-sum" rows={3} value={legislativeForm.summary} onChange={(e) => setLegislativeForm({ ...legislativeForm, summary: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <FileUpload label="Official Signed PDF Document Attachment" folder="legislative_documents" bucket="public-cms" currentValue={legislativeForm.file_url} onUploadComplete={(url) => setLegislativeForm({ ...legislativeForm, file_url: url })} />
-
-                    <SubmitBtn label={editingId ? "Update Legislative Record" : "Publish Legislative Record"} isLoading={isActionLoading} />
-                  </form>
-                )}
-
-                {/* 11. TRANSPARENCY & FULL DISCLOSURE FORM */}
-                {(activeTab.startsWith('transparency') || activeTab === 'full-disclosure') && (
-                  <form onSubmit={handleSaveEntity} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-title">Document Title *</label>
-                      <input id="trn-title" type="text" required value={transparencyForm.title} onChange={(e) => setTransparencyForm({ ...transparencyForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-cat">Portal Category</label>
-                        <select id="trn-cat" value={transparencyForm.category} onChange={(e) => setTransparencyForm({ ...transparencyForm, category: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
-                          <option value="full_disclosure">Full Disclosure Portal</option>
-                          <option value="annual_investment_plan">Annual Investment Plan (AIP)</option>
-                          <option value="financial">Financial Statements</option>
-                          <option value="bac_bids">BAC Procurement & Bids</option>
-                          <option value="coa_report">COA Audit Report</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-dept">Issuing Department</label>
-                        <input id="trn-dept" type="text" placeholder="e.g. Accounting / BAC Secretariat" value={transparencyForm.department} onChange={(e) => setTransparencyForm({ ...transparencyForm, department: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-yr">Fiscal Year</label>
-                        <input id="trn-yr" type="number" value={transparencyForm.fiscal_year} onChange={(e) => setTransparencyForm({ ...transparencyForm, fiscal_year: Number(e.target.value) })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="trn-qtr">Quarter / Period</label>
-                        <select id="trn-qtr" value={transparencyForm.quarter} onChange={(e) => setTransparencyForm({ ...transparencyForm, quarter: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
-                          <option value="Q1">Q1 (1st Quarter)</option>
-                          <option value="Q2">Q2 (2nd Quarter)</option>
-                          <option value="Q3">Q3 (3rd Quarter)</option>
-                          <option value="Q4">Q4 (4th Quarter)</option>
-                          <option value="Annual">Annual Report</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <FileUpload label="Disclosure PDF Document Attachment" folder="transparency_documents" bucket="public-cms" currentValue={transparencyForm.file_url} onUploadComplete={(url) => setTransparencyForm({ ...transparencyForm, file_url: url })} />
-
-                    <SubmitBtn label={editingId ? "Update Disclosure File" : "Publish Disclosure File"} isLoading={isActionLoading} />
-                  </form>
-                )}
-
-                {/* 12. EMERGENCY ADVISORIES FORM */}
-                {activeTab === 'advisories' && (
-                  <form onSubmit={handleSaveEntity} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="adv-title">Advisory Headline *</label>
-                      <input id="adv-title" type="text" required value={advisoriesForm.title} onChange={(e) => setAdvisoriesForm({ ...advisoriesForm, title: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="adv-type">Category</label>
-                        <select id="adv-type" value={advisoriesForm.type} onChange={(e) => setAdvisoriesForm({ ...advisoriesForm, type: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
-                          <option value="Weather / Typhoon">Weather / Typhoon</option>
-                          <option value="Public Health / Epidemic">Public Health / Epidemic</option>
-                          <option value="Power & Water Advisory">Power & Water Advisory</option>
-                          <option value="Road Closure & Traffic">Road Closure & Traffic</option>
-                          <option value="General Safety Bulletin">General Safety Bulletin</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="adv-sev">Severity Level</label>
-                        <select id="adv-sev" value={advisoriesForm.severity} onChange={(e) => setAdvisoriesForm({ ...advisoriesForm, severity: e.target.value as any })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs cursor-pointer">
-                          <option value="info">Info Bulletin</option>
-                          <option value="warning">Warning / Advisory</option>
-                          <option value="critical">Critical Urgency</option>
-                          <option value="danger">Emergency / Danger</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest" htmlFor="adv-content">Full Advisory Text *</label>
-                      <textarea id="adv-content" required rows={4} value={advisoriesForm.content} onChange={(e) => setAdvisoriesForm({ ...advisoriesForm, content: e.target.value })} className="w-full bg-gray-50 border border-transparent rounded-2xl py-4 px-6 font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/20 text-xs" />
-                    </div>
-
-                    <SubmitBtn label={editingId ? "Update Emergency Advisory" : "Dispatch Emergency Advisory"} isLoading={isActionLoading} />
                   </form>
                 )}
 

@@ -103,7 +103,7 @@ const OrganizationalChartPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="pb-20 px-4 max-w-7xl mx-auto min-h-screen bg-brand-bg pt-32">
+      <div className="pb-20 px-4 max-w-7xl mx-auto min-h-screen bg-brand-bg pt-6">
         <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl font-bold">
           {error}
         </div>
@@ -113,7 +113,7 @@ const OrganizationalChartPage: React.FC = () => {
 
   if (!data) {
     return (
-      <div className="pb-20 px-4 max-w-7xl mx-auto min-h-screen bg-brand-bg pt-32 flex flex-col items-center justify-center text-center">
+      <div className="pb-20 px-4 max-w-7xl mx-auto min-h-screen bg-brand-bg pt-6 flex flex-col items-center justify-center text-center">
         <Users className="w-16 h-16 text-brand-muted/30 mb-4" />
         <h2 className="text-2xl font-bold text-brand-text mb-2">Structure Not Found</h2>
         <p className="text-brand-muted max-w-md">The organizational chart is currently being updated. Please check back later.</p>

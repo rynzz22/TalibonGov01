@@ -50,9 +50,9 @@ export default function LguEventsSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10 gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400/20 border border-amber-300/30 rounded-full mb-3 backdrop-blur-md">
-              <PartyPopper size={14} className="text-amber-300 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-200">
+            <div className="flex items-center gap-2 mb-2">
+              <PartyPopper size={15} className="text-amber-300" />
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-amber-300">
                 TALIBON FESTIVITIES & CIVIC GATHERINGS
               </span>
             </div>

@@ -10,7 +10,7 @@ export const citizenCharterData = {
       "Fire Safety Inspection Certificate",
       "Sanitary Permit",
     ],
-    processingTime: "1-3 Working Days (via e-BOSS)",
+    processingTime: "1-3 Working Days (via E-Services)",
     office: "Business Permit and Licensing Office (BPLO)",
   },
   "Building Permit": {

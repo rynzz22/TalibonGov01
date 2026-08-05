@@ -106,7 +106,7 @@ const EnactedOrdinancesPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-brand-bg pt-32 md:pt-44 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-brand-bg pt-6 sm:pt-8 pb-20 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <motion.div 

@@ -83,30 +83,30 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
 
     if (docTypeLower.includes("clearance") && docTypeLower.includes("barangay")) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-amber-50/20 border border-amber-100/50 p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-amber-600/80 tracking-widest block mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 py-1">
+          <div className="col-span-1 sm:col-span-2 pb-2.5 border-b border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-blue-600 tracking-wider block mb-0.5">
               Purpose
             </span>
-            <span className="text-xs font-bold text-gray-900">{purposeText}</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-900">{purposeText}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Barangay
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("barangay")}</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-900">{getVal("barangay")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Sitio / Purok
             </span>
-            <span className="text-xs font-bold text-gray-900">{getVal("sitioPurok")}</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-800">{getVal("sitioPurok")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Years of Residency
             </span>
-            <span className="text-xs font-black text-blue-600">{getVal("yearsOfResidency")}</span>
+            <span className="text-xs sm:text-sm font-bold text-blue-600">{getVal("yearsOfResidency")} Years</span>
           </div>
         </div>
       );
@@ -114,54 +114,54 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
 
     if (docTypeLower.includes("business")) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="col-span-1 sm:col-span-2 p-4 bg-blue-50/20 border border-blue-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-blue-600 tracking-widest block mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 py-1">
+          <div className="col-span-1 sm:col-span-2 pb-2.5 border-b border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-blue-600 tracking-wider block mb-0.5">
               Business Name
             </span>
-            <span className="text-sm font-black text-gray-900">{getVal("businessName")}</span>
+            <span className="text-xs sm:text-sm font-black text-slate-900">{getVal("businessName")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Owner / Applicant
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("ownerName")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("ownerName")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Nature of Business
             </span>
-            <span className="text-xs font-bold text-gray-900">{getVal("natureOfBusiness")}</span>
+            <span className="text-xs font-bold text-slate-800">{getVal("natureOfBusiness")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Business Address
             </span>
-            <span className="text-xs font-bold text-gray-900">{getVal("businessAddress")}</span>
+            <span className="text-xs font-bold text-slate-800">{getVal("businessAddress")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Barangay
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("barangay")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("barangay")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               DTI / SEC Registration No
             </span>
-            <span className="text-xs font-mono font-bold text-teal-600">{getVal("dtiSecRegNo")}</span>
+            <span className="text-xs font-mono font-bold text-slate-800">{getVal("dtiSecRegNo")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Contact / Phone
             </span>
-            <span className="text-xs font-bold text-gray-900">{getVal("contactNumber")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("contactNumber")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl col-span-1 sm:col-span-2">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div className="col-span-1 sm:col-span-2 pt-2 border-t border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Purpose
             </span>
-            <span className="text-xs text-gray-700">{purposeText}</span>
+            <span className="text-xs text-slate-700">{purposeText}</span>
           </div>
         </div>
       );
@@ -169,126 +169,144 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
 
     if (docTypeLower.includes("building")) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 bg-teal-50/20 border border-teal-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-teal-600 tracking-widest block mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 py-1">
+          <div className="col-span-1 sm:col-span-2 pb-2.5 border-b border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-teal-700 tracking-wider block mb-0.5">
               Project / Construction Type
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("constructionType")}</span>
+            <span className="text-xs font-black text-slate-900">{getVal("constructionType")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Property Owner
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("propertyOwner")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("propertyOwner")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Location / Address
             </span>
-            <span className="text-xs font-bold text-gray-900">{getVal("propertyAddress")}</span>
+            <span className="text-xs font-bold text-slate-800">{getVal("propertyAddress")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Barangay
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("barangay")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("barangay")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Lot Number
             </span>
-            <span className="text-xs font-mono font-bold text-gray-900">{getVal("lotNumber")}</span>
+            <span className="text-xs font-mono font-bold text-slate-900">{getVal("lotNumber")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Tax Declaration No
             </span>
-            <span className="text-xs font-mono font-bold text-gray-900">{getVal("taxDeclarationNo")}</span>
+            <span className="text-xs font-mono font-bold text-slate-900">{getVal("taxDeclarationNo")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Estimated Cost
             </span>
-            <span className="text-xs font-black text-emerald-600">₱{getVal("estimatedCost")}</span>
+            <span className="text-xs font-bold text-emerald-600">₱{getVal("estimatedCost")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Total Floor Area
             </span>
-            <span className="text-xs font-bold text-gray-900">{getVal("floorArea")} sqm</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("floorArea")} sqm</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl col-span-1 sm:col-span-2">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div className="col-span-1 sm:col-span-2 pt-2 border-t border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Responsible Engineer / Architect
             </span>
-            <span className="text-xs font-black text-gray-800">{getVal("engineerArchitect")}</span>
+            <span className="text-xs font-bold text-slate-800">{getVal("engineerArchitect")}</span>
           </div>
         </div>
       );
     }
 
     if (docTypeLower.includes("cedula") || docTypeLower.includes("ctc") || docTypeLower.includes("community tax")) {
+      const fn = formData.firstName;
+      const mn = formData.middleName;
+      const ln = formData.lastName;
+      let taxpayerName = "Not provided";
+      if (fn || ln) {
+        taxpayerName = [fn, mn, ln].filter(Boolean).join(" ");
+      } else if (formData.taxpayerName || formData.fullName) {
+        taxpayerName = String(formData.taxpayerName || formData.fullName);
+      }
+
+      const birthInfo = (formData.dateOfBirth || formData.placeOfBirth)
+        ? [formData.dateOfBirth, formData.placeOfBirth].filter(Boolean).join(" | ")
+        : "Not provided";
+
+      const civilGenderInfo = (formData.civilStatus || formData.gender)
+        ? [formData.civilStatus, formData.gender].filter(Boolean).join(" | ")
+        : "Not provided";
+
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="col-span-1 sm:col-span-2 bg-indigo-50/20 border border-indigo-100/50 p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-indigo-600 tracking-widest block mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 py-1">
+          <div className="col-span-1 sm:col-span-2 pb-2.5 border-b border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-indigo-600 tracking-wider block mb-0.5">
               Taxpayer Legal Name
             </span>
-            <span className="text-sm font-black text-gray-900">
-              {getVal("firstName")} {formData.middleName ? formData.middleName + " " : ""}{getVal("lastName")}
+            <span className="text-xs sm:text-sm font-black text-slate-900 leading-snug block">
+              {taxpayerName}
             </span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Date & Place of Birth
             </span>
-            <span className="text-xs font-bold text-gray-900">
-              {getVal("dateOfBirth")} | {getVal("placeOfBirth")}
+            <span className="text-xs font-bold text-slate-800 leading-snug block">
+              {birthInfo}
             </span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Civil Status & Gender
             </span>
-            <span className="text-xs font-bold text-gray-900">
-              {getVal("civilStatus")} | {getVal("gender")}
+            <span className="text-xs font-bold text-slate-800 leading-snug block">
+              {civilGenderInfo}
             </span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Profession / Occupation
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("profession")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("profession")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Citizenship
             </span>
-            <span className="text-xs font-bold text-gray-900">{getVal("citizenship")}</span>
+            <span className="text-xs font-bold text-slate-800">{getVal("citizenship")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl col-span-1 sm:col-span-2">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div className="col-span-1 sm:col-span-2">
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Address
             </span>
-            <span className="text-xs text-gray-700">
+            <span className="text-xs text-slate-700">
               {getVal("purokSitio")}, {getVal("barangay")}, {getVal("municipality")}, {getVal("province")} {getVal("zipCode")}
             </span>
           </div>
           
-          {/* CTC Taxes box */}
-          <div className="col-span-1 sm:col-span-2 p-4 bg-emerald-50/30 border border-emerald-100 rounded-xl grid grid-cols-3 gap-2">
+          {/* CTC Taxes clean row without background card */}
+          <div className="col-span-1 sm:col-span-2 pt-2.5 border-t border-slate-100 grid grid-cols-3 gap-2">
             <div>
-              <span className="text-[9px] uppercase font-black text-emerald-700 tracking-widest block">Basic Tax</span>
-              <span className="text-xs font-black text-gray-900">₱{parseFloat(getVal("basicTax") || "0").toFixed(2)}</span>
+              <span className="text-[8.5px] uppercase font-black text-slate-400 tracking-wider block">Basic Tax</span>
+              <span className="text-xs font-bold text-slate-900">₱{parseFloat(getVal("basicTax") || "0").toFixed(2)}</span>
             </div>
             <div>
-              <span className="text-[9px] uppercase font-black text-emerald-700 tracking-widest block">Additional Tax</span>
-              <span className="text-xs font-black text-gray-900">₱{parseFloat(getVal("additionalTax") || "0").toFixed(2)}</span>
+              <span className="text-[8.5px] uppercase font-black text-slate-400 tracking-wider block">Additional Tax</span>
+              <span className="text-xs font-bold text-slate-900">₱{parseFloat(getVal("additionalTax") || "0").toFixed(2)}</span>
             </div>
-            <div className="border-l border-emerald-100 pl-4">
-              <span className="text-[9px] uppercase font-black text-emerald-800 tracking-widest block">Total Assessment</span>
-              <span className="text-sm font-black text-emerald-700">₱{parseFloat(getVal("totalTax") || "0").toFixed(2)}</span>
+            <div className="border-l border-slate-200/80 pl-2.5">
+              <span className="text-[8.5px] uppercase font-black text-emerald-700 tracking-wider block">Total Assessment</span>
+              <span className="text-xs sm:text-sm font-black text-emerald-700">₱{parseFloat(getVal("totalTax") || "0").toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -297,42 +315,42 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
 
     if (docTypeLower.includes("indigency")) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="col-span-1 sm:col-span-2 bg-purple-50/20 border border-purple-100/50 p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-purple-600 tracking-widest block mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 py-1">
+          <div className="col-span-1 sm:col-span-2 pb-2.5 border-b border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-purple-600 tracking-wider block mb-0.5">
               Purpose / Reason
             </span>
-            <span className="text-sm font-bold text-gray-900">{purposeText}</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-900">{purposeText}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Applicant Full Name
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("fullName")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("fullName")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Residence Barangay
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("barangay")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("barangay")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Household / Family Members
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("familyMembers")} members</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("familyMembers")} members</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Reported Monthly Income
             </span>
-            <span className="text-xs font-black text-purple-600">₱{getVal("monthlyIncome")}</span>
+            <span className="text-xs font-bold text-purple-600">₱{getVal("monthlyIncome")}</span>
           </div>
-          <div className="col-span-1 sm:col-span-2 p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div className="col-span-1 sm:col-span-2 pt-2 border-t border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Detailed Case Explanation / Reason
             </span>
-            <span className="text-xs text-gray-700 block whitespace-pre-line">{getVal("reason")}</span>
+            <span className="text-xs text-slate-700 block whitespace-pre-line">{getVal("reason")}</span>
           </div>
         </div>
       );
@@ -340,42 +358,42 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
 
     if (docTypeLower.includes("zoning")) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 bg-rose-50/20 border border-rose-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-rose-600 tracking-widest block mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 py-1">
+          <div className="col-span-1 sm:col-span-2 pb-2.5 border-b border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-rose-600 tracking-wider block mb-0.5">
               Applicant Name
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("applicantName")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("applicantName")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Barangay
             </span>
-            <span className="text-xs font-black text-gray-900">{getVal("barangay")}</span>
+            <span className="text-xs font-bold text-slate-900">{getVal("barangay")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl col-span-1 sm:col-span-2">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div className="col-span-1 sm:col-span-2">
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Property Location / Address
             </span>
-            <span className="text-xs font-bold text-gray-900">{getVal("propertyAddress")}</span>
+            <span className="text-xs font-bold text-slate-800">{getVal("propertyAddress")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Lot Number
             </span>
-            <span className="text-xs font-mono font-bold text-gray-900">{getVal("lotNumber")}</span>
+            <span className="text-xs font-mono font-bold text-slate-900">{getVal("lotNumber")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div>
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Tax Declaration No
             </span>
-            <span className="text-xs font-mono font-bold text-gray-900">{getVal("taxDeclarationNo")}</span>
+            <span className="text-xs font-mono font-bold text-slate-900">{getVal("taxDeclarationNo")}</span>
           </div>
-          <div className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl col-span-1 sm:col-span-2">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+          <div className="col-span-1 sm:col-span-2 pt-2 border-t border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Clearance Purpose
             </span>
-            <span className="text-xs text-gray-700">{purposeText}</span>
+            <span className="text-xs text-slate-700">{purposeText}</span>
           </div>
         </div>
       );
@@ -385,21 +403,21 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
     const keys = Object.keys(formData);
     if (keys.length > 0) {
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="col-span-1 sm:col-span-2 p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-            <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 py-1">
+          <div className="col-span-1 sm:col-span-2 pb-2.5 border-b border-slate-100">
+            <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
               Core Purpose / Statement
             </span>
-            <span className="text-xs text-gray-900 font-bold">{purposeText}</span>
+            <span className="text-xs text-slate-900 font-bold">{purposeText}</span>
           </div>
           {keys.map(key => {
             if (key === "purposeText" || key === "form_data") return null;
             return (
-              <div key={key} className="p-4 bg-gray-50/50 border border-gray-100/50 rounded-xl">
-                <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest block mb-1">
+              <div key={key}>
+                <span className="text-[9.5px] uppercase font-black text-slate-400 tracking-wider block mb-0.5">
                   {formatLabel(key)}
                 </span>
-                <span className="text-xs font-bold text-gray-900 truncate block">
+                <span className="text-xs font-bold text-slate-900 break-words block">
                   {getVal(key)}
                 </span>
               </div>
@@ -411,11 +429,11 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
 
     // Absolutely no nested properties
     return (
-      <div className="p-5 bg-amber-50/20 border border-amber-100 rounded-2xl">
-        <span className="text-[10px] uppercase font-black text-amber-600 tracking-widest block mb-1">
+      <div className="py-1">
+        <span className="text-[9.5px] uppercase font-black text-amber-700 tracking-wider block mb-0.5">
           Detailed Purpose / Notes
         </span>
-        <p className="text-xs font-bold text-gray-900 whitespace-pre-wrap leading-relaxed">
+        <p className="text-xs font-bold text-slate-900 whitespace-pre-wrap leading-relaxed">
           {purposeText}
         </p>
       </div>
@@ -423,87 +441,81 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
   };
 
   return (
-    <div className="relative overflow-hidden bg-radial from-slate-50 to-white border-2 border-slate-200 rounded-[2.5rem] p-6 sm:p-8 shadow-xl max-w-2xl mx-auto font-sans text-left">
-      {/* Government Document Watermark Accent */}
-      <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-slate-100/50 rounded-full border-[1.5rem] border-slate-200/30 flex items-center justify-center pointer-events-none select-none">
-        <Landmark className="text-slate-300/30 w-32 h-32" />
-      </div>
-
-      {/* Official Top Banner */}
-      <div className="flex flex-col items-center text-center pb-6 border-b-2 border-dashed border-slate-200 mb-6 space-y-2">
-        <div className="inline-flex items-center justify-center bg-slate-900 text-white p-3 rounded-2xl shadow-md">
-          <Landmark size={24} />
+    <div className="relative font-sans text-left pt-1">
+      {/* Official Top Header Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3.5 mb-3.5 border-b border-slate-100">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Landmark size={18} />
+          </div>
+          <div className="min-w-0">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-none mb-0.5">
+              Republic of the Philippines
+            </span>
+            <h3 className="text-xs sm:text-sm font-bold tracking-tight text-slate-900 uppercase leading-snug break-words font-display">
+              Municipality of Talibon, Bohol
+            </h3>
+            <p className="text-[9px] font-mono font-semibold text-blue-600 uppercase tracking-wider mt-0.5">
+              Official E-Services Portal
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xs font-black tracking-widest text-slate-800 uppercase leading-none">
-            Republic of the Philippines
-          </h2>
-          <h3 className="text-base font-black tracking-tight text-slate-900 leading-tight">
-            MUNICIPALITY OF TALIBON, BOHOL
-          </h3>
-          <p className="text-[9px] font-mono uppercase font-bold text-blue-600/80 tracking-widest mt-0.5">
-            Official Municipal E-Services Portal
-          </p>
-        </div>
-      </div>
 
-      {/* Tracking and Header Metadata */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6 border-b border-slate-100 mb-6">
-        <div className="space-y-1">
-          <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block">
-            Service Certificate Type
+        <div className="shrink-0 self-start sm:self-center">
+          <span className="font-mono text-xs sm:text-sm font-bold text-slate-900 tracking-tight block sm:inline-block">
+            {ticketId}
           </span>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-xl">
-            <FileText size={12} className="text-blue-600" />
-            <span className="text-xs font-black text-blue-700 uppercase">
+        </div>
+      </div>
+
+      {/* Quick Certificate & Date Ribbon */}
+      <div className="pb-3.5 mb-3.5 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <FileText size={16} className="text-blue-600 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-none mb-1">
+              Document Type
+            </span>
+            <span className="font-bold text-slate-900 uppercase text-xs sm:text-sm block leading-snug break-words">
               {documentType}
             </span>
           </div>
         </div>
 
-        <div className="space-y-1 sm:text-right">
-          <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block">
-            Transaction Track ID
-          </span>
-          <span className="inline-block font-mono text-xs font-black text-slate-900 bg-slate-100 border border-slate-200 px-3 py-1 rounded-xl shadow-xs">
-            {ticketId}
-          </span>
-        </div>
-
-        <div className="space-y-1">
-          <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block">
-            Security Integration
-          </span>
-          <div className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-600 font-bold">
-            <Shield size={10} />
-            <span>SECURED DATABASE PIPELINE</span>
-          </div>
-        </div>
-
-        <div className="space-y-1 sm:text-right">
-          <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest block">
-            Authorized Submission Date
-          </span>
-          <div className="inline-flex items-center gap-1.5 text-[10px] text-slate-600 font-bold sm:justify-end">
-            <Calendar size={11} className="text-slate-400" />
-            <span>{formattedDate}</span>
+        <div className="flex items-start gap-2.5 min-w-0">
+          <Calendar size={16} className="text-slate-500 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-none mb-1">
+              Submission Date
+            </span>
+            <span className="font-bold text-slate-800 text-xs sm:text-sm block leading-snug">
+              {formattedDate}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Main Document Dynamic Fields Grid */}
-      <div className="relative z-10 space-y-4">
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400/90 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-          <FileCheck size={12} className="text-blue-500" />
-          Submitted Form Data
-        </h4>
+      <div className="relative z-10 space-y-2.5">
+        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+          <div className="flex items-center gap-1.5">
+            <FileCheck size={13} className="text-blue-600 shrink-0" />
+            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-600">
+              Submitted Form Data
+            </span>
+          </div>
+          <span className="text-[8.5px] font-mono font-bold text-slate-400 uppercase">
+            Cloud Record
+          </span>
+        </div>
+
         {renderDocumentFields()}
       </div>
 
-      {/* Official Footnote / Authenticity Disclaimer */}
-      <div className="mt-8 pt-4 border-t-2 border-slate-200/60 flex flex-col sm:flex-row justify-between items-center text-[8px] text-slate-400/80 font-mono font-bold uppercase tracking-widest gap-2">
-        <span>TALIBON LGU TRANSACTION CERTIFICATE</span>
-        <span>VERIFIED THROUGH SECURED CLOUD DATABASE</span>
+      {/* Official Footnote */}
+      <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[8px] text-slate-400 font-mono uppercase tracking-widest">
+        <span>TALIBON LGU E-SERVICES</span>
+        <span>SECURED CLOUD RECORD</span>
       </div>
     </div>
   );

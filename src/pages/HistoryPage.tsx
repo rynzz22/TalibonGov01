@@ -9,7 +9,7 @@ const HistoryPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-brand-bg pt-32 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-brand-bg pt-6 sm:pt-8 pb-24 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <motion.div 
@@ -50,8 +50,8 @@ const HistoryPage: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="inline-flex items-center gap-2 bg-white text-brand-primary px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-brand-border mb-8 shadow-sm">
-              <History size={14} />
+            <div className="flex items-center gap-2 text-brand-primary text-[11px] font-extrabold uppercase tracking-[0.2em] mb-4">
+              <History size={15} />
               <span>Historical Profile</span>
             </div>
             <h1 className="text-6xl md:text-8xl font-extrabold text-brand-text leading-[0.85] mb-8 tracking-tighter font-display">

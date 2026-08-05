@@ -332,11 +332,11 @@ export default function Navbar() {
           <Link to="/" onClick={handleHomeClick} className="flex-1 flex flex-col items-center text-center px-2 transition-transform hover:scale-[1.01]">
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <div className="px-2.5 py-0.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-yellow-100 text-slate-950 text-[8px] font-black rounded-full tracking-widest shadow-2xs">#TALIBOOM</div>
+                <div className="px-2.5 py-0.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-yellow-100 text-slate-950 text-[8px] font-black rounded-full tracking-widest shadow-2xs font-display" style={{ fontFamily: "'Outfit', sans-serif" }}>#TALIBOOM</div>
               </div>
-              <h1 className="font-display font-black text-yellow-400 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tighter leading-none mb-0.5 text-base sm:text-xl lg:text-[26px]">MUNICIPALITY OF TALIBON</h1>
+              <h1 className="font-black text-yellow-400 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-tighter leading-none mb-0.5 text-base sm:text-xl lg:text-[26px]" style={{ fontFamily: "'Outfit', sans-serif" }}>MUNICIPALITY OF TALIBON</h1>
               <div className="flex items-center gap-1.5">
-                <p className="text-yellow-400 font-black tracking-[0.2em] uppercase text-[8px] sm:text-[10px] lg:text-[11px] leading-none filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">BOHOL'S SEAFOOD CAPITAL 🦀</p>
+                <p className="text-yellow-400 font-black tracking-[0.2em] uppercase text-[8px] sm:text-[10px] lg:text-[11px] leading-none filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] font-display" style={{ fontFamily: "'Outfit', sans-serif" }}>BOHOL'S SEAFOOD CAPITAL 🦀</p>
               </div>
             </div>
           </Link>

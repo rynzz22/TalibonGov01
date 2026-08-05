@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Sparkles, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-react";
-import { certificateService } from "../../services/certificateService";
+import { certificateService, saveLocalRequest } from "../../services/certificateService";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
 import { isMockAllowed } from "../../lib/mode";
@@ -94,7 +94,7 @@ export default function ECertificateOfIndigencyForm({ onSuccess }: ECertificateO
       if (!isMockAllowed()) {
         throw error;
       }
-      console.error("[IndigencyForm] Submit failed, using fallback", error);
+      console.info("[IndigencyForm] Submit using offline local storage fallback");
       
       // Client-side fallback
       const generatedId = `TAL-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 8999) + 1000)}`;
@@ -120,6 +120,8 @@ export default function ECertificateOfIndigencyForm({ onSuccess }: ECertificateO
         submittedAt: new Date().toISOString(),
         status: "Submitted"
       };
+
+      saveLocalRequest(fallbackRequest);
 
       // Add to local state of citizen requests
       try {
@@ -150,45 +152,49 @@ export default function ECertificateOfIndigencyForm({ onSuccess }: ECertificateO
 
   return (
     <div className="bg-white border border-brand-border rounded-2xl overflow-hidden shadow-xs">
-      <div className="p-4 sm:p-5 border-b border-brand-border bg-gray-50 flex items-center gap-3">
-        <div className="w-10 h-10 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center shrink-0">
+      <div className="p-5 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3.5">
+        <div className="w-10 h-10 bg-brand-primary/10 text-brand-primary rounded-xl flex items-center justify-center shrink-0">
           <Sparkles size={20} />
         </div>
         <div>
-          <h2 className="text-base font-black text-brand-text uppercase font-display tracking-tight">Certificate of Indigency Application</h2>
-          <p className="text-[10px] text-brand-muted font-bold uppercase tracking-widest mt-0.5">Submit online application to MSWDO Office</p>
+          <h2 className="text-lg font-bold text-slate-900 font-display">Certificate of Indigency Application</h2>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">Submit your application online to the Municipal Social Welfare and Development Office (MSWDO)</p>
         </div>
       </div>
 
-      <form onSubmit={handleFormSubmit} className="p-4 sm:p-5 space-y-4">
+      <form onSubmit={handleFormSubmit} className="p-5 space-y-5">
         {validationError && (
-          <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center gap-2.5">
+          <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-semibold flex items-center gap-2.5">
             <AlertCircle size={16} className="shrink-0" />
             <span>{validationError}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="form-label">Full Legal Name of Applicant *</label>
+            <label className="text-xs font-semibold text-slate-700 block">
+              Full Legal Name of Applicant <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="fullName"
-              placeholder="e.g. Bernardo Carpio Jr."
+              placeholder="e.g. Juan De La Cruz Jr."
               value={formData.fullName}
               onChange={handleChange}
-              className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
+              className="w-full bg-white border border-slate-300 rounded-xl py-2.5 px-3.5 text-sm text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all shadow-xs"
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="form-label">Registered Barangay *</label>
+            <label className="text-xs font-semibold text-slate-700 block">
+              Registered Barangay <span className="text-red-500">*</span>
+            </label>
             <select
               name="barangay"
               value={formData.barangay}
               onChange={handleChange}
-              className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
+              className="w-full bg-white border border-slate-300 rounded-xl py-2.5 px-3.5 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all shadow-xs"
             >
               {BARANGAYS.map(b => (
                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -197,84 +203,96 @@ export default function ECertificateOfIndigencyForm({ onSuccess }: ECertificateO
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="form-label">Home Physical Address *</label>
+            <label className="text-xs font-semibold text-slate-700 block">
+              Home Physical Address <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="address"
-              placeholder="e.g. Sitio San Roque Crossroads"
+              placeholder="e.g. Sitio San Roque, Poblacion"
               value={formData.address}
               onChange={handleChange}
-              className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
+              className="w-full bg-white border border-slate-300 rounded-xl py-2.5 px-3.5 text-sm text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all shadow-xs"
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="form-label">Estimated Monthly Family Income (PHP) *</label>
+            <label className="text-xs font-semibold text-slate-700 block">
+              Estimated Monthly Family Income (PHP) <span className="text-red-500">*</span>
+            </label>
             <input
               type="number"
               name="monthlyIncome"
               placeholder="e.g. 5000"
               value={formData.monthlyIncome}
               onChange={handleChange}
-              className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
+              className="w-full bg-white border border-slate-300 rounded-xl py-2.5 px-3.5 text-sm text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all shadow-xs"
               required
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="form-label">Purpose of Request *</label>
+            <label className="text-xs font-semibold text-slate-700 block">
+              Purpose of Request <span className="text-red-500">*</span>
+            </label>
             <select
               name="purpose"
               value={formData.purpose}
               onChange={handleChange}
-              className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
+              className="w-full bg-white border border-slate-300 rounded-xl py-2.5 px-3.5 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all shadow-xs"
             >
-              <option value="Medical Financial Assistance">Medical / Health Aid Financial Assistance</option>
+              <option value="Medical Financial Assistance">Medical / Health Financial Assistance</option>
               <option value="Educational Scholarship Program">Educational / Scholarship Assistance</option>
               <option value="Burial Social Service Support">Burial & Funeral Social Support</option>
-              <option value="Legal Court Defense Support">PAO legal Court Assistance</option>
+              <option value="Legal Court Defense Support">PAO / Legal Court Assistance</option>
             </select>
           </div>
 
           <div className="space-y-1.5">
-            <label className="form-label">Dependent Family Members</label>
+            <label className="text-xs font-semibold text-slate-700 block">
+              Dependent Family Members
+            </label>
             <input
               type="text"
               name="familyMembers"
               placeholder="e.g. Spouse (40), Child (12), Child (9)"
               value={formData.familyMembers}
               onChange={handleChange}
-              className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-xs sm:text-sm"
+              className="w-full bg-white border border-slate-300 rounded-xl py-2.5 px-3.5 text-sm text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all shadow-xs"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="form-label">Reason for Request / Additional Details</label>
+          <label className="text-xs font-semibold text-slate-700 block">
+            Reason for Request / Additional Details
+          </label>
           <textarea
             name="reason"
-            rows={2}
+            rows={3}
             placeholder="Please detail any specific emergency or situational need to support MSWDO evaluation (e.g. Currently hospitalized at Bohol Provincial Hospital, needing dialysis subsidy)"
             value={formData.reason}
             onChange={handleChange}
-            className="w-full bg-gray-50 border border-brand-border rounded-xl py-2 px-3 sm:px-3.5 font-semibold text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all resize-none text-xs sm:text-sm"
+            className="w-full bg-white border border-slate-300 rounded-xl py-2.5 px-3.5 text-sm text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all resize-none shadow-xs"
           />
         </div>
 
-        <div className="space-y-3 pt-3 border-t border-brand-border">
-          <div className="flex items-center gap-2">
+        <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs">
             <ShieldCheck size={16} className="text-brand-primary" />
-            <span className="form-label !mb-0">Required Barangay Verification Attachments</span>
+            <span>Required Barangay Verification Attachments</span>
           </div>
 
           <div className="space-y-1.5">
-            <label className="form-label">Barangay Indigency Certification *</label>
-            <div className="relative border-2 border-dashed border-brand-border rounded-xl p-3 text-center bg-gray-50/50 hover:bg-gray-50 transition-colors flex flex-col items-center justify-center cursor-pointer max-w-md">
+            <label className="text-xs font-semibold text-slate-700 block">
+              Barangay Indigency Certification <span className="text-red-500">*</span>
+            </label>
+            <div className="relative border-2 border-dashed border-slate-300 hover:border-brand-primary/60 rounded-xl p-4 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors flex flex-col items-center justify-center cursor-pointer max-w-md">
               <input
                 type="file"
                 accept="image/*,application/pdf"
@@ -282,13 +300,13 @@ export default function ECertificateOfIndigencyForm({ onSuccess }: ECertificateO
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 required={!certFile}
               />
-              <File size={20} className="text-brand-primary/40 mb-1" />
-              <p className="text-xs font-bold text-brand-text">
+              <File size={22} className="text-brand-primary/60 mb-1.5" />
+              <p className="text-xs font-semibold text-slate-800">
                 {certFile ? "Certification Selected Successfully" : "Upload Signed Barangay Certification file"}
               </p>
-              <p className="text-[10px] text-brand-muted mt-0.5">Signed by Barangay Captain, up to 5MB</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Signed by Barangay Captain, up to 5MB (PDF, JPG, PNG)</p>
               {certFile && (
-                <span className="mt-1.5 px-2 py-0.5 bg-white rounded border border-brand-border text-[8px] font-bold text-brand-primary truncate max-w-full">
+                <span className="mt-2 px-2.5 py-1 bg-white rounded-lg border border-slate-200 text-xs font-medium text-brand-primary truncate max-w-full shadow-xs">
                   {certFile}
                 </span>
               )}
@@ -299,12 +317,12 @@ export default function ECertificateOfIndigencyForm({ onSuccess }: ECertificateO
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+          className="w-full py-3 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-2"
         >
           {isSubmitting ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
-            <>Submit Indigency Application <ArrowRight size={14} /></>
+            <>Submit Indigency Application <ArrowRight size={15} /></>
           )}
         </button>
       </form>

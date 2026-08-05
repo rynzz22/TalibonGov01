@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Shield, ExternalLink, Download } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 
 const FullDisclosurePage: React.FC = () => {
   const imageUrl = "https://talibon.gov.ph/wp-content/themes/yootheme/cache/e8/RegistrationCert_page-0001-e8213d59.webp";
@@ -13,13 +13,12 @@ const FullDisclosurePage: React.FC = () => {
         transition={{ duration: 0.4 }}
       >
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 uppercase tracking-tight leading-none mb-3 font-display">
+          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">
+            Transparency & Accountability Policy
+          </p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 uppercase tracking-tight leading-none font-display">
             Full Disclosure
           </h1>
-          <div className="flex items-center gap-2.5 py-2 px-3.5 bg-blue-50 rounded-xl border border-blue-100 inline-flex">
-            <Shield className="text-blue-600" size={18} />
-            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Transparency & Accountability Policy</span>
-          </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">

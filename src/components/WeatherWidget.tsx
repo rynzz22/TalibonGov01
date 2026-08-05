@@ -17,18 +17,18 @@ export default function WeatherWidget() {
     { time: "11:30 PM", level: "0.4m", type: "Low" },
   ];
 
-  const textShadowStyle = { textShadow: "0 2px 8px rgba(0,0,0,0.6)" };
-  const filterShadowStyle = { filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.5))" };
+  const textShadowStyle = { textShadow: "0 2px 6px rgba(0,0,0,0.85), 0 1px 2px rgba(0,0,0,0.9)" };
+  const filterShadowStyle = { filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.8))" };
 
   return (
     <section 
-      className="relative w-full overflow-hidden bg-cover bg-center py-10 sm:py-14 text-white z-20"
-      style={{ backgroundImage: `url('https://chat.google.com/api/get_attachment_url?url_type=FIFE_URL&content_type=image%2Fpng&attachment_token=AOo0EEU57q%2BXDS2TZnXb7Om2GuVprH5bVdshcD8aBm%2F816ltxr0caDnlBqKjsXZqhFRnBsHt41p0JpU7Qq8OSpB5FM%2F2EGifhCGPDwuVATfGJM3oL2euyIodye%2BmgOK3JXMWyiE%2BiR6GUX0T79SwY1VxBQFYlmvBMaAZrENqbvUTSIFNjBe7tOfSX4V0XZ6HYHspQ338b7ruNTB2Pv0EMkkO9RKmA2RkyqbMxdZAw1IpikQeM%2BI1xzroqOEe4V1BPO3hpHxTm3iBp%2Bl0wGgMq4nXh4P0aZuVWPWuMn5we4DMCjJOlCCz3uV1B56sfMCN2XhtHzDvklKAgBgatOL3PfWteadgRRDJ3aLrv9bPeU6nLVX46%2BXTg3uIqdMGbvp%2B%2BLLm3PWj5z2MaX8hvYuj5UPSXh%2FJXaIBL7aGYTXmZqU6x48zULipopJPVTUdU7WoeIznuVMWmuD0Z0Q0NvkwiFh2TK33HIPDYWfXAaHjJpXu7fhHzGqUtFIKKVH4jVQwy4rT04yuosnwhJirhN%2FByfYkSV6lO%2BwTx8FIBPdxkGpbz%2Bl9ywh2NKLaX4UW5nn1Pg06c2zzg4YSiBViNfzvORtMZgYE8NegYs%2BLfmuCRYjTymkk%2FJhhq%2BsUbQrXpPE3cgQi7mGocbMbEb0EWdTRQ0Y5&allow_caching=true&sz=w512')` }}
+      className="relative w-full overflow-hidden bg-cover bg-center py-12 sm:py-16 lg:py-20 text-white z-20"
+      style={{ backgroundImage: `url('https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?auto=format&fit=crop&w=3840&q=90')` }}
     >
-      {/* Full-section gradient overlay */}
+      {/* Light subtle overlay for soft contrast */}
       <div 
         className="absolute inset-0 z-0 pointer-events-none" 
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 100%)" }} 
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.15) 100%)" }} 
       />
 
       {/* Content Container */}

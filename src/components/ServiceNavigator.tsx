@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Search, FileText, CreditCard, UserCheck, Map, Download, ArrowRight, Info } from "lucide-react";
 
 const services = [
-  { id: 1, name: "Business Permit", category: "E-BOSS", icon: CreditCard, description: "Apply or renew your business permit online.", requirements: ["DTI/SEC Registration", "Barangay Clearance", "Lease Contract"], fee: "Varies based on assessment" },
+  { id: 1, name: "Business Permit", category: "Business", icon: CreditCard, description: "Apply or renew your business permit online.", requirements: ["DTI/SEC Registration", "Barangay Clearance", "Lease Contract"], fee: "Varies based on assessment" },
   { id: 2, name: "Birth Certificate", category: "Civil Registry", icon: FileText, description: "Request for a certified true copy of birth certificate.", requirements: ["Valid ID", "Request Form"], fee: "₱155.00" },
   { id: 3, name: "Barangay Clearance", category: "General", icon: UserCheck, description: "Secure a clearance from your local barangay.", requirements: ["Cedula", "Proof of Residency"], fee: "₱50.00" },
   { id: 4, name: "Real Property Tax", category: "Treasury", icon: Map, description: "Pay your land or property taxes online.", requirements: ["Tax Declaration Number"], fee: "Based on property value" },

@@ -126,7 +126,7 @@ const ResolutionsPage: React.FC = () => {
   }, [searchQuery, sortKey, sortOrder]);
 
   return (
-    <div className="pt-32 md:pt-44 pb-20 px-4 md:px-8 max-w-7xl mx-auto min-h-screen">
+    <div className="pt-6 sm:pt-8 pb-20 px-4 md:px-8 max-w-7xl mx-auto min-h-screen">
       {/* Header Section */}
       <div className="mb-16 relative">
         <motion.div

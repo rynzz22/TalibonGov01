@@ -13,12 +13,12 @@ import { Link } from "react-router-dom";
 
 export default function PopularServices() {
   const services = [
-    { name: "ePermits (Business Permits)", to: "/e-services?type=Business Permit Clearance", color: "bg-emerald-50 text-emerald-800 border-emerald-200 hover:border-emerald-500", status: "Active" },
-    { name: "eClearance (Barangay Clearance)", to: "/e-services?type=Barangay Clearance", color: "bg-blue-50 text-blue-800 border-blue-200 hover:border-blue-500", status: "Active" },
-    { name: "eCedula (Community Tax)", to: "/e-services?type=Community Tax Certificate", color: "bg-purple-50 text-purple-800 border-purple-200 hover:border-purple-500", status: "Active" },
-    { name: "eCertificate (Indigency)", to: "/e-services", color: "bg-sky-50 text-sky-800 border-sky-200 hover:border-sky-500", status: "Active" },
-    { name: "eBuilding Permit", to: "/e-services", color: "bg-teal-50 text-teal-800 border-teal-200 hover:border-teal-500", status: "Active" },
-    { name: "Real Property Tax Assessment", to: "/e-services", color: "bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-500", status: "Information Only" },
+    { name: "ePermits (Business Permits)", to: "/e-services?service=business_permit", color: "bg-emerald-50 text-emerald-800 border-emerald-200 hover:border-emerald-500", status: "Active" },
+    { name: "eClearance (Barangay Clearance)", to: "/e-services?service=barangay_clearance", color: "bg-blue-50 text-blue-800 border-blue-200 hover:border-blue-500", status: "Active" },
+    { name: "eCedula (Community Tax)", to: "/e-services?service=e-cedula", color: "bg-purple-50 text-purple-800 border-purple-200 hover:border-purple-500", status: "Active" },
+    { name: "eCertificate (Indigency)", to: "/e-services?service=certificate_of_indigency", color: "bg-sky-50 text-sky-800 border-sky-200 hover:border-sky-500", status: "Active" },
+    { name: "eBuilding Permit", to: "/e-services?service=building_permit", color: "bg-teal-50 text-teal-800 border-teal-200 hover:border-teal-500", status: "Active" },
+    { name: "Real Property Tax Assessment", to: "/e-services?service=zoning_clearance", color: "bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-500", status: "Information Only" },
   ];
 
   return (
@@ -26,7 +26,7 @@ export default function PopularServices() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="mb-6 sm:mb-8">
           <h2 className="text-lg sm:text-xl md:text-2xl font-black text-brand-text uppercase tracking-tight font-display">
-            ONLINE SERVICES & E-BOSS
+            ONLINE SERVICES
           </h2>
           <p className="text-xs text-brand-muted font-medium max-w-lg mx-auto mt-1">
             Access official municipal e-services, apply for business permits, track applications, and utilize Philippine government digital portals.

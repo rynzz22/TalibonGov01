@@ -84,9 +84,9 @@ export default function Services() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-400/20 border border-sky-300/30 rounded-full mb-3 backdrop-blur-md">
-            <Building size={14} className="text-sky-300" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-sky-200">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Building size={15} className="text-sky-300" />
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-sky-300">
               MUNICIPAL SERVICES & REAL ESTATE
             </span>
           </div>

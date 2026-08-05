@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HardHat, AlertCircle, ShieldCheck, File, ArrowRight } from "lucide-react";
-import { certificateService } from "../../services/certificateService";
+import { certificateService, saveLocalRequest } from "../../services/certificateService";
 import { BARANGAYS } from "../../constants/barangayConfig";
 import { notificationService } from "../../services/notificationService";
 import { isMockAllowed } from "../../lib/mode";
@@ -109,7 +109,7 @@ export default function EBuildingPermitForm({ onSuccess }: EBuildingPermitFormPr
       if (!isMockAllowed()) {
         throw error;
       }
-      console.error("[BuildingPermitForm] Submit failed, using robust fallback", error);
+      console.info("[BuildingPermitForm] Submit using offline local storage fallback");
       
       // Client-side fallback
       const generatedId = `TAL-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 8999) + 1000)}`;
@@ -138,6 +138,8 @@ export default function EBuildingPermitForm({ onSuccess }: EBuildingPermitFormPr
         submittedAt: new Date().toISOString(),
         status: "Submitted"
       };
+
+      saveLocalRequest(fallbackRequest);
 
       // Add to local state of citizen requests
       try {

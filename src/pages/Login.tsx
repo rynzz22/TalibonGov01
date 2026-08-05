@@ -96,12 +96,16 @@ const Login: React.FC = () => {
         } else {
           setErrorMsg(error.message);
         }
-      } else {
+      } else if (data?.user) {
+        const userProfile = await refreshProfile(data.user);
         setSuccessMsg("Logged in successfully!");
         if (rememberMe) {
           localStorage.setItem("remember_me_email", email);
         } else {
           localStorage.removeItem("remember_me_email");
+        }
+        if (userProfile && userProfile.is_verified) {
+          navigate("/admin");
         }
       }
     } catch (err: any) {
@@ -201,13 +205,13 @@ const Login: React.FC = () => {
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const { error } = await supabase.from("profiles").insert({
+    const { error } = await supabase.from("profiles").upsert({
       id: user.id,
       email: user.email,
       full_name: fullName,
       role: selectedRole,
       barangay_id: selectedRole === "barangay_admin" ? selectedBarangay : null,
-    });
+    }, { onConflict: 'id' });
 
     setIsLoading(false);
     if (!error) {

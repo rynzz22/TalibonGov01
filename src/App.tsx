@@ -293,7 +293,7 @@ function AppLayout() {
 
         <div className="relative z-10">
           {!isLogin && <Navbar />}
-          <div className={isHome || isLogin ? "" : "pt-[180px] lg:pt-[260px]"}>
+          <div className={isHome || isLogin ? "" : "pt-[125px] lg:pt-[142px]"}>
             <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />

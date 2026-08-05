@@ -26,7 +26,7 @@ interface AuthContextType {
   signInWithEmail: (email: string, password: string) => Promise<AuthResponse>;
   signUpWithEmail: (email: string, password: string) => Promise<AuthResponse>;
   signOut: () => Promise<void>;
-  refreshProfile: (u?: User) => Promise<boolean>;
+  refreshProfile: (u?: User) => Promise<UserProfile | null>;
   resetPasswordForEmail: (email: string) => Promise<{ error: any }>;
   updatePassword: (password: string) => Promise<{ error: any }>;
 }
@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Loading is derived from state
   const loading = state === "INITIALIZING";
 
-  const refreshProfile = async (u?: User): Promise<boolean> => {
+  const refreshProfile = async (u?: User): Promise<UserProfile | null> => {
     try {
       let targetUser = u;
       if (!targetUser) {
@@ -50,11 +50,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error || !data?.user) {
           console.warn("[Auth] getUser failed during profile refresh:", error?.message);
           setProfile(null);
-          return false;
+          return null;
         }
         targetUser = data.user;
       }
 
+      // Query profile matching auth.users.id
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -64,30 +65,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error("[Auth] Profile fetch database error:", error.message);
         setProfile(null);
-        return false;
+        return null;
       }
 
       if (data) {
-        setProfile(data as UserProfile);
-        try {
-          localStorage.setItem(`sb_profile_${targetUser.id}`, JSON.stringify(data));
-        } catch (storageErr) {
-          console.warn("[Auth] Failed to write profile cache to localStorage:", storageErr);
-        }
+        const fetchedProfile = data as UserProfile;
+        setProfile(fetchedProfile);
         if (import.meta.env.DEV) {
-          console.log(`[Auth - DEV] User Profile Loaded: ${data.full_name || data.email}`);
-          console.log(`[Auth - DEV] Role Loaded: ${data.role} (Verified: ${data.is_verified})`);
+          console.log(`[Auth - DEV] User Profile Loaded: ${fetchedProfile.full_name || fetchedProfile.email}`);
+          console.log(`[Auth - DEV] Role Loaded: ${fetchedProfile.role} (Verified: ${fetchedProfile.is_verified})`);
         }
-        return true;
+        return fetchedProfile;
       } else {
-        console.warn("[Auth] Profile missing in database");
+        console.warn("[Auth] Profile missing in database for user:", targetUser.id);
         setProfile(null);
-        return false;
+        return null;
       }
     } catch (err) {
       console.error("[Auth] refreshProfile database exception:", err);
       setProfile(null);
-      return false;
+      return null;
     }
   };
 
@@ -110,19 +107,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         const currentUser = session.user;
-        const success = await refreshProfile(currentUser);
-        
+        setSession(session);
+        setUser(currentUser);
+
+        const fetchedProfile = await refreshProfile(currentUser);
+
         if (active) {
-          if (success) {
-            setSession(session);
-            setUser(currentUser);
-            setState("AUTHENTICATED");
-          } else {
-            setSession(null);
-            setUser(null);
-            setProfile(null);
-            setState("UNAUTHENTICATED");
-          }
+          setState("AUTHENTICATED");
         }
       } catch (err) {
         console.error("[Auth] Error handling auth state change:", err);
@@ -272,14 +263,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setProfile(null);
       setState("UNAUTHENTICATED");
-
-      // Clear cached profile in localStorage if user existed
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith("sb_profile_")) {
-          localStorage.removeItem(key);
-        }
-      }
 
       // Call Supabase sign out to terminate the server session
       await supabase.auth.signOut();

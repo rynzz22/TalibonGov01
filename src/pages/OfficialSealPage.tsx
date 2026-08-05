@@ -23,16 +23,14 @@ const OfficialSealPage: React.FC = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, type: "spring", damping: 20 }}
-            className="relative w-full max-w-sm"
+            className="relative w-full max-w-sm flex items-center justify-center"
           >
-            <div className="bg-brand-surface p-6 sm:p-8 rounded-2xl border border-brand-border shadow-md">
-              <img 
-                src={sealUrl} 
-                alt="Official Seal of Talibon" 
-                className="w-full h-auto max-w-[220px] sm:max-w-[260px] mx-auto drop-shadow-sm"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+            <img 
+              src={sealUrl} 
+              alt="Official Seal of Talibon" 
+              className="w-full h-auto max-w-[240px] sm:max-w-[280px] mx-auto drop-shadow-md"
+              referrerPolicy="no-referrer"
+            />
           </motion.div>
           
           <div className="max-w-xl text-center">

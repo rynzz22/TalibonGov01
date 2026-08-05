@@ -30,9 +30,9 @@ export default function CitizensCharterSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 sm:mb-10">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-primary/10 border border-brand-primary/20 rounded-full mb-2.5">
-              <BookOpen size={13} className="text-brand-primary" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen size={15} className="text-brand-primary" />
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-brand-primary">
                 RA 11032 — ANTI-RED TAPE AUTHORITY
               </span>
             </div>
