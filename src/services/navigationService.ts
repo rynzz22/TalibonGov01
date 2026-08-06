@@ -49,7 +49,7 @@ export const navigationService = {
         if (!isMockAllowed()) {
           throw new Error(`[NavigationService] Failed to load navigation items: ${e.message}`);
         }
-        console.error("[NavigationService] Supabase Navigation fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("[NavigationService] Supabase Navigation fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 

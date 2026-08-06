@@ -146,56 +146,60 @@ export class FormsService {
             }
           }
         } else {
-          // If DB status is different, call RPC or do direct update
-          let rpcSuccess = false;
-          try {
-            const { error } = await client.rpc("update_request_status", {
-              p_request_id: requestId,
-              p_status: dbStatus,
-              p_remarks: remarks || `Status updated via Admin Dashboard: ${status}`
-            });
-            if (!error) rpcSuccess = true;
-          } catch (rpcErr) {
-            console.warn("[FormsService] RPC update_request_status exception:", rpcErr);
-          }
+          // Perform direct table update first
+          let updateSuccess = false;
+          const now = new Date().toISOString();
 
-          if (!rpcSuccess) {
-            console.warn("[FormsService] RPC update_request_status failed or not found, falling back to direct table update");
-            const { error: updateError } = await client
-              .from("certificate_requests")
-              .update({ status: dbStatus }) // Note: updated_at column does not exist on certificate_requests table in live DB
+          try {
+            const { error: srError } = await client
+              .from("service_requests")
+              .update({ status: dbStatus, updated_at: now })
               .eq("id", requestId);
 
-            if (updateError) throw updateError;
+            if (!srError) {
+              updateSuccess = true;
+            } else {
+              const { error: crError } = await client
+                .from("certificate_requests")
+                .update({ status: dbStatus })
+                .eq("id", requestId);
 
+              if (!crError) updateSuccess = true;
+            }
+          } catch (updateErr) {
+            console.warn("[FormsService] Direct table update error:", updateErr);
+          }
+
+          if (updateSuccess) {
             if (saveTimeline) {
               try {
-                await client.from("workflow_history").insert({
+                await client.from("service_request_history").insert({
                   request_id: requestId,
                   status: dbStatus,
-                  remarks: remarks || `Status updated via direct database update: ${status}`
+                  remarks: remarks || `Status updated via Admin Dashboard: ${status}`
                 });
               } catch (histErr: any) {
-                console.warn("[FormsService] Failed to insert workflow history (table may not exist):", histErr.message || histErr);
+                try {
+                  await client.from("workflow_history").insert({
+                    request_id: requestId,
+                    status: dbStatus,
+                    remarks: remarks || `Status updated via Admin Dashboard: ${status}`
+                  });
+                } catch (wfErr) {
+                  console.warn("[FormsService] Workflow history insert skipped:", wfErr);
+                }
               }
             }
-          } else if (!saveTimeline) {
-            // Since RPC and trigger automatically insert into workflow_history, if staff explicitly requested
-            // NOT to save to timeline, we can delete the newly created entry or do nothing.
-            // But we should respect saveTimeline! If trigger logged it and saveTimeline is false, we can delete the latest one:
+          } else {
+            // Fallback to RPC if direct table update failed
             try {
-              const { data: latestHist } = await client
-                .from("workflow_history")
-                .select("id")
-                .eq("request_id", requestId)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .maybeSingle();
-              if (latestHist) {
-                await client.from("workflow_history").delete().eq("id", latestHist.id);
-              }
-            } catch (errHistoryDel: any) {
-              console.warn("[FormsService] Failed to clean workflow_history for saveTimeline = false", errHistoryDel?.message || errHistoryDel);
+              await client.rpc("update_request_status", {
+                p_request_id: requestId,
+                p_status: dbStatus,
+                p_remarks: remarks || `Status updated via Admin Dashboard: ${status}`
+              });
+            } catch (rpcErr) {
+              console.warn("[FormsService] RPC update_request_status failed:", rpcErr);
             }
           }
         }
@@ -415,24 +419,49 @@ export class FormsService {
   }
 
   async getRequestStatus(ticketId: string): Promise<CertificateRequestPayload | null> {
-    // If Supabase is connected, try to fetch fresh from Supabase first
+    const code = ticketId ? ticketId.trim() : "";
+    if (!code) return null;
+
     try {
       const client = this.supabaseService.getClient();
       if (client) {
-        // Try looking up by ticket_id first, then fallback to id (UUID)
-        let query = client.from("certificate_requests").select("*");
-        
-        // Simple check: if it looks like a UUID, search by id, otherwise ticket_id
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticketId.trim());
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(code);
+        let data: any = null;
+
         if (isUuid) {
-          query = query.eq("id", ticketId.trim());
-        } else {
-          query = query.eq("ticket_id", ticketId.trim());
+          const { data: idRes } = await client.from("certificate_requests").select("*").eq("id", code).maybeSingle();
+          if (idRes) data = idRes;
         }
 
-        const { data, error } = await query.maybeSingle();
-        
-        if (!error && data) {
+        if (!data) {
+          const { data: ticketRes, error: ticketErr } = await client
+            .from("certificate_requests")
+            .select("*")
+            .or(`ticket_id.ilike.${code},ticket_id.eq.${code}`)
+            .maybeSingle();
+
+          if (ticketRes) {
+            data = ticketRes;
+          } else if (ticketErr) {
+            console.warn("[FormsService] Query error searching ticket_id on certificate_requests:", ticketErr.message);
+          }
+        }
+
+        if (!data) {
+          const { data: codeRes, error: codeErr } = await client
+            .from("certificate_requests")
+            .select("*")
+            .or(`tracking_code.ilike.${code},tracking_code.eq.${code}`)
+            .maybeSingle();
+
+          if (codeRes) {
+            data = codeRes;
+          } else if (codeErr) {
+            console.warn("[FormsService] Query error searching tracking_code on certificate_requests:", codeErr.message);
+          }
+        }
+
+        if (data) {
           // Fetch workflow history chronological timeline!
           let historyData: any[] = [];
           try {
@@ -442,24 +471,31 @@ export class FormsService {
               .eq("request_id", data.id)
               .order("created_at", { ascending: true });
             
-            if (!histError && hist) {
+            if (!histError && hist && hist.length > 0) {
               historyData = hist;
+            } else {
+              const { data: srh } = await client
+                .from("service_request_history")
+                .select("*")
+                .eq("request_id", data.id)
+                .order("created_at", { ascending: true });
+              if (srh) historyData = srh;
             }
           } catch (histErr: any) {
-            console.warn("[FormsService] Could not fetch workflow history from Supabase (table may not exist):", histErr.message || histErr);
+            console.warn("[FormsService] Could not fetch workflow history from Supabase:", histErr.message || histErr);
           }
 
           return {
             id: data.id,
-            ticketId: data.ticket_id || data.ticketId,
-            documentType: data.document_type || data.documentType,
+            ticketId: data.ticket_id || data.tracking_code || data.ticketId || data.id,
+            documentType: data.document_type || data.documentType || "Certificate Request",
             barangay: data.barangay_id || data.barangay || "Poblacion",
             fullName: data.full_name || data.fullName,
             email: data.email,
             mobileNumber: data.mobile_number || data.mobileNumber,
             purpose: data.purpose,
             attachments: data.attachments || [],
-            submittedAt: data.submitted_at || data.submittedAt,
+            submittedAt: data.submitted_at || data.created_at,
             status: data.status || "Submitted",
             history: (historyData || []).map(h => ({
               id: h.id,

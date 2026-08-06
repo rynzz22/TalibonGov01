@@ -8,8 +8,8 @@ const UpdatesPage: React.FC = () => {
   const feeds = {
     pio: {
       name: "Public Info Office",
-      url: "https://www.facebook.com/PioTalibon",
-      handle: "@PioTalibon"
+      url: "https://www.facebook.com/profile.php?id=100092810378501",
+      handle: "@PublicInfoOffice"
     },
     main: {
       name: "Official LGU Page",

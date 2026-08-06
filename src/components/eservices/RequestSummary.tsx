@@ -6,13 +6,15 @@ interface RequestSummaryProps {
   purposeJson: string;
   ticketId: string;
   submittedAt?: string;
+  compact?: boolean;
 }
 
 export const RequestSummary: React.FC<RequestSummaryProps> = ({
   documentType,
   purposeJson,
   ticketId,
-  submittedAt
+  submittedAt,
+  compact = false
 }) => {
   // Safe parsing helper
   const parseData = (): { purposeText?: string; form_data?: Record<string, any> } => {
@@ -440,55 +442,261 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
     );
   };
 
+  if (compact) {
+    const renderCompactFields = () => {
+      const docTypeLower = documentType.toLowerCase();
+
+      if (docTypeLower.includes("clearance") && docTypeLower.includes("barangay")) {
+        return (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+            <div className="col-span-2">
+              <span className="text-[8.5px] uppercase font-bold text-blue-600 tracking-wider block">Purpose</span>
+              <span className="font-bold text-slate-900 leading-tight block">{purposeText}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Barangay</span>
+              <span className="font-bold text-slate-900 truncate block">{getVal("barangay")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Sitio / Purok</span>
+              <span className="font-semibold text-slate-800 truncate block">{getVal("sitioPurok")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Residency</span>
+              <span className="font-bold text-blue-600 block">{getVal("yearsOfResidency")} Years</span>
+            </div>
+          </div>
+        );
+      }
+
+      if (docTypeLower.includes("business")) {
+        return (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+            <div className="col-span-2">
+              <span className="text-[8.5px] uppercase font-bold text-blue-600 tracking-wider block">Business Name</span>
+              <span className="font-extrabold text-slate-900 leading-tight block">{getVal("businessName")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Owner / Applicant</span>
+              <span className="font-bold text-slate-800 truncate block">{getVal("ownerName")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Nature of Business</span>
+              <span className="font-semibold text-slate-800 truncate block">{getVal("natureOfBusiness")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Business Address</span>
+              <span className="font-semibold text-slate-800 truncate block">{getVal("businessAddress")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Barangay</span>
+              <span className="font-bold text-slate-900 truncate block">{getVal("barangay")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">DTI / SEC Reg</span>
+              <span className="font-mono font-bold text-slate-800 truncate block">{getVal("dtiSecRegNo")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Contact Phone</span>
+              <span className="font-bold text-slate-900 truncate block">{getVal("contactNumber")}</span>
+            </div>
+          </div>
+        );
+      }
+
+      if (docTypeLower.includes("cedula") || docTypeLower.includes("ctc") || docTypeLower.includes("community tax")) {
+        const birthInfo = (formData.dateOfBirth || formData.placeOfBirth)
+          ? [formData.dateOfBirth, formData.placeOfBirth].filter(Boolean).join(" | ")
+          : "Not provided";
+
+        const civilGenderInfo = (formData.civilStatus || formData.gender)
+          ? [formData.civilStatus, formData.gender].filter(Boolean).join(" | ")
+          : "Not provided";
+
+        return (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Date & Place of Birth</span>
+              <span className="font-semibold text-slate-800 truncate block">{birthInfo}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Civil Status & Gender</span>
+              <span className="font-semibold text-slate-800 truncate block">{civilGenderInfo}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Profession / Occupation</span>
+              <span className="font-bold text-slate-900 truncate block">{getVal("profession")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Citizenship</span>
+              <span className="font-semibold text-slate-800 truncate block">{getVal("citizenship")}</span>
+            </div>
+            <div className="col-span-2">
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Address</span>
+              <span className="text-slate-700 font-medium truncate block">
+                {getVal("purokSitio")}, {getVal("barangay")}, {getVal("municipality")}, {getVal("province")} {getVal("zipCode")}
+              </span>
+            </div>
+            
+            {/* Total Assessment Bar */}
+            <div className="col-span-2 mt-0.5 bg-emerald-50/90 border border-emerald-200/70 rounded-md px-2 py-1 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-[8.5px] uppercase font-bold text-slate-500">Basic: ₱{parseFloat(getVal("basicTax") || "0").toFixed(2)}</span>
+                <span className="text-[8.5px] uppercase font-bold text-slate-500">Add'l: ₱{parseFloat(getVal("additionalTax") || "0").toFixed(2)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[8.5px] uppercase font-bold text-emerald-800">Total:</span>
+                <span className="font-black text-emerald-700 text-xs">₱{parseFloat(getVal("totalTax") || "0").toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (docTypeLower.includes("building")) {
+        return (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+            <div className="col-span-2">
+              <span className="text-[8.5px] uppercase font-bold text-teal-700 tracking-wider block">Project / Construction Type</span>
+              <span className="font-extrabold text-slate-900 leading-tight block">{getVal("constructionType")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Property Owner</span>
+              <span className="font-bold text-slate-900 truncate block">{getVal("propertyOwner")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Barangay</span>
+              <span className="font-bold text-slate-900 truncate block">{getVal("barangay")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Lot Number</span>
+              <span className="font-mono font-bold text-slate-800 truncate block">{getVal("lotNumber")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Tax Dec No</span>
+              <span className="font-mono font-bold text-slate-800 truncate block">{getVal("taxDeclarationNo")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Estimated Cost</span>
+              <span className="font-bold text-emerald-600 block">₱{getVal("estimatedCost")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Floor Area</span>
+              <span className="font-bold text-slate-800 block">{getVal("floorArea")} sqm</span>
+            </div>
+          </div>
+        );
+      }
+
+      if (docTypeLower.includes("indigency")) {
+        return (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+            <div className="col-span-2">
+              <span className="text-[8.5px] uppercase font-bold text-purple-700 tracking-wider block">Purpose / Reason</span>
+              <span className="font-bold text-slate-900 leading-tight block">{purposeText}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Barangay</span>
+              <span className="font-bold text-slate-900 truncate block">{getVal("barangay")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Monthly Income</span>
+              <span className="font-bold text-purple-700 block">₱{getVal("monthlyIncome")}</span>
+            </div>
+          </div>
+        );
+      }
+
+      if (docTypeLower.includes("zoning")) {
+        return (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Barangay</span>
+              <span className="font-bold text-slate-900 truncate block">{getVal("barangay")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Lot Number</span>
+              <span className="font-mono font-bold text-slate-800 truncate block">{getVal("lotNumber")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Tax Dec No</span>
+              <span className="font-mono font-bold text-slate-800 truncate block">{getVal("taxDeclarationNo")}</span>
+            </div>
+            <div>
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Property Address</span>
+              <span className="font-semibold text-slate-800 truncate block">{getVal("propertyAddress")}</span>
+            </div>
+            <div className="col-span-2">
+              <span className="text-[8.5px] uppercase font-bold text-slate-400 tracking-wider block">Clearance Purpose</span>
+              <span className="text-slate-800 font-medium leading-tight block">{purposeText}</span>
+            </div>
+          </div>
+        );
+      }
+
+      // Generic fallback
+      return renderDocumentFields();
+    };
+
+    return (
+      <div className="relative font-sans text-left">
+        {/* Dynamic Form Fields Grid */}
+        <div className="bg-slate-50/70 rounded-lg p-2 border border-slate-200/60">
+          {renderCompactFields()}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative font-sans text-left pt-1">
+    <div className="relative font-sans text-left border border-slate-200/80 bg-white rounded-2xl p-4 sm:p-5 shadow-2xs">
       {/* Official Top Header Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3.5 mb-3.5 border-b border-slate-100">
+      <div className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-slate-100">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <Landmark size={18} />
+          <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-2xs">
+            <Landmark size={16} />
           </div>
           <div className="min-w-0">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-none mb-0.5">
+            <span className="text-[8.5px] font-semibold uppercase tracking-wider text-slate-400 block leading-none mb-0.5">
               Republic of the Philippines
             </span>
-            <h3 className="text-xs sm:text-sm font-bold tracking-tight text-slate-900 uppercase leading-snug break-words font-display">
+            <h3 className="text-xs font-bold tracking-tight text-slate-900 uppercase leading-snug truncate font-display">
               Municipality of Talibon, Bohol
             </h3>
-            <p className="text-[9px] font-mono font-semibold text-blue-600 uppercase tracking-wider mt-0.5">
+            <p className="text-[8.5px] font-mono font-semibold text-blue-600 uppercase tracking-wider mt-0.5 leading-none">
               Official E-Services Portal
             </p>
           </div>
         </div>
 
-        <div className="shrink-0 self-start sm:self-center">
-          <span className="font-mono text-xs sm:text-sm font-bold text-slate-900 tracking-tight block sm:inline-block">
+        <div className="shrink-0 text-right">
+          <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-md tracking-tight inline-block">
             {ticketId}
           </span>
         </div>
       </div>
 
       {/* Quick Certificate & Date Ribbon */}
-      <div className="pb-3.5 mb-3.5 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-        <div className="flex items-start gap-2.5 min-w-0">
-          <FileText size={16} className="text-blue-600 shrink-0 mt-0.5" />
+      <div className="pb-3 mb-3 border-b border-slate-100 grid grid-cols-2 gap-3 text-xs">
+        <div className="flex items-start gap-2 min-w-0">
+          <FileText size={15} className="text-blue-600 shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-none mb-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 block leading-none mb-1">
               Document Type
             </span>
-            <span className="font-bold text-slate-900 uppercase text-xs sm:text-sm block leading-snug break-words">
+            <span className="font-bold text-slate-900 uppercase text-xs block leading-snug truncate">
               {documentType}
             </span>
           </div>
         </div>
 
-        <div className="flex items-start gap-2.5 min-w-0">
-          <Calendar size={16} className="text-slate-500 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 min-w-0">
+          <Calendar size={15} className="text-slate-500 shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-none mb-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 block leading-none mb-1">
               Submission Date
             </span>
-            <span className="font-bold text-slate-800 text-xs sm:text-sm block leading-snug">
+            <span className="font-semibold text-slate-800 text-xs block leading-snug">
               {formattedDate}
             </span>
           </div>
@@ -496,24 +704,26 @@ export const RequestSummary: React.FC<RequestSummaryProps> = ({
       </div>
 
       {/* Main Document Dynamic Fields Grid */}
-      <div className="relative z-10 space-y-2.5">
+      <div className="relative z-10 space-y-2">
         <div className="flex items-center justify-between pb-1 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <FileCheck size={13} className="text-blue-600 shrink-0" />
-            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-600">
+            <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-600">
               Submitted Form Data
             </span>
           </div>
-          <span className="text-[8.5px] font-mono font-bold text-slate-400 uppercase">
+          <span className="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest">
             Cloud Record
           </span>
         </div>
 
-        {renderDocumentFields()}
+        <div className="bg-slate-50/70 rounded-xl p-3 border border-slate-100">
+          {renderDocumentFields()}
+        </div>
       </div>
 
       {/* Official Footnote */}
-      <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[8px] text-slate-400 font-mono uppercase tracking-widest">
+      <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[8px] text-slate-400 font-mono uppercase tracking-widest">
         <span>TALIBON LGU E-SERVICES</span>
         <span>SECURED CLOUD RECORD</span>
       </div>

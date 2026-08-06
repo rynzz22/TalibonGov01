@@ -80,7 +80,7 @@ export const servicesCmsService = {
         if (!isMockAllowed()) {
           throw new Error(`[ServicesCmsService] Failed to load services: ${e.message}`);
         }
-        console.error("[ServicesCmsService] Supabase Services fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("[ServicesCmsService] Supabase Services fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 

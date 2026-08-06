@@ -48,7 +48,8 @@ export const API_ENDPOINTS = {
 
 // UI Constants
 export const OFFICIAL_FACEBOOK_URLS = {
-  PIO: "https://www.facebook.com/TalibonLGU",
+  PIO: "https://www.facebook.com/profile.php?id=100092810378501",
+  MAIN: "https://www.facebook.com/TalibonOfficialPage",
 };
 
 export const LOADING_TIMEOUT = 5000; // 5 seconds

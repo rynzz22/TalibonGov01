@@ -39,38 +39,38 @@ export const SearchFilterToolbar: React.FC<SearchFilterToolbarProps> = ({
   };
 
   return (
-    <div className={`flex flex-col md:flex-row gap-4 items-stretch md:items-center w-full bg-white border border-gray-100 p-4 rounded-3xl shadow-sm transition-all hover:border-gray-200/80 mb-6 ${className}`}>
+    <div className={`flex flex-col sm:flex-row gap-3 items-stretch sm:items-center w-full bg-white border border-slate-200/90 p-2.5 sm:p-3 rounded-2xl shadow-2xs transition-all hover:border-slate-300 mb-5 ${className}`}>
       {/* Search Input Container */}
       <div className="relative grow">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-colors group-focus-within:text-blue-500" size={16} />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-blue-600" size={15} />
         <input
           type="text"
           placeholder={placeholder}
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full bg-gray-50/50 border border-gray-100 hover:border-gray-200/80 rounded-2xl py-3 pl-11 pr-10 font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/80 text-xs transition-all"
+          className="w-full bg-slate-50/70 border border-slate-200/80 hover:border-slate-300 rounded-xl py-2 pl-10 pr-9 font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs transition-all"
         />
         {searchTerm && (
           <button
             onClick={() => onSearchChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-800 hover:bg-gray-200/50 rounded-lg transition-all"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-all"
             title="Clear search"
           >
-            <X size={14} />
+            <X size={13} />
           </button>
         )}
       </div>
 
       {/* Filter Selector & Clear Button */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
         {onFilterChange && filterOptions && filterOptions.length > 0 && (
-          <div className="flex items-center gap-2 bg-gray-50/50 border border-gray-100 rounded-2xl px-3 py-1 bg-white">
-            <SlidersHorizontal size={13} className="text-gray-400" />
+          <div className="flex items-center gap-1.5 bg-slate-50/70 border border-slate-200/80 rounded-xl px-2.5 py-0.5">
+            <SlidersHorizontal size={12} className="text-slate-400" />
             <select
               value={filterValue}
               onChange={(e) => onFilterChange(e.target.value)}
               aria-label={filterLabel}
-              className="bg-transparent border-none py-2 pr-4 pl-1 font-extrabold text-gray-800 text-[10px] uppercase tracking-wider focus:outline-none focus:ring-0 cursor-pointer"
+              className="bg-transparent border-none py-1.5 pr-3 pl-1 font-bold text-slate-800 text-[10px] uppercase tracking-wider focus:outline-none focus:ring-0 cursor-pointer"
             >
               {filterOptions.map((opt) => (
                 <option key={opt.value} value={opt.value} className="normal-case font-medium text-xs">
@@ -84,10 +84,10 @@ export const SearchFilterToolbar: React.FC<SearchFilterToolbarProps> = ({
         {hasActiveFilters && (
           <button
             onClick={handleClear}
-            className="px-3.5 py-2.5 text-[9px] font-black uppercase tracking-widest bg-red-50 hover:bg-red-100/80 text-red-600 rounded-xl transition-all flex items-center gap-1.5 border border-red-100/50 cursor-pointer"
+            className="px-3 py-2 text-[9px] font-bold uppercase tracking-wider bg-red-50 hover:bg-red-100/80 text-red-600 rounded-xl transition-all flex items-center gap-1 border border-red-100 cursor-pointer"
           >
             <X size={11} />
-            Reset Filters
+            Reset
           </button>
         )}
 

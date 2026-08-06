@@ -576,7 +576,7 @@ export const cmsService = {
         if (!isMockAllowed()) {
           throw new Error(`[CMSService] Failed to load officials: ${e.message}`);
         }
-        console.error("Supabase Officials fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("Supabase Officials fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     if (!isMockAllowed()) {
@@ -690,7 +690,7 @@ export const cmsService = {
         if (!isMockAllowed()) {
           throw new Error(`[CMSService] Failed to load departments: ${e.message}`);
         }
-        console.error("Supabase Departments fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("Supabase Departments fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     if (!isMockAllowed()) {
@@ -807,7 +807,7 @@ export const cmsService = {
         if (!isMockAllowed()) {
           throw new Error(`[CMSService] Failed to load barangays: ${e.message}`);
         }
-        console.error("Supabase Barangays fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("Supabase Barangays fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     if (!isMockAllowed()) {
@@ -955,7 +955,7 @@ export const cmsService = {
         if (!isMockAllowed()) {
           throw new Error(`[CMSService] Failed to load citizens charter: ${e.message}`);
         }
-        console.error("Supabase Citizen Charter fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("Supabase Citizen Charter fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     if (!isMockAllowed()) {
@@ -1074,7 +1074,7 @@ export const cmsService = {
         if (!isMockAllowed()) {
           throw new Error(`[CMSService] Failed to load audit logs: ${e.message}`);
         }
-        console.error("Supabase Audit Logs fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("Supabase Audit Logs fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
     if (!isMockAllowed()) {
@@ -1094,7 +1094,7 @@ export const cmsService = {
         if (!isMockAllowed()) {
           throw new Error(`[CMSService] Failed to load users: ${e.message}`);
         }
-        console.error("Supabase profiles query failed, falling back to LocalStorage:", e.message || e);
+        console.warn("Supabase profiles query failed, falling back to LocalStorage:", e.message || e);
       }
     }
     if (!isMockAllowed()) {

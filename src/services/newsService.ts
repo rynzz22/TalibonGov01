@@ -43,7 +43,7 @@ export const newsService = {
         if (!isMockAllowed()) {
           throw new Error(`[NewsService] Failed to load news items: ${e.message}`);
         }
-        console.error("[NewsService] Supabase News fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("[NewsService] Supabase News fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 
@@ -56,8 +56,12 @@ export const newsService = {
   async createNews(item: Omit<NewsItem, "id">, userEmail: string): Promise<NewsItem> {
     if (isSupabaseConfigured) {
       try {
-        const initialStatus = item.status === "published" ? "draft" : item.status;
-        const insertPayload = { ...item, status: initialStatus };
+        const now = new Date().toISOString();
+        const insertPayload = {
+          ...item,
+          published_at: item.status === "published" ? now : null,
+          updated_at: now
+        };
 
         const { data, error } = await supabase
           .from("news")
@@ -67,15 +71,6 @@ export const newsService = {
         if (error) throw error;
         if (data) {
           await logCmsAction(userEmail, "CREATE", "news", data.id);
-          
-          if (item.status === "published") {
-            try {
-              await this.publishNewsRpc(data.id, userEmail);
-              return { ...data, status: "published" } as NewsItem;
-            } catch (pubErr) {
-              console.error("[NewsService] RPC publish failed during create:", pubErr);
-            }
-          }
           return data as NewsItem;
         }
       } catch (e: any) {
@@ -100,37 +95,26 @@ export const newsService = {
   async updateNews(id: string, item: Partial<NewsItem>, userEmail: string): Promise<NewsItem> {
     if (isSupabaseConfigured) {
       try {
-        const shouldPublishViaRpc = item.status === "published";
-        const updatePayload = { ...item };
-        if (shouldPublishViaRpc) {
-          delete updatePayload.status;
+        const now = new Date().toISOString();
+        const updatePayload: any = {
+          ...item,
+          updated_at: now
+        };
+
+        if (item.status === "published") {
+          updatePayload.published_at = now;
         }
 
-        let updatedData: any = null;
-        if (Object.keys(updatePayload).length > 0) {
-          const { data, error } = await supabase
-            .from("news")
-            .update(updatePayload)
-            .eq("id", id)
-            .select()
-            .maybeSingle();
-          if (error) throw error;
-          updatedData = data;
-        }
-
-        if (shouldPublishViaRpc) {
-          await this.publishNewsRpc(id, userEmail);
-          if (!updatedData) {
-            const { data } = await supabase.from("news").select("*").eq("id", id).maybeSingle();
-            updatedData = data;
-          } else {
-            updatedData.status = "published";
-          }
-        }
-
-        if (updatedData) {
+        const { data, error } = await supabase
+          .from("news")
+          .update(updatePayload)
+          .eq("id", id)
+          .select()
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
           await logCmsAction(userEmail, "UPDATE", "news", id);
-          return updatedData as NewsItem;
+          return data as NewsItem;
         }
       } catch (e: any) {
         console.error("[NewsService] Supabase News update failed:", e.message || e);
@@ -181,25 +165,33 @@ export const newsService = {
   },
 
   /**
-   * Publish news using the publish_news RPC
+   * Directly publish news by updating status, published_at, and updated_at
    */
   async publishNewsRpc(newsId: string, userEmail: string): Promise<any> {
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabase.rpc("publish_news", {
-          p_news_id: newsId,
-        });
+        const now = new Date().toISOString();
+        const { data, error } = await supabase
+          .from("news")
+          .update({
+            status: "published",
+            published_at: now,
+            updated_at: now
+          })
+          .eq("id", newsId)
+          .select()
+          .maybeSingle();
+
         if (error) throw error;
-        await logCmsAction(userEmail, "PUBLISH_RPC", "news", newsId);
+        await logCmsAction(userEmail, "PUBLISH", "news", newsId);
         return data;
       } catch (e: any) {
-        console.error("[NewsService] publish_news RPC call failed, trying standard update:", e.message || e);
-        // Fallback to standard update in case RPC is not loaded/fails
-        return this.updateNews(newsId, { status: "published" }, userEmail);
+        console.error("[NewsService] Direct publish news failed:", e.message || e);
+        throw e;
       }
     }
     if (!isMockAllowed()) {
-      throw new Error("[NewsService] Supabase is unconfigured. Production Mode requires a live database connection to call RPC.");
+      throw new Error("[NewsService] Supabase is unconfigured. Production Mode requires a live database connection to publish news.");
     }
     return this.updateNews(newsId, { status: "published" }, userEmail);
   }

@@ -80,7 +80,7 @@ export const profileService = {
         if (!isMockAllowed()) {
           throw new Error(`[ProfileService] Failed to load profiles: ${e.message}`);
         }
-        console.error("[ProfileService] Supabase profiles query failed, falling back to LocalStorage:", e.message || e);
+        console.warn("[ProfileService] Supabase profiles query failed, falling back to LocalStorage:", e.message || e);
       }
     }
 
@@ -157,7 +157,7 @@ export const profileService = {
   },
 
   /**
-   * Update user role and verify using standard flow or secure RPC (approve_user)
+   * Update user role and verification status directly via Supabase CRUD
    */
   async updateUserRole(
     id: string,
@@ -167,31 +167,10 @@ export const profileService = {
     departmentId?: string | null,
     barangayId?: string | null
   ): Promise<UserProfileItem> {
-    // If we're verifying / approving a user, attempt the `approve_user` RPC
-    if (isSupabaseConfigured && isVerified) {
-      try {
-        const { data, error } = await supabase.rpc("approve_user", {
-          p_user_id: id,
-          p_role: role
-        });
-
-        if (error) throw error;
-
-        // Since approve_user doesn't set department/barangay directly, 
-        // we can follow up with a standard update if those are specified.
-        if (data && (departmentId !== undefined || barangayId !== undefined)) {
-          return await this.updateProfile(id, { department_id: departmentId, barangay_id: barangayId }, userEmail);
-        } else if (data) {
-          await logCmsAction(userEmail, "APPROVE_USER_RPC", "profiles", id);
-          return data as UserProfileItem;
-        }
-      } catch (e: any) {
-        console.warn("[ProfileService] approve_user RPC failed, falling back to direct update:", e.message || e);
-      }
-    }
-
-    // Direct update fallback (or if not setting verified)
-    const updatePayload: Partial<UserProfileItem> = { role: role as any, is_verified: isVerified };
+    const updatePayload: Partial<UserProfileItem> = {
+      role: role as any,
+      is_verified: isVerified
+    };
     if (departmentId !== undefined) updatePayload.department_id = departmentId;
     if (barangayId !== undefined) updatePayload.barangay_id = barangayId;
 

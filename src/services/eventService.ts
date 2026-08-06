@@ -41,7 +41,7 @@ export const eventService = {
         if (!isMockAllowed()) {
           throw new Error(`[EventService] Failed to load events: ${e.message}`);
         }
-        console.error("[EventService] Supabase Events fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("[EventService] Supabase Events fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 

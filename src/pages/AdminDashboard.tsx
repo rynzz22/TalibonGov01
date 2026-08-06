@@ -9,7 +9,8 @@ import {
   Newspaper, Users, Gavel, LayoutDashboard,
   Edit3, Save, Globe, Building2, Mic, Eye,
   Folder, Image, Clock, Landmark, Calendar,
-  Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock, Workflow
+  Shield, Activity, RefreshCw, HelpCircle, Key, ListCollapse, Lock, Workflow,
+  ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { notificationService, AppNotification } from '../services/notificationService';
 import { certificateService } from '../services/certificateService';
@@ -60,6 +61,9 @@ const AdminDashboard: React.FC = () => {
     | 'workflows'
   >('overview');
 
+  const [workflowExpandedIds, setWorkflowExpandedIds] = useState<Set<string>>(new Set());
+  const [workflowSortField, setWorkflowSortField] = useState<'date' | 'ticket'>('date');
+  const [workflowSortOrder, setWorkflowSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Notification and Active Tab URL sync states
@@ -1100,105 +1104,105 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-32 md:pt-40 pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50/60 pt-24 md:pt-32 pb-16">
+      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-5 lg:px-6">
         
         {/* HEADER */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 mb-6 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
           <div>
-            <div className="flex items-center gap-4 mb-3">
-              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                <Shield size={24} />
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-xs">
+                <Shield size={20} />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight uppercase">
+                <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight uppercase">
                   CMS Administration
                 </h1>
-                <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Local Government of Talibon, Bohol</p>
+                <p className="text-slate-400 font-bold text-[9.5px] uppercase tracking-wider">Local Government of Talibon, Bohol</p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-gray-400 font-bold text-xs tracking-wider">
-              <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+            <div className="flex flex-wrap items-center gap-2.5 text-slate-500 font-bold text-xs tracking-wider">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-xs">Logged:</span>
-              <span className="text-blue-600 font-black">{user.email}</span>
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] uppercase font-black tracking-widest">
+              <span className="text-blue-600 font-bold">{user.email}</span>
+              <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-100 text-blue-700 rounded-md text-[9.5px] uppercase font-bold tracking-wider">
                 {profile.role.replace('_', ' ')}
               </span>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
             {activeTab !== 'overview' && activeTab !== 'logs' && activeTab !== 'users' && activeTab !== 'media' && activeTab !== 'meeting-assistant' && activeTab !== 'workflows' && canWriteTab(activeTab) && (
               <button
                 onClick={() => { resetAllForms(); setIsModalOpen(true); }}
-                className="px-6 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2 grow lg:grow-0"
+                className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs tracking-wider hover:bg-blue-700 transition-all shadow-2xs flex items-center justify-center gap-1.5 grow lg:grow-0 cursor-pointer"
               >
-                <Plus size={16} />
+                <Plus size={15} />
                 Create New
               </button>
             )}
             <button
               onClick={loadAllCmsData}
               disabled={isActionLoading}
-              className="px-5 py-4 bg-white text-gray-600 rounded-2xl font-black text-xs tracking-widest hover:bg-gray-100 border border-gray-100 transition-all flex items-center justify-center gap-2 grow lg:grow-0"
+              className="px-4 py-2.5 bg-white text-slate-700 rounded-xl font-bold text-xs tracking-wider hover:bg-slate-50 border border-slate-200/80 transition-all flex items-center justify-center gap-1.5 grow lg:grow-0 cursor-pointer"
             >
-              <RefreshCw size={16} className={isActionLoading ? "animate-spin" : ""} />
+              <RefreshCw size={15} className={isActionLoading ? "animate-spin" : ""} />
               Refresh
             </button>
             <button
               onClick={signOut}
-              className="px-5 py-4 bg-red-50 text-red-600 rounded-2xl font-black text-xs tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2 grow lg:grow-0"
+              className="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl font-bold text-xs tracking-wider hover:bg-red-100 transition-all flex items-center justify-center gap-1.5 grow lg:grow-0 cursor-pointer"
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
               Exit CMS
             </button>
           </div>
         </div>
 
         {/* MAIN CMS LAYOUT GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-5 items-start">
           {/* NAVIGATION SIDEBAR */}
-          <div className={`transition-all duration-300 lg:sticky lg:top-6 self-start ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} w-full space-y-4`}>
-            <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xs space-y-3">
-              <div className="flex items-center justify-between px-2 py-1">
+          <div className={`transition-all duration-300 lg:sticky lg:top-6 self-start ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'} w-full space-y-3`}>
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between px-2 py-0.5">
                 {!isSidebarCollapsed && (
-                  <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">Nav Modules</span>
+                  <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">Nav Modules</span>
                 )}
                 <button
                   onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  className="p-1.5 hover:bg-gray-50 rounded-xl text-gray-400 hover:text-gray-800 transition-all flex items-center justify-center shrink-0 ml-auto"
+                  className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-800 transition-all flex items-center justify-center shrink-0 ml-auto cursor-pointer"
                   title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                   aria-label={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
-                  <ListCollapse size={16} className={`transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} />
+                  <ListCollapse size={15} className={`transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} />
                 </button>
               </div>
 
               {profile?.department_id ? (
-                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/30">
-                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-black uppercase tracking-widest rounded-md">Office Assigned</span>
+                <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-100">
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-bold uppercase tracking-wider rounded-md">Office Assigned</span>
                   {!isSidebarCollapsed && (
-                    <p className="text-xs font-black text-blue-900 mt-2 leading-relaxed">
+                    <p className="text-xs font-bold text-blue-900 mt-1.5 leading-snug">
                       {departments.find(d => d.id === profile.department_id)?.name || "Department Staff"}
                     </p>
                   )}
                 </div>
               ) : profile?.barangay_id ? (
-                <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/30">
-                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-widest rounded-md">Barangay Active</span>
+                <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-100">
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-bold uppercase tracking-wider rounded-md">Barangay Active</span>
                   {!isSidebarCollapsed && (
-                    <p className="text-xs font-black text-amber-900 mt-2 leading-relaxed">
+                    <p className="text-xs font-bold text-amber-900 mt-1.5 leading-snug">
                       {BARANGAYS.find(b => b.id === profile.barangay_id)?.name || "Barangay Admin"}
                     </p>
                   )}
                 </div>
               ) : null}
 
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {!isSidebarCollapsed ? (
-                  <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-2">Core Modules</p>
+                  <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider pl-2.5 mb-1 mt-1">Core Modules</p>
                 ) : (
-                  <div className="border-t border-gray-50 my-2" />
+                  <div className="border-t border-slate-100 my-1.5" />
                 )}
                 <SidebarBtn id="overview" label="Dashboard Stats" icon={LayoutDashboard} active={activeTab} onClick={setActiveTab} visible={isTabVisible('overview')} collapsed={isSidebarCollapsed} />
                 <SidebarBtn id="workflows" label="Citizen Workflows" icon={Workflow} active={activeTab} onClick={setActiveTab} visible={isTabVisible('workflows')} collapsed={isSidebarCollapsed} />
@@ -1209,11 +1213,11 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               {(isTabVisible('officials') || isTabVisible('departments') || isTabVisible('barangays') || isTabVisible('services') || isTabVisible('charter')) && (
-                <div className="space-y-1 pt-2">
+                <div className="space-y-0.5 pt-1 border-t border-slate-100/80">
                   {!isSidebarCollapsed ? (
-                    <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-4">Structure</p>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider pl-2.5 mb-1 mt-2">Structure</p>
                   ) : (
-                    <div className="border-t border-gray-50 my-2" />
+                    <div className="border-t border-slate-100 my-1.5" />
                   )}
                   <SidebarBtn id="officials" label="Officials Directory" icon={Users} active={activeTab} onClick={setActiveTab} visible={isTabVisible('officials')} collapsed={isSidebarCollapsed} />
                   <SidebarBtn id="departments" label="Departments" icon={Landmark} active={activeTab} onClick={setActiveTab} visible={isTabVisible('departments')} collapsed={isSidebarCollapsed} />
@@ -1224,11 +1228,11 @@ const AdminDashboard: React.FC = () => {
               )}
 
               {(isTabVisible('media') || isTabVisible('users') || isTabVisible('logs') || isTabVisible('meeting-assistant')) && (
-                <div className="space-y-1 pt-2">
+                <div className="space-y-0.5 pt-1 border-t border-slate-100/80">
                   {!isSidebarCollapsed ? (
-                    <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-[0.2em] pl-3 mb-2 mt-4">Utilities</p>
+                    <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider pl-2.5 mb-1 mt-2">Utilities</p>
                   ) : (
-                    <div className="border-t border-gray-50 my-2" />
+                    <div className="border-t border-slate-100 my-1.5" />
                   )}
                   <SidebarBtn id="media" label="Media Library" icon={Image} active={activeTab} onClick={setActiveTab} visible={isTabVisible('media')} collapsed={isSidebarCollapsed} />
                   <SidebarBtn id="users" label="User Permissions" icon={Key} active={activeTab} onClick={setActiveTab} visible={isTabVisible('users')} collapsed={isSidebarCollapsed} />
@@ -1241,7 +1245,7 @@ const AdminDashboard: React.FC = () => {
 
           {/* MAIN DATA PANELS */}
           <div className="w-full">
-            <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden min-h-[60vh] p-8 md:p-12">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden min-h-[60vh] p-4 sm:p-6 md:p-8">
               
               {/* CONTEXTUAL FEEDBACK BANNERS */}
               {errorMsg && (
@@ -2544,6 +2548,19 @@ const AdminDashboard: React.FC = () => {
                   return matchesSearch;
                 });
 
+                // Sorting logic
+                const sortedRequests = [...filteredRequests].sort((a, b) => {
+                  let comparison = 0;
+                  if (workflowSortField === 'date') {
+                    const dateA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+                    const dateB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+                    comparison = dateA - dateB;
+                  } else {
+                    comparison = (a.trackingNumber || "").localeCompare(b.trackingNumber || "");
+                  }
+                  return workflowSortOrder === 'desc' ? -comparison : comparison;
+                });
+
                 const handleAssignDept = (reqId: string, deptId: string | null) => {
                   setCitizenRequests(prev => prev.map(req => {
                     if (req.id === reqId) {
@@ -2566,106 +2583,339 @@ const AdminDashboard: React.FC = () => {
                   }));
                 };
 
-
                 return (
-                  <div className="space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div className="space-y-4">
+                    {/* Header Bar with Controls */}
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
                       <div>
-                        <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Citizen Workflow Routing Engine</h3>
-                        <p className="text-gray-400 text-xs font-bold mt-1">
+                        <div className="flex items-center gap-2.5">
+                          <h3 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">Citizen Workflow Routing Engine</h3>
+                          <span className="text-[11px] font-extrabold text-blue-700 bg-blue-50 border border-blue-200/80 px-2.5 py-0.5 rounded-full">
+                            {sortedRequests.length} {sortedRequests.length === 1 ? 'Ticket' : 'Tickets'}
+                          </span>
+                        </div>
+                        <p className="text-slate-500 text-xs font-medium mt-0.5">
                           {isGeneralAdmin 
-                            ? "Overview of all active municipal citizen inquiries. Route tasks to responsible departments." 
+                            ? "Overview of active citizen workflow requests. Click any row or 'View' to expand detailed information." 
                             : `Displaying tasks routed specifically to your office: ${departments.find(d => d.id === myDeptId)?.name || "Assigned Department"}`
                           }
                         </p>
                       </div>
                       
-                      {!isGeneralAdmin && myDeptId && (
-                        <div className="px-3.5 py-1.5 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 font-black text-[9px] uppercase tracking-widest animate-pulse">
-                          DEPARTMENT FILTER ACTIVE
+                      <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto shrink-0">
+                        {!isGeneralAdmin && myDeptId && (
+                          <div className="px-3 py-1 bg-blue-50 border border-blue-200/80 rounded-lg text-blue-700 font-extrabold text-[9px] uppercase tracking-widest">
+                            DEPARTMENT FILTER ACTIVE
+                          </div>
+                        )}
+
+                        {/* Sort Field Controls */}
+                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase px-2">Sort:</span>
+                          <button
+                            onClick={() => {
+                              if (workflowSortField === 'date') {
+                                setWorkflowSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+                              } else {
+                                setWorkflowSortField('date');
+                                setWorkflowSortOrder('desc');
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                              workflowSortField === 'date' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            <span>Date</span>
+                            {workflowSortField === 'date' && (
+                              workflowSortOrder === 'desc' ? <ArrowDown size={12} /> : <ArrowUp size={12} />
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (workflowSortField === 'ticket') {
+                                setWorkflowSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+                              } else {
+                                setWorkflowSortField('ticket');
+                                setWorkflowSortOrder('asc');
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                              workflowSortField === 'ticket' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            <span>Ticket #</span>
+                            {workflowSortField === 'ticket' && (
+                              workflowSortOrder === 'desc' ? <ArrowDown size={12} /> : <ArrowUp size={12} />
+                            )}
+                          </button>
                         </div>
-                      )}
+
+                        {sortedRequests.length > 0 && (
+                          <button
+                            onClick={() => {
+                              const allIds = sortedRequests.map(r => r.id);
+                              if (workflowExpandedIds.size === sortedRequests.length) {
+                                setWorkflowExpandedIds(new Set());
+                              } else {
+                                setWorkflowExpandedIds(new Set(allIds));
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-200/80 cursor-pointer"
+                          >
+                            <ListCollapse size={14} className="text-slate-500" />
+                            <span>
+                              {workflowExpandedIds.size === sortedRequests.length ? "Collapse All" : "Expand All"}
+                            </span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {filteredRequests.map((req) => {
-                        const assignedDept = departments.find(d => d.id === req.assignedDeptId);
-                        return (
-                          <div key={req.id} className="bg-white rounded-[2.5rem] border border-gray-100 p-6 sm:p-8 shadow-sm hover:border-blue-200 hover:shadow-md transition-all flex flex-col justify-between space-y-6">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <span className="text-[10px] font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-                                  {req.trackingNumber}
-                                </span>
-                                <h4 className="font-black text-gray-900 mt-2 text-sm">{req.citizenName}</h4>
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{req.type}</span>
-                              </div>
-                              <StatusBadge status={req.priority} label={`${req.priority} Priority`} />
-                            </div>
-
-                            {/* Beautiful structured human-readable government document style */}
-                            <RequestSummary
-                              documentType={req.type}
-                              purposeJson={req.description}
-                              ticketId={req.trackingNumber}
-                              submittedAt={req.submittedAt}
-                            />
-
-                            <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Responsible Office</label>
-                                {isGeneralAdmin ? (
-                                  <select
-                                    value={req.assignedDeptId || ""}
-                                    onChange={(e) => handleAssignDept(req.id, e.target.value || null)}
-                                    className="w-full bg-gray-50 border border-transparent rounded-xl p-2 font-black text-gray-800 text-[10px] focus:outline-none"
-                                  >
-                                    <option value="">-- ROUTE DEPARTMENT --</option>
-                                    {departments.map(d => (
-                                      <option key={d.id} value={d.id}>{d.name}</option>
-                                    ))}
-                                  </select>
-                                ) : (
-                                  <div className="bg-gray-50 p-2 rounded-xl text-gray-700 font-black text-[10px] truncate">
-                                    {assignedDept ? assignedDept.name : "Unassigned"}
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Action Status</label>
-                                <select
-                                  value={req.status}
-                                  onChange={(e) => openStatusUpdatePrompt(req, e.target.value)}
-                                  className="w-full bg-gray-50 border border-transparent rounded-xl p-2 font-black text-gray-800 text-[10px] focus:outline-none"
+                    {/* Table Container */}
+                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[950px]">
+                          <thead>
+                            <tr className="bg-slate-50/90 border-b border-slate-200/80 text-[10.5px] font-black text-slate-500 uppercase tracking-wider">
+                              <th className="py-3.5 px-4">
+                                <button 
+                                  onClick={() => {
+                                    if (workflowSortField === 'ticket') {
+                                      setWorkflowSortOrder(p => p === 'asc' ? 'desc' : 'asc');
+                                    } else {
+                                      setWorkflowSortField('ticket');
+                                      setWorkflowSortOrder('asc');
+                                    }
+                                  }}
+                                  className="flex items-center gap-1 hover:text-slate-900 transition-colors cursor-pointer"
                                 >
-                                  <option value="SUBMITTED">Submitted</option>
-                                  <option value="ASSIGNED">Assigned to Department</option>
-                                  <option value="PROCESSING">Under Review</option>
-                                  <option value="RETURNED">Additional Requirements Needed</option>
-                                  <option value="APPROVED">Approved</option>
-                                  <option value="PREPARING">Preparing Document</option>
-                                  <option value="READY">Ready for Claim</option>
-                                  <option value="CLAIMED">Claimed / Completed</option>
-                                  <option value="REJECTED">Rejected</option>
-                                </select>
-                              </div>
-                            </div>
+                                  <span>Ticket #</span>
+                                  <ArrowUpDown size={11} className="text-slate-400" />
+                                </button>
+                              </th>
+                              <th className="py-3.5 px-4">Applicant</th>
+                              <th className="py-3.5 px-4">Document Type</th>
+                              <th className="py-3.5 px-4">Priority</th>
+                              <th className="py-3.5 px-4">Status</th>
+                              <th className="py-3.5 px-4">
+                                <button 
+                                  onClick={() => {
+                                    if (workflowSortField === 'date') {
+                                      setWorkflowSortOrder(p => p === 'asc' ? 'desc' : 'asc');
+                                    } else {
+                                      setWorkflowSortField('date');
+                                      setWorkflowSortOrder('desc');
+                                    }
+                                  }}
+                                  className="flex items-center gap-1 hover:text-slate-900 transition-colors cursor-pointer"
+                                >
+                                  <span>Submitted</span>
+                                  <ArrowUpDown size={11} className="text-slate-400" />
+                                </button>
+                              </th>
+                              <th className="py-3.5 px-4">Responsible Office</th>
+                              <th className="py-3.5 px-4 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                            {sortedRequests.map((req, idx) => {
+                              const isExpanded = workflowExpandedIds.has(req.id);
+                              const assignedDept = departments.find(d => d.id === req.assignedDeptId);
 
-                            <div className="flex justify-between items-center pt-2 text-[9px] text-gray-400 font-bold uppercase tracking-wider">
-                              <span>Submitted: {new Date(req.submittedAt).toLocaleDateString()}</span>
-                              <StatusBadge status={req.status} />
-                            </div>
-                          </div>
-                        );
-                      })}
+                              const formattedDate = req.submittedAt
+                                ? new Date(req.submittedAt).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                  })
+                                : "Recently";
 
-                      {filteredRequests.length === 0 && (
-                        <div className="col-span-2 text-center py-16 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                          <Workflow className="mx-auto text-gray-300 mb-2 animate-pulse" size={32} />
-                          <p className="text-xs text-gray-400 font-bold">No citizen requests found matching search or filter restrictions.</p>
-                        </div>
-                      )}
+                              const toggleRow = () => {
+                                setWorkflowExpandedIds(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(req.id)) next.delete(req.id);
+                                  else next.add(req.id);
+                                  return next;
+                                });
+                              };
+
+                              return (
+                                <React.Fragment key={req.id}>
+                                  {/* Main Row */}
+                                  <tr 
+                                    onClick={toggleRow}
+                                    className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${
+                                      isExpanded ? 'bg-blue-50/30' : idx % 2 === 1 ? 'bg-slate-50/30' : 'bg-white'
+                                    }`}
+                                  >
+                                    {/* Ticket # */}
+                                    <td className="py-3 px-4 font-mono font-black text-blue-700 text-xs tracking-tight whitespace-nowrap">
+                                      {req.trackingNumber}
+                                    </td>
+
+                                    {/* Applicant */}
+                                    <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
+                                      {req.citizenName}
+                                    </td>
+
+                                    {/* Document Type */}
+                                    <td className="py-3 px-4 uppercase font-bold text-slate-800 text-[11px] whitespace-nowrap">
+                                      {req.type}
+                                    </td>
+
+                                    {/* Priority */}
+                                    <td className="py-3 px-4 whitespace-nowrap">
+                                      <StatusBadge status={req.priority} label={`${req.priority}`} />
+                                    </td>
+
+                                    {/* Status */}
+                                    <td className="py-3 px-4 whitespace-nowrap">
+                                      <StatusBadge status={req.status} />
+                                    </td>
+
+                                    {/* Submission Date */}
+                                    <td className="py-3 px-4 text-slate-500 whitespace-nowrap text-[11px]">
+                                      {formattedDate}
+                                    </td>
+
+                                    {/* Responsible Office */}
+                                    <td className="py-3 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                      {isGeneralAdmin ? (
+                                        <select
+                                          value={req.assignedDeptId || ""}
+                                          onChange={(e) => handleAssignDept(req.id, e.target.value || null)}
+                                          className="bg-slate-50 hover:bg-white border border-slate-200/80 rounded-lg px-2 py-1 font-bold text-slate-800 text-[11px] focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs cursor-pointer max-w-[160px] truncate"
+                                        >
+                                          <option value="">-- ROUTE OFFICE --</option>
+                                          {departments.map(d => (
+                                            <option key={d.id} value={d.id}>{d.name}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <span className="text-[11px] font-bold text-slate-700 bg-slate-100 border border-slate-200/60 px-2 py-1 rounded-lg truncate inline-block max-w-[150px]">
+                                          {assignedDept ? assignedDept.name : "Unassigned"}
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* Actions */}
+                                    <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                      <button
+                                        onClick={toggleRow}
+                                        className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 border border-slate-200/80 cursor-pointer shadow-2xs"
+                                      >
+                                        <span>{isExpanded ? "Hide" : "View"}</span>
+                                        {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                                      </button>
+                                    </td>
+                                  </tr>
+
+                                  {/* Expanded Row Details */}
+                                  {isExpanded && (
+                                    <tr key={`${req.id}-details`} className="bg-slate-50/60">
+                                      <td colSpan={8} className="p-0 border-b border-slate-200/80">
+                                        <AnimatePresence>
+                                          <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="p-4 sm:p-5 space-y-3.5"
+                                          >
+                                            {/* Expanded Card Detail Header */}
+                                            <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                                              <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Citizen Workflow Record</span>
+                                                  <span className="font-mono font-bold text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded text-[11px]">
+                                                    {req.trackingNumber}
+                                                  </span>
+                                                </div>
+                                                <h4 className="text-base font-extrabold text-slate-900">
+                                                  {req.citizenName} — <span className="text-slate-600 font-semibold">{req.type}</span>
+                                                </h4>
+                                              </div>
+
+                                              {/* Status and Department Selectors */}
+                                              <div className="flex flex-wrap items-center gap-3">
+                                                <div className="space-y-0.5">
+                                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                                                    Responsible Office
+                                                  </label>
+                                                  {isGeneralAdmin ? (
+                                                    <select
+                                                      value={req.assignedDeptId || ""}
+                                                      onChange={(e) => handleAssignDept(req.id, e.target.value || null)}
+                                                      className="bg-white border border-slate-200/90 rounded-lg px-2.5 py-1 font-bold text-slate-800 text-[11px] focus:ring-2 focus:ring-blue-500 shadow-2xs cursor-pointer"
+                                                    >
+                                                      <option value="">-- ROUTE OFFICE --</option>
+                                                      {departments.map(d => (
+                                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                                      ))}
+                                                    </select>
+                                                  ) : (
+                                                    <div className="bg-white border border-slate-200/90 px-2.5 py-1 rounded-lg text-slate-800 font-bold text-[11px]">
+                                                      {assignedDept ? assignedDept.name : "Unassigned"}
+                                                    </div>
+                                                  )}
+                                                </div>
+
+                                                <div className="space-y-0.5">
+                                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                                                    Action Status
+                                                  </label>
+                                                  <select
+                                                    value={req.status}
+                                                    onChange={(e) => openStatusUpdatePrompt(req, e.target.value)}
+                                                    className="bg-white border border-slate-200/90 rounded-lg px-2.5 py-1 font-bold text-slate-800 text-[11px] focus:ring-2 focus:ring-blue-500 shadow-2xs cursor-pointer"
+                                                  >
+                                                    <option value="SUBMITTED">Submitted</option>
+                                                    <option value="ASSIGNED">Assigned to Department</option>
+                                                    <option value="PROCESSING">Under Review</option>
+                                                    <option value="RETURNED">Additional Requirements Needed</option>
+                                                    <option value="APPROVED">Approved</option>
+                                                    <option value="PREPARING">Preparing Document</option>
+                                                    <option value="READY">Ready for Claim</option>
+                                                    <option value="CLAIMED">Claimed / Completed</option>
+                                                    <option value="REJECTED">Rejected</option>
+                                                  </select>
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            {/* Form Field Summary */}
+                                            <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-2xs">
+                                              <RequestSummary
+                                                documentType={req.type}
+                                                purposeJson={req.description}
+                                                ticketId={req.trackingNumber}
+                                                submittedAt={req.submittedAt}
+                                                compact={true}
+                                              />
+                                            </div>
+                                          </motion.div>
+                                        </AnimatePresence>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+
+                            {sortedRequests.length === 0 && (
+                              <tr>
+                                <td colSpan={8} className="py-16 text-center bg-slate-50/50">
+                                  <Workflow className="mx-auto text-slate-300 mb-2 animate-pulse" size={36} />
+                                  <p className="text-xs text-slate-500 font-bold">No citizen requests found matching search or filter restrictions.</p>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 );
@@ -4211,20 +4461,20 @@ const SidebarBtn: React.FC<SidebarBtnProps> = ({ id, label, icon: Icon, active, 
   return (
     <button
       onClick={() => onClick(id)}
-      className={`w-full px-4 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center transition-all text-left relative group ${
-        collapsed ? 'justify-center lg:px-0' : 'gap-3.5'
+      className={`w-full px-3 py-2.5 rounded-xl font-bold text-[10.5px] uppercase tracking-wider flex items-center transition-all text-left relative group ${
+        collapsed ? 'justify-center lg:px-0' : 'gap-2.5'
       } ${
         isSelected
-          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/10'
-          : 'text-gray-400 hover:bg-gray-50 hover:text-gray-800'
+          ? 'bg-blue-600 text-white shadow-2xs font-extrabold'
+          : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
       }`}
     >
-      <Icon size={14} className={isSelected ? "text-white" : "text-gray-400 group-hover:scale-110 transition-transform"} />
+      <Icon size={14} className={isSelected ? "text-white" : "text-slate-400 group-hover:text-slate-700 transition-colors"} />
       <span className={`transition-opacity duration-300 ${collapsed ? 'lg:hidden' : 'block'}`}>
         {label}
       </span>
       {collapsed && (
-        <div className="hidden lg:group-hover:block absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap z-50 shadow-md">
+        <div className="hidden lg:group-hover:block absolute left-full ml-2.5 px-2.5 py-1 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg whitespace-nowrap z-50 shadow-md">
           {label}
         </div>
       )}
@@ -4242,16 +4492,15 @@ interface StatBoxProps {
 const StatBox: React.FC<StatBoxProps> = ({ count, label, icon: Icon, color }) => {
   return (
     <motion.div 
-      whileHover={{ y: -4, scale: 1.02 }}
-      className="border border-gray-100 rounded-[2rem] p-6 shadow-xs hover:shadow-lg hover:shadow-gray-100/50 transition-all flex items-center justify-between bg-white overflow-hidden relative group"
+      whileHover={{ y: -2 }}
+      className="border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between bg-white overflow-hidden relative group"
     >
-      <div className="absolute right-0 top-0 w-32 h-32 bg-radial from-gray-50/20 to-transparent rounded-full -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-125" />
-      <div className="space-y-1.5 relative z-10">
-        <span className="text-3xl font-black text-gray-900 block tracking-tight font-display">{count}</span>
-        <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block">{label}</span>
+      <div className="space-y-1 relative z-10">
+        <span className="text-2xl font-black text-slate-900 block tracking-tight font-display">{count}</span>
+        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">{label}</span>
       </div>
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:rotate-6 relative z-10 ${color}`}>
-        <Icon size={22} />
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 relative z-10 ${color}`}>
+        <Icon size={18} />
       </div>
     </motion.div>
   );

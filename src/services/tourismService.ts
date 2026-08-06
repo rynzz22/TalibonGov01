@@ -52,7 +52,7 @@ export const tourismService = {
         if (!isMockAllowed()) {
           throw new Error(`[TourismService] Failed to load tourism spots: ${e.message}`);
         }
-        console.error("[TourismService] Supabase Tourism spots fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("[TourismService] Supabase Tourism spots fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 

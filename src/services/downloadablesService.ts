@@ -50,7 +50,7 @@ export const downloadablesService = {
         if (!isMockAllowed()) {
           throw new Error(`[DownloadablesService] Failed to load downloadables: ${e.message}`);
         }
-        console.error("[DownloadablesService] Supabase Downloadables fetch failed, falling back to LocalStorage:", e.message || e);
+        console.warn("[DownloadablesService] Supabase Downloadables fetch failed, falling back to LocalStorage:", e.message || e);
       }
     }
 
