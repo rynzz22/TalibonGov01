@@ -30,6 +30,7 @@ import AuthCallback from "./pages/AuthCallback";
 import EServicesPage from "./pages/EServicesPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AccessDenied from "./pages/AccessDenied";
+import NotFound from "./pages/NotFound";
 import TourismMapPage from "./pages/TourismMapPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
@@ -362,6 +363,10 @@ function AppLayout() {
           <Route path="/forms/business" element={<BusinessPermitPage />} />
           <Route path="/forms/building" element={<BuildingPermitPage />} />
           <Route path="/forms/zoning" element={<ZoningClearancePage />} />
+
+          {/* Access Control & Fallback Routes */}
+          <Route path="/access-denied" element={<AccessDenied />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
           </div>
           <Footer />
